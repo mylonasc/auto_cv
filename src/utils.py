@@ -48,11 +48,18 @@ class DocSection:
 class DocSectionItem:
     def __init__(self, company, duration, position, text_items):
         self.company, self.duration, self.position, self.item_list =  company, duration, position, text_items
+        self.notes = None
 
+    def set_notes(self, notes):
+        self.notes = notes
+        
     def get_latex(self):
         s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}}}\n"
         for i in self.item_list:
-            s += f'    \\item {i}\n'
+            s += f'    \\item {i}'
+            if self.notes is not None:
+                s += f'\\pdfcomment{{{self.notes}}}'
+            s += '\n'
         s += f'  \\end{{myrSubsection}}\n'
         return s
 
