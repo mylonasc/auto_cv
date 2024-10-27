@@ -38,6 +38,12 @@ class DocSection:
         self.section_title = section_title
         self.doc_section_items = doc_section_items
     
+    def get_markdown(self):
+        s = f'## {self.section_title} \n'
+        for _i in self.doc_section_items:
+            s += _i.get_markdown()
+        return s + '\n'
+    
     def get_latex(self):
         s = f'\\begin{{rSection}}{{{self.section_title}}}\n'
         for _i in self.doc_section_items:
@@ -45,21 +51,45 @@ class DocSection:
         s += '\\end{rSection}\n'
         return s
 
-class DocSectionItem:
-    def __init__(self, company, duration, position, text_items):
-        self.company, self.duration, self.position, self.item_list =  company, duration, position, text_items
-        self.notes = None
 
-    def set_notes(self, notes):
-        self.notes = notes
+class SectionListItem:
+    def __init__(self, text, comment = None):
+        self.text = text
+        self.comment = comment
+    def set_comment(self, comment):
+        self.comment = comment
+    def get_markdown(self):
+        s = f'* {self.text}'
+        if self.comment is not None:
+            s += f' (comment:  {self.comment})'
+        return s + '\n'
+    def get_latex(self):
+        s = f'    \\item {self.text}'
+        if self.comment is not None:
+            s += f'\\pdfcomment{{{self.comment}}}'
+        return s + '\n'
+
+class DocSectionItem:
+    def __init__(self, company : str, duration : str, position : str, text_items : list[str]):
+        self.company, self.duration, self.position =  company, duration, position
+        self.section_item_list = [SectionListItem(li) for li in text_items]
+        self.comment = None
+
+    def set_comment(self, comment):
+        self.comment = comment
         
+    def get_markdown(self):
+        s = f'### {self.company} at {self.position} ({self.duration})\n'
+        for i in self.section_item_list:
+            s += i.get_markdown()
+        return s
+    
     def get_latex(self):
         s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}}}\n"
-        for i in self.item_list:
-            s += f'    \\item {i}'
-            if self.notes is not None:
-                s += f'\\pdfcomment{{{self.notes}}}'
-            s += '\n'
+        if self.comment is not None:
+            s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}\\pdfcomment{{{self.comment}}}}}\n"
+        for i in self.section_item_list:
+            s += i.get_latex()
         s += f'  \\end{{myrSubsection}}\n'
         return s
 
