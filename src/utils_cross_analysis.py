@@ -4,8 +4,9 @@ from langchain_ollama.llms import OllamaLLM
 
 from tqdm import tqdm
 import numpy as np
+import os
 import pandas as pd
-from .utils import _trim_encap_tag_load_json
+from .utils import _trim_encap_tag_load_json, JobPostAnalysis, FullCVDocument
 import json
 
 personal_statement_analysis = {
@@ -51,9 +52,9 @@ section_experience_analysis = {
             
             In what follows, there is a piece of text that contains information about a particular job post, 
             and a passage from a CV, about some professional experience of a job candidate. 
-
+            
             Your task is:
-            1. to judge by assigning a number from 0 to 10, how relevant the CV passage is, to the job posting.
+            1. to judge by assigning a number from 0 to 10, how relevant the CV passage is, to the job posting. You may assign at least 5 if the section has strong evidence of excellence or strong work ethic.
             2. to write a short explanation (less than 20 words) of why the score was assigned.
             3. to explain which parts of the job posting analysis are relevant to the CV passage.
             
@@ -102,17 +103,51 @@ section_experience_analysis = {
 }
 
 
+from .models import ModelFactory
+
+def _load_defaults():
+    from pathlib import Path
+    import yaml
+    _here = Path(__file__).resolve().parent.parent
+    with open(os.path.join(_here, 'config/llm_defaults.yaml'),'r') as f:
+        res = yaml.safe_load(f)
+    return res
+
+def _make_default_model():
+    default_model_options = _load_defaults()
+    print(default_model_options)
+    return ModelFactory(**default_model_options['cv_cross_analysis_llm_default']).get_llm_model()
 
 class CVCrossAnalyzer:
-    def __init__(self, job_post_analyzer, full_cv_document, ollama_llm_str = 'llama3.1', max_section_parse_retries = 3):
+    """ This class contains utilities to cross-analyze the job posting and the cv.
+    It returns a set of scores for each section of the CV (e.g., relevance) and the job posting.
+    """
+    def __init__(
+                self, 
+                job_post_analyzer : JobPostAnalysis, 
+                full_cv_document : FullCVDocument, 
+                llm_model = None, 
+                max_section_parse_retries = 3
+        ):
         self.cv_model = full_cv_document
         self.job_post_analyzer = job_post_analyzer
+        if llm_model is None:
+            self.model = _make_default_model()
+        else:
+            self.model = llm_model
+        
+            
         # self.cv_cross_analyzer_prompts = cv_cross_analyzer_prompts
-        self.model = OllamaLLM(model = ollama_llm_str)
+        
         self.max_section_parse_retries = max_section_parse_retries
+        
         ## Customized chains:
-        experience_analysis_chain = ChatPromptTemplate.from_template(section_experience_analysis['prompt_txt']) | self.model
-        personal_statement_analysis_chain = ChatPromptTemplate.from_template(personal_statement_analysis['prompt_txt']) | self.model
+        experience_analysis_chain =\
+            ChatPromptTemplate.from_template(section_experience_analysis['prompt_txt']) | self.model
+            
+        personal_statement_analysis_chain =\
+            ChatPromptTemplate.from_template(personal_statement_analysis['prompt_txt']) | self.model                
+
         self.chains = {
             'personal_statement_analysis' : {
                 'chain' : personal_statement_analysis_chain, 
@@ -143,7 +178,6 @@ class CVCrossAnalyzer:
             section_notes = ''
             section_items_list_dict = {}
             for i in s.section_item_list:
-                section_parse_retries = 0 
                 for k in range(self.max_section_parse_retries):
                     try:
                         _res = analysis_item['chain'].invoke({'cv_experience' : i.text,'job_posting_data' : _job_post_data})

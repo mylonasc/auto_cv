@@ -1,0 +1,7 @@
+cv_cross_analysis_llm_default:
+  model_provider : 'ollama'
+  model_str : 'llama3.1:latest'
+
+job_post_analysis_llm_default:
+  model_provider: 'ollama'
+  model_str : 'deepseek-r1:latest'

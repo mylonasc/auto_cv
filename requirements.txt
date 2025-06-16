@@ -1,3 +1,8 @@
+
 langchain
 langchain_ollama
+langchain-google-genai
+google-genai
+langchain_community
 tqdm
+

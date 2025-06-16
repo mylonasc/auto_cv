@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 import json
 
+
 TEMPLATE_NAME = os.path.join('assets','latex_cv_template_v0.tex')
 
 def _trim_encap_tag_load_json(_res, encap_tag :str = 'output'):
@@ -206,13 +207,32 @@ analyses_prompts = [
             'prompt_provides' : 'industry_and_position_analysis'     
         }    
 ]
-    
+
+from .models import ModelFactory
+
+def _load_defaults():
+    from pathlib import Path
+    import yaml
+    _here = Path(__file__).resolve().parent.parent
+    with open(os.path.join(_here, 'config/llm_defaults.yaml'),'r') as f:
+        res = yaml.safe_load(f)
+    return res
+
+def _make_default_model_job_post_analysis():
+    default_model_options = _load_defaults()
+    return ModelFactory(**default_model_options['job_post_analysis_llm_default']).get_llm_model()
+
 class JobPostAnalysis:
-    def __init__(self, post_txt_file, analysis_prompts = analyses_prompts, ollama_llm_str = 'llama3.1'):
+    def __init__(self, post_txt_file, analysis_prompts = analyses_prompts, llm_model = None):
         self.post_txt_file = post_txt_file
         with open(self.post_txt_file ,'r') as f:
             self.post_txt = f.read()
-        self.model = OllamaLLM(model = ollama_llm_str)
+        
+        if llm_model is None:
+            self.model = _make_default_model_job_post_analysis()
+        else:
+            self.model = llm_model
+        
         self.chains = []
         for an_t in analyses_prompts:
             prompt_str, prompt_provides = an_t['prompt_txt'], an_t['prompt_provides']
@@ -224,4 +244,5 @@ class JobPostAnalysis:
     def analyze(self):
         for c in self.chains:
             res = c['chain'].invoke({'job_posting_text' : self.post_txt})
+            print(res)
             self.data[c['provides']] =_trim_encap_tag_load_json(res)
