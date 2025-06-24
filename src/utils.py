@@ -49,7 +49,6 @@ def _latex_to_pdf(latex_string, output_pdf):
         except subprocess.CalledProcessError as e:
             print("Error compiling LaTeX:", e)
 
-
 class DocSection:
     def __init__(self, section_title, doc_section_items):
         self.section_title = section_title
@@ -114,6 +113,9 @@ class DocSectionItem:
         return s
 
 class FullCVDocument:
+    """ A class that takes care of rendering and encapsulating different standardized
+    sections of the CV.
+    """
     def __init__(self, statement : str, experience_section : DocSection):
         self.statement, self.experience_section = statement, experience_section
         
@@ -127,8 +129,10 @@ class FullCVDocument:
             _exp_latex += '\n' + '\\newpage' + '\n'  *2
         ff = ff.replace('<experience_section>', _exp_latex)
         return ff
+    
     def render_pdf(self, out_file):
         _latex_to_pdf(self.make_latex(), out_file)
+        
     def copy(self):
         # new_experience = [e.copy() for e in self.experience_section.doc_section_items]
         return FullCVDocument(self.statement, self.experience_section.copy())
@@ -224,6 +228,14 @@ def _make_default_model_job_post_analysis():
 
 class JobPostAnalysis:
     def __init__(self, post_txt_file, analysis_prompts = analyses_prompts, llm_model = None):
+        """ A class to manage analysis of the job posting. 
+        
+        Args:
+            post_txt_file: (str) the text file containing the job posting info
+            analysis_prompts: The prompts used for analyzing the job posting (they have default values)
+            llm_model : (None) a model to be used with the `src.utils.ModelFactory`. To get a list of set-up models 
+                check the corresponding class.
+        """
         self.post_txt_file = post_txt_file
         with open(self.post_txt_file ,'r') as f:
             self.post_txt = f.read()
