@@ -34,6 +34,12 @@ ollama run llama3
 
 or by defining and setting a new model file.
 
+## Running with OpenTelemetry tracing
+It may be helpful to use open telemetry to get statistics about the runtimes, the errors, and intermediate outputs from the chains run. 
+There is an automatically instrumented `autocv-otel.py` file you can use for that. 
+
+
+
 
 
 

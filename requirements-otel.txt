@@ -1,0 +1,13 @@
+
+langchain
+langchain_ollama
+langchain-google-genai
+google-genai
+langchain_community
+tqdm
+
+opentelemetry-distro[otlp] 
+opentelemetry-instrumentation-requests 
+opentelemetry-instrumentation-logging
+opentelemetry-instrumentation-langchain
+opentelemetry-instrumentation-ollama
