@@ -80,6 +80,12 @@ def get_base_cv():
     return fcv
 
 
+def proc_text_dummy(text):
+
+    fcv = get_base_cv()
+    fcv.render_pdf('dummy.pdf')
+    return 'dummy.pdf'
+
 def process_text(text):
     with open('posting.txt','w') as f:
         f.write(text)
@@ -89,13 +95,13 @@ def process_text(text):
     jpa.analyze()
     fcv = get_base_cv()
     fcv_copy = fcv.copy()
-    doc_section_copy = doc_section.copy()
-    fcv = FullCVDocument(statement, doc_section_copy)
+    doc_section_copy = fcv.experience_section.copy()
+    fcv = FullCVDocument(fcv.statement, doc_section_copy)
     cvca = CVCrossAnalyzer(jpa, fcv)
     cvca.analyze_job_experience_section()
-    metrics_pre, _ , _ = cvca.analyze_job_experience_section()
+    metrics_pre = cvca.get_section_aggregate_metrics()
     agg_metrics_prev = cvca.rewrite_reviewed_experience_section(max_section_items_keep=5,min_relevance_score=4)
-    agg_metrics_prev = cvca.analyze_job_experience_section()
-    metrics_post , _ ,  _ = cvca.analyze_job_experience_section()
+    cvca.analyze_job_experience_section()
+    metrics_post = cvca.get_section_aggregate_metrics()
     cvca.cv_model.copy().render_pdf("result.pdf")
     return 'result.pdf'#, [metrics_pre, metrics_post]

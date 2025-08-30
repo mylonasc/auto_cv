@@ -1,6 +1,7 @@
 import gradio as gr
-from analysis_engine_ui import process_text
+from analysis_engine_ui import process_text, proc_text_dummy
 
+process_text = proc_text_dummy
 # def process_text(text):
 #     with open('')
 #     # Process the input text (example: convert to uppercase)
@@ -22,17 +23,25 @@ with gr.Blocks() as app:
     process_button = gr.Button("Process Text")
     
     # Download button for the processed text file, hidden initially
-    download_button = gr.File(label="Download Result", visible=False)
+    download_button = gr.DownloadButton(label="Download Result", value = 'test.txt', visible = False)
     
+    res_path_glob = ''
     # Define the function to execute on button click
     def on_process_click(text):
+        print("--proc stage")
         result_path = process_text(text)
-        # Make the download button visible with the processed file
-        download_button.update(value=result_path, visible=True)
+        download_button.visible = True
+        return result_path
+
+    def dummy_output(dat):
+        print(dat)
     
     # Wire up the process button to call `on_process_click`
+    # gr_file = gr.File()
     process_button.click(on_process_click, inputs=text_input, outputs=download_button)
 
 # Launch the app
+
+
 app.launch()
 

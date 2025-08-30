@@ -7,6 +7,7 @@ import json
 
 
 TEMPLATE_NAME = os.path.join('assets','latex_cv_template_v0.tex')
+TEMPLATE_COVER_LETTER = os.path.join('assets','cover_letter', 'CoverLetter_Template.tex')
 
 def _trim_encap_tag_load_json(_res, encap_tag :str = 'output'):
     f1= _res.find("<" + encap_tag + ">")+len(encap_tag) + 2
@@ -137,6 +138,37 @@ class FullCVDocument:
         # new_experience = [e.copy() for e in self.experience_section.doc_section_items]
         return FullCVDocument(self.statement, self.experience_section.copy())
 
+class CoverLetterModel:
+    def __init__(self, cover_letter_template_path = TEMPLATE_COVER_LETTER):
+        self.cover_letter_template_path = cover_letter_template_path
+        with open(self.cover_letter_template_path,'r') as f:
+            self.cover_letter_template_tex_contents = f.read()
+                    
+    def set_data(self, date_str, company_name, letter_body, name = 'Charilaos Mylonas, PhD', prof_signature = "\\\\" + 'Machine Learning Engineer' + '\\\\' + 'Zurich'):
+        self.date_str = date_str # <DATETODAY>
+        self.company_name =company_name # <COMPANYNAME>
+        self.letter_body = letter_body # <LETTERCONTENT>
+        self.name = name  # <NAME>
+        self.prof_signature = prof_signature #<PROF_SIGNATURE>
+        
+    def render_tex_template(self):
+        replace_data = {
+            'DATETODAY' : self.date_str, 
+            'COMPANYNAME' : self.company_name, 
+            'LETTERCONTENT' : self.letter_body,
+            'NAME' : self.name,
+            'PROF_SIGNATURE' : self.prof_signature
+        }
+        with open(self.cover_letter_template_path,'r') as f:
+            new_tex = f.read()
+        
+        for k, v in replace_data.items():
+            new_tex= new_tex.replace(f'<{k}>',v)
+        
+        return new_tex
+    
+    def to_pdf(self, file):
+        _latex_to_pdf(self.render_tex_template(), file)
 
 analyses_prompts = [
     {
