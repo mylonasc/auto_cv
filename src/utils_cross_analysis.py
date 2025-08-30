@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from .utils import _trim_encap_tag_load_json, JobPostAnalysis, FullCVDocument
 import json
+from bs4 import BeautifulSoup # pip install beautifulsoup4
 
 personal_statement_analysis = {
     'prompt_txt' : 
@@ -42,6 +43,32 @@ personal_statement_analysis = {
         </output>
         ''',
         'prompt_provides' : 'personal_statement_analysis'
+}
+
+personal_statement_list_analysis = {
+    'prompt_txt' : '''
+    """
+    In the following, you are provided with the text of a job description/linkedin job post, and some alternative personal statements describing concisely the experience of a candidate.
+    I would like to have a candidate personal statement calibrated to the job description, that uses ONLY statements from the example personal statements.
+
+    I want you to (1) first collect a list of statements, (2) score them (0 to 10) in relevance and candidate strength according to the job posting. In the scoring give a higher score to unique and differentiating aspects - not on fairly standard skills.
+    Finally (3) I want you to create a concise statement that takes the strongest points of the statements regarding this job posing.
+    
+    I want you to avoid repetition. Please do not make up statements but stick to the statements provided. If needed, you may slightly rephrase only for conciseness and 
+    avoidance of repetition where applicable. I want the final re-written statement to be written in a similar style as the provided ones (e.g., as they were written by the candidate).
+    
+    You should wrap the analyzed output in appropriate tags. Namely, the analysis/scoring should be wrapped in an <analysis> ... </analysis> tag, and the final edited statement in an <edited_statement> ... </edited_statement> tag for easier parsing.
+
+    Job posting:
+    ----------------
+    {job_posting_raw}
+
+    Alternative Personal statements:
+    --------------------------------
+    {personal_statements}    
+    ''',
+    'prompt_provides' : 
+        ['analysis','edited_statement']
 }
 
 section_experience_analysis = {
@@ -118,15 +145,102 @@ def _make_default_model():
     print(default_model_options)
     return ModelFactory(**default_model_options['cv_cross_analysis_llm_default']).get_llm_model()
 
+
+class CoverLetterDrafter:
+    """ This function wraps different cover letter
+    authoring functionality.
+    
+    Example:
+    
+        ```
+        cover_letter_text = cld.get_cover_letter_text()
+        ```
+        
+    """
+    draft_prompt = """ I want you to draft a short cover letter for a job candidate. I will add a job description, a personal statement from a candidate, and
+        the different professional experience of that candidate. I want you to first carefully analyze the most important differentiating aspects of 
+        that candidate as
+        it pertains to that job. Then I want you to create a professional cover letter, stressing the candidate's eagerness for being considered in 
+        this position, while shortly summarizing why this candidate  is appropriate for that position. Return the cover letter enclosed in tags <COVERLETTER>.
+
+        The address to the hiring manager before and after the cover letter should be outside the <COVERLETTER> tag. 
+
+        Example output: 
+        Dear Hiring Manager, 
+
+        <COVERLETTER>
+        With this letter I would like to express my keen interest and apply for the [insert role] position at [insert company]. 
+        ...
+        I am looking forward to meeting you and further discussing my credentials and experience. 
+        </COVERLETTER>
+
+        Sincerely, ...
+
+        Role Description:
+        ----------
+        {job_post_text}
+
+        Personal Statement:
+        ---------------
+        {pers_statement}
+
+        Professional Experience:
+        -----------------------
+        {exp_section}
+        """
+        
+    def __init__(self, cvca : 'CVCrossAnalyzer', llm_editor_model = None):
+        self.cvca = cvca
+        
+        self.llm_editor_model = llm_editor_model
+        
+        if self.llm_editor_model is None:
+            self.llm_editor_model = self.cvca.llm_editor_model
+        
+        self._debug = {}
+        
+    def get_cover_letter_text(self):
+        chain = ChatPromptTemplate.from_template(self.draft_prompt) | self.llm_editor_model
+        experience_markdown_text = self.cvca.cv_model.experience_section.get_markdown()
+        post_text = self.cvca.job_post_analyzer.post_txt
+
+        _inputs = {
+            "exp_section" : self.cvca.cv_model.experience_section.get_markdown(),
+            'pers_statement' : self.cvca.cv_model.statement,
+            'job_post_text' : self.cvca.job_post_analyzer.post_txt
+        }
+        
+        res = chain.invoke(_inputs)
+        self._debug['inputs'] = _inputs
+        self._debug['raw_llm_output'] = res
+        soup = BeautifulSoup(res,'html.parser')
+        return soup.coverletter.text
+    
+    def draft_cover_letter(self):
+        main_text = self.get_cover_letter_text()
+        clm = CoverLetterModel()
+    
+    # def author_cover_letter_from_analysis(self):
+    #     chain = ChatPromptTemplate.from_template(self.draft_prompt) | self.llm_editor_model
+    #     _inputs = {
+    #         "exp_section" : cvca,
+    #         'pers_statement' : ,
+    #         'job_post_text' : 
+    #     }
+    #     outputs = chain.invoke(_inputs)
+    #     return 
+
+
 class CVCrossAnalyzer:
     """ This class contains utilities to cross-analyze the job posting and the cv.
     It returns a set of scores for each section of the CV (e.g., relevance) and the job posting.
     """
     def __init__(
                 self, 
-                job_post_analyzer : JobPostAnalysis, 
-                full_cv_document : FullCVDocument, 
+                job_post_analyzer : JobPostAnalysis,
+                full_cv_document : FullCVDocument,
                 llm_model = None, 
+                llm_editor_model = None, # A more powerful model (e.g., Gemini or O3) to be used for "reasoning" and editing where needed (e.g., re-writing statements).
                 max_section_parse_retries = 3
         ):
         self.cv_model = full_cv_document
@@ -135,9 +249,11 @@ class CVCrossAnalyzer:
             self.model = _make_default_model()
         else:
             self.model = llm_model
-        
             
-        # self.cv_cross_analyzer_prompts = cv_cross_analyzer_prompts
+        if llm_editor_model is None:
+            llm_editor_model = self.model
+            
+        self.llm_editor_model = llm_editor_model
         
         self.max_section_parse_retries = max_section_parse_retries
         
@@ -146,8 +262,11 @@ class CVCrossAnalyzer:
             ChatPromptTemplate.from_template(section_experience_analysis['prompt_txt']) | self.model
             
         personal_statement_analysis_chain =\
-            ChatPromptTemplate.from_template(personal_statement_analysis['prompt_txt']) | self.model                
-
+            ChatPromptTemplate.from_template(personal_statement_analysis['prompt_txt']) | self.model
+            
+        personal_statement_list_rewrite_chain = \
+            ChatPromptTemplate.from_template(personal_statement_list_analysis['prompt_txt']) | self.llm_editor_model
+            
         self.chains = {
             'personal_statement_analysis' : {
                 'chain' : personal_statement_analysis_chain, 
@@ -156,10 +275,32 @@ class CVCrossAnalyzer:
             'experience_section_analysis' : {
                 'chain' :experience_analysis_chain, 
                 'provides' : section_experience_analysis['prompt_provides']
+            },
+            'personal_statement_rewrite' : {
+                'chain' : personal_statement_list_rewrite_chain,
+                'provides' : personal_statement_list_analysis['prompt_provides']
             }
         }
         ## Somewhere to put the data:
         self.data = {}
+        
+    def analyze_rewrite_personal_statement(self, statements_list = None):
+        post_txt = self.job_post_analyzer.post_txt
+        if statements_list is None:
+            statements_list = self.personal_statements
+        if statements_list is None:
+            raise Exception("You need to provide a list of personal statements for this task (either in the cross analyzer object or as a parameter in the call)")
+        statements_str = ''.join(['Personal Statement %i'%i+'-'*10+s+'\n\n' for i, s in enumerate(statements_list)])
+        _curr_chain = self.chains['personal_statement_rewrite']['chain']
+        res = _curr_chain.invoke({'job_posting_raw' : post_txt ,'personal_statements' : statements_str})
+        
+        # parsing the outputs:
+        soup = BeautifulSoup(res, "html.parser")
+        analysis = soup.analysis
+        # edited_statement = soup.edited_statement.string
+        # The following should correspond to the "provides" part of the chain.
+        self.data['edited_statement'] = soup.edited_statement.string
+        self.data['statement_list_analysis'] = str(soup.analysis)
         
     def analyze_personal_statement(self):
         statement = self.cv_model.statement
@@ -258,24 +399,44 @@ class CVCrossAnalyzer:
                 ss = s['experience_relevance_score']
             if isinstance(s, list):
                 ss = np.mean([_s['experience_relevance_score'] for _s in s])
+            
             return ss
         
         for k, v in fsa.items():
             new_section_item_list = []
             # First sort by relevance:
-            
+            # relevance_scores = [ss for ss in k.section_item_list]
             temp_list = sorted(k.section_item_list, key = lambda x : -_get_exp_rel_score(bsa[k][x]))
+            
             for section_item in temp_list:
                 try:
-                    relevance_score = bsa[k][section_item]['experience_relevance_score']
+                    _tmp = bsa[k][section_item]
+                    relevance_score = _get_exp_rel_score(_tmp)
+                    # if isinstance(_tmp, list):
+                    #     relevance_score = _tmp[0]['experience_relevance_score']
+                    # else:
+                    #     relevance_score = _tmp['experience_relevance_score']
+                    
                 except:
                     print("Failed to get 'experience_relevance_score'. Offending part:")
                     print(bsa[k][section_item])
+                    raise Exception("Couldn't pass relevance score! Aborting!")
+                # the new section is added regardless of relevance, due to the minimum items per-section:
+                
+                # There is a max number of sections - if it is passed then no more sections are added.
+                if len(new_section_item_list) >= max_section_items_keep:
+                    break
+                
                 if len(new_section_item_list) < min_section_items_keep:
                     new_section_item_list.append(section_item)
+                    print(f" --- --- --- -- -- Adding section because of the min_num_sections (min sections: {min_section_items_keep}, curr_nsections: {len(new_section_item_list)} constraint - section item: ", section_item.get_markdown())
                     continue
-                if len(new_section_item_list) > max_section_items_keep:
-                    break
+                
+                # when the new number of sections are between min_section_items and max_sections, 
+                # A section is added only if it is relevant. 
                 if min_relevance_score <= relevance_score:
+                    print(f" --- --- ->> -- -- Adding section because of the RELEVANCE ({min_relevance_score}, {relevance_score})score constraint - section item: ", section_item.get_markdown())
+                    
                     new_section_item_list.append(section_item)
             k.section_item_list = new_section_item_list
+        

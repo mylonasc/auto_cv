@@ -23,20 +23,28 @@ def _log_agg_metrics(agg_metrics, txt_suff = None):
 def _log(*s):
     print(*s)
 
-job_posting_path = 'job_postings_text/Capgemini_SeniorDataScientist_June3_2025-v2.txt'
+#job_posting_path = 'job_postings_text/AltusSearch_MLStrategist_Commodities_26062025.txt'
+#job_posting_path = 'job_postings_text/Capgemini_SeniorDataScientist_June3_2025-v2.txt'
+#job_posting_path = 'job_postings_text/KAIKO_SeniorMLEngineer_27062025.txt'
+# job_posting_path = 'job_postings_text/ON_SeniorMLScientist_02072025.txt' 
+# job_posting_path = 'job_postings_text/RepRisk_SeniorMachineLearningEngineer_02072025.tex'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/AIMLQuality_GoogleYoutube_300825.txt'
+job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/RepRisk_MLEngineer_300825_v2.txt'
 output_folder = 'autocv_output_' + job_posting_path.split('/')[-1][:-4]
 
-company_name = 'Capgemini'
+company_name = 'RepRisk'
 name = 'Charilaos Mylonas'
-prof_signature = "\\\\" + 'Data Scientist \\& ML Engineer \\\\ Zurich'
+prof_signature = "\\\\" + 'Senior Deep Learning Engineer \\\\ Zurich'
 MAX_SECTION_ITEMS_KEEP = 4
-MIN_RELEVANCE_SCORE_KEEP = 3
+MIN_RELEVANCE_SCORE_KEEP = 5
+MIN_SECTION_ITEMS_KEEP = 1
 
 ALT_STATEMENTS_PATH = 'assets/alt_statements.json'
-EXP_PATH= 'assets/experience_fields.json'
+# EXP_PATH= 'assets/experience_fields.json'
+EXP_PATH= 'assets/experience_fields_aug_25.json'
 
 TMP_FOLDER = tempfile.mkdtemp()
-_ = input('temp folder is (press any key to continue)' + TMP_FOLDER)
+#_ = input('temp folder is (press any key to continue)' + TMP_FOLDER)
 
 with open(ALT_STATEMENTS_PATH,'r') as f:
     alt_statements = json.loads(f.read())
@@ -53,9 +61,14 @@ _log(f'- loaded {len(experience_fields)} professional experience')
 
 doc_section_copy = doc_section.copy()
 
+# authoring_model_params = {
+#     'model_provider' : 'google',
+#     'model_str' : 'models/gemini-2.5-flash-preview-05-20'
+# }
+
 authoring_model_params = {
     'model_provider' : 'google',
-    'model_str' : 'models/gemini-2.5-flash-preview-05-20'
+    'model_str' : 'models/gemini-2.5-pro'
 }
 
 analysis_model_params = {
@@ -126,7 +139,11 @@ with open(os.path.join(TMP_FOLDER, 'cover_letter_tmp.tex'),'w') as f:
 
 cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, "test_before_edits.pdf"))
 
-rewrite_output = cvca.rewrite_reviewed_experience_section(max_section_items_keep=MAX_SECTION_ITEMS_KEEP,min_relevance_score=MIN_RELEVANCE_SCORE_KEEP)
+rewrite_output = cvca.rewrite_reviewed_experience_section(
+    max_section_items_keep=MAX_SECTION_ITEMS_KEEP,
+    min_relevance_score=MIN_RELEVANCE_SCORE_KEEP, 
+    min_section_items_keep=MIN_SECTION_ITEMS_KEEP
+)
 
 agg_metrics_post = cvca.get_section_aggregate_metrics()
 _log_agg_metrics(agg_metrics_post, 'after edits')
@@ -156,7 +173,6 @@ with open('job_post.txt','w') as f:
 shutil.copy('job_post.txt', os.path.join(output_folder, 'job_post.txt'))
 
 latex_root = os.path.join(output_folder, 'latex_folder')
-shutil.copy('')
 fdat_with_comments = cvca.cv_model.make_latex()
 with open(os.path.join(latex_root, 'cv_edited_with_comments.tex'),'w') as f:
     f.write(fdat_with_comments)

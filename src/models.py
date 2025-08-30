@@ -1,5 +1,5 @@
 """ 
-A set of simpliffied interfaces to different LLM providers for use with the implemented code.
+A set of simplified interfaces to different LLM providers for use with the implemented code.
 
 This code also implements tools to query available models etc where applicable
 """
@@ -49,6 +49,27 @@ class OllamaModelWrapper:
         import ollama
         return [m.model for m in ollama.list().models]
         
+def _gemini_api_key_setup(set_environ = False):
+    """ This function attempts to sort-out where to find the 
+    gemini api key. If it's not in the env. variables, it searches for a 
+    path in the config that points to a text file that stores the key.
+    """
+    from pathlib import Path
+    import yaml
+    _here = Path(__file__).resolve().parent.parent
+    
+    if 'GEMINI_API_KEY' not in os.environ:
+        with open(os.path.join(_here, 'config/google_config.yaml'),'r') as f:
+            res = yaml.safe_load(f)
+        print(res)
+        with open(res['gemini_api_key_path'] ,'r') as f:
+            gemini_api_key = f.read().rstrip(' ').rstrip('\n')
+        if set_environ:
+            os.environ['GEMINI_API_KEY'] = gemini_api_key
+    else:
+        gemini_api_key = os.environ['GEMINI_API_KEY']
+    return gemini_api_key
+
 class GoogleModelWrapper:
     def __init__(self, model_string, config = None):
         """ Model provider wrapper for google
@@ -71,6 +92,8 @@ class GoogleModelWrapper:
         
         if 'GEMINI_API_KEY' in os.environ:
             self._api_key = os.environ['GEMINI_API_KEY']
+        else:
+            self._api_key = _gemini_api_key_setup(set_environ = False)
             
         if config is not None:
             if 'API_KEY' in config:
@@ -91,9 +114,10 @@ class GoogleModelWrapper:
         if self._model_string not in avail_models:
             raise Exception(f"requested model {self._model_string} is not within the available models in google API. List of models: \n{'\n-'.join(avail_models)}.")        
     
-    def get_llm_model(self):
+    def get_llm_model(self, check_avail = False):
         
-        self.check_model_avail()
+        if check_avail:
+            self.check_model_avail()
         
         from langchain_google_genai import GoogleGenerativeAI
         
@@ -120,13 +144,25 @@ class GoogleModelWrapper:
 
 
 class ModelFactory:
-    """ A factory for LLM model creation (independent of whether it is local from ollama or from gooogle).
+    """ A factory for LLM model creation (independent of whether it is local from ollama or from google).
+    
+    available model providers can be shown with:
+    `ModelFactory.MODEL_PROVIDERS`
+    
+    The corresponding default models can be show with:
+    `ModelFactory.MODEL_DEFAULTS`
+    
     
     Example:
     ```
-    model_factory = ModelFactory(model_provider = 'ollama', model_str = 'llama3.1:latest')
-    model_wrapper = model_factory.get_model_wrapper() # this is 
+        model_factory = ModelFactory(model_provider = 'ollama', model_str = 'llama3.1:latest')
+        model_wrapper = model_factory.get_model_wrapper() # this is the inner model wrapper. 
+            typically you don't have to use that (just the top-level factory).
+    ```
     """
+    MODEL_PROVIDERS = MODEL_PROVIDERS
+    MODEL_DEFAULTS = MODEL_DEFAULTS
+    
     def __init__(self, model_provider : Optional[str] = None, model_str : Optional[str] = None, config : Optional[dict] = None):        
         self._model_provider = model_provider
         self._model_str = model_str
