@@ -5,7 +5,7 @@ from src.models import ModelFactory
 from src.utils import JobPostAnalysis, FullCVDocument, CoverLetterModel, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer, CoverLetterDrafter
 from src.utils_cross_analysis import CoverLetterDrafter
-from langchain_core.prompts import ChatPromptTemplate
+
 from datetime import datetime
 import json
 import tempfile 
@@ -29,25 +29,29 @@ def _log(*s):
 # job_posting_path = 'job_postings_text/ON_SeniorMLScientist_02072025.txt' 
 # job_posting_path = 'job_postings_text/RepRisk_SeniorMachineLearningEngineer_02072025.tex'
 # job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/AIMLQuality_GoogleYoutube_300825.txt'
-job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/RepRisk_MLEngineer_300825_v2.txt'
+job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Mistral_AIResearcher_161025.txt'
 output_folder = 'autocv_output_' + job_posting_path.split('/')[-1][:-4]
 
-company_name = 'RepRisk'
+company_name = 'Mistral AI'
 name = 'Charilaos Mylonas'
 prof_signature = "\\\\" + 'Senior Deep Learning Engineer \\\\ Zurich'
 MAX_SECTION_ITEMS_KEEP = 4
 MIN_RELEVANCE_SCORE_KEEP = 5
 MIN_SECTION_ITEMS_KEEP = 1
 
-ALT_STATEMENTS_PATH = 'assets/alt_statements.json'
+ALT_STATEMENTS_PATH = 'assets/statements.txt'
 # EXP_PATH= 'assets/experience_fields.json'
-EXP_PATH= 'assets/experience_fields_aug_25.json'
+# EXP_PATH= 'assets/experience_fields_oct_25.json'
+EXP_PATH= '/home/charilaos/Workspace/auto_cv/assets/experience_fields_oct25.json'
 
 TMP_FOLDER = tempfile.mkdtemp()
 #_ = input('temp folder is (press any key to continue)' + TMP_FOLDER)
 
+# with open(ALT_STATEMENTS_PATH,'r') as f:
+#     alt_statements = json.loads(f.read())
+alt_statements = []
 with open(ALT_STATEMENTS_PATH,'r') as f:
-    alt_statements = json.loads(f.read())
+    alt_statements = f.read().split('\n')
 
 with open(EXP_PATH,'r') as f:
     experience_fields = json.loads(f.read())
@@ -159,8 +163,6 @@ cvca.cv_model.render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits.pdf'))
 cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits_nocomments.pdf'))
 
 # 5. Copy to the output folder for further editing and inspection
-
-
 try:
     shutil.move(TMP_FOLDER, output_folder)
     os.mkdir(os.path.join(output_folder,'latex_folder'))

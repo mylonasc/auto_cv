@@ -201,9 +201,7 @@ class CoverLetterDrafter:
         
     def get_cover_letter_text(self):
         chain = ChatPromptTemplate.from_template(self.draft_prompt) | self.llm_editor_model
-        experience_markdown_text = self.cvca.cv_model.experience_section.get_markdown()
-        post_text = self.cvca.job_post_analyzer.post_txt
-
+        
         _inputs = {
             "exp_section" : self.cvca.cv_model.experience_section.get_markdown(),
             'pers_statement' : self.cvca.cv_model.statement,
@@ -216,9 +214,9 @@ class CoverLetterDrafter:
         soup = BeautifulSoup(res,'html.parser')
         return soup.coverletter.text
     
-    def draft_cover_letter(self):
-        main_text = self.get_cover_letter_text()
-        clm = CoverLetterModel()
+    # def draft_cover_letter(self):
+    #     main_text = self.get_cover_letter_text()
+    #     clm = CoverLetterModel()
     
     # def author_cover_letter_from_analysis(self):
     #     chain = ChatPromptTemplate.from_template(self.draft_prompt) | self.llm_editor_model

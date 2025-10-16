@@ -1,8 +1,8 @@
 [
     {
-        "company": "Modulai",
-        "duration": "Feb 2025 -- Jun 2025",
-        "position": "Senior Machine Learning Engineer",
+        "company": "EPAM",
+        "duration": "Aug 2025 -- current",
+        "position": "Lead Developer / Senior Data Scientist",
         "text_items": [
             "Developing agentic tool integrations (MCP servers/clients) for a heterogeneous set of software components deployed in a hybrid cloud (Azure and on-prem) for the wealth management division of a large swiss bank.",
             "Configuring infrastructure deployments (Kubernetes, Docker, Terraform) for the above, and creating a python tooling stack for supporting the necessary agentic integrations."
@@ -14,7 +14,7 @@
         "position": "Senior Machine Learning Engineer",
         "text_items": [
             "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings for the entire user base of the client (more than 35 million users).",
-            "Extended the client's fraud detection pipeline to incorporate graph-based features, resulting in up to 7% reduction in false positive rate."
+            "Extended the client's fraud detection pipeline to incorporate graph-based features, resulting in up to 7\\% reduction in false positive rate."
         ]
     },
     {
