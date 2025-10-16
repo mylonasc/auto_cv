@@ -1,45 +1,47 @@
+import json
+import os
 import subprocess
 import tempfile
-import os
+from typing import Any, Dict, Optional
+
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
-import json
 
 
 TEMPLATE_NAME = os.path.join('assets','latex_cv_template_v0.tex')
 TEMPLATE_COVER_LETTER = os.path.join('assets','cover_letter', 'CoverLetter_Template.tex')
 
-def _trim_encap_tag_load_json(_res, encap_tag :str = 'output'):
-    f1= _res.find("<" + encap_tag + ">")+len(encap_tag) + 2
-    f2 = _res.find("</" + encap_tag + ">") 
+def _trim_encap_tag_load_json(_res: str, encap_tag: str = "output") -> Dict[str, Any]:
+    f1 = _res.find("<" + encap_tag + ">") + len(encap_tag) + 2
+    f2 = _res.find("</" + encap_tag + ">")
     try:
         return json.loads(_res[f1:f2])
-    except:
+    except Exception as exc:
         print("----")
-        print(f1,' to ',f2)
+        print(f1, " to ", f2)
         print("----")
         print(_res[f1:f2])
         print("")
-        raise Exception("json decode failed")
+        raise Exception("json decode failed") from exc
 
-def _latex_to_pdf(latex_string, output_pdf):
+def _latex_to_pdf(latex_string: str, output_pdf: str) -> None:
     # Create a temporary directory to store intermediate files
     with tempfile.TemporaryDirectory() as tempdir:
         # Define the path for the temporary .tex file
         tex_file_path = os.path.join(tempdir, "temp.tex")
-        
+
         # Write the LaTeX string to the .tex file
         with open(tex_file_path, "w") as tex_file:
             tex_file.write(latex_string)
-        
+
         # Run xelatex to compile the .tex file into a PDF
         try:
             # -output-directory specifies where the PDF should be created (tempdir)
             subprocess.run(
                 ["xelatex", "-output-directory", tempdir, tex_file_path],
-                check=True
+                check=True,
             )
-            
+
             # Move the generated PDF to the specified output path
             pdf_path = os.path.join(tempdir, "temp.pdf")
             if os.path.exists(pdf_path):
@@ -47,8 +49,8 @@ def _latex_to_pdf(latex_string, output_pdf):
                 print(f"PDF generated successfully: {output_pdf}")
             else:
                 print("Error: PDF was not generated.")
-        except subprocess.CalledProcessError as e:
-            print("Error compiling LaTeX:", e)
+        except subprocess.CalledProcessError as exc:
+            print("Error compiling LaTeX:", exc)
 
 class DocSection:
     def __init__(self, section_title, doc_section_items):
@@ -112,6 +114,18 @@ class DocSectionItem:
             s += i.get_latex()
         s += f'  \\end{{myrSubsection}}\n'
         return s
+    
+    def to_dict(self):
+        return {
+            'company' : self.company,
+            'duration' : self.duration,
+            'position' : self.position,
+            'text_items' : [i.text for i in self.section_item_list]
+        }
+    
+    def to_json(self, file):
+        with open(file,'w') as f:
+            json.dump(self.to_dict(), f, indent=4)
 
 class FullCVDocument:
     """ A class that takes care of rendering and encapsulating different standardized
@@ -133,7 +147,30 @@ class FullCVDocument:
     
     def render_pdf(self, out_file):
         _latex_to_pdf(self.make_latex(), out_file)
-        
+    
+    def to_json(self, file):
+        with open(file,'w') as f:
+            json.dump({
+                'statement' : self.statement,
+                'experience_section' : {
+                    'section_title' : self.experience_section.section_title,
+                    'doc_section_items' : [
+                        d.to_dict() for d in self.experience_section.doc_section_items
+                    ]
+                }
+            }, f, indent=4)
+
+    def from_json(file):
+        with open(file,'r') as f:
+            res = json.load(f)
+        experience_section = DocSection(
+            res['experience_section']['section_title'],
+            [DocSectionItem(**d) for d in res['experience_section']['doc_section_items']]
+        )
+        return FullCVDocument(res['statement'], experience_section)
+
+    
+
     def copy(self):
         # new_experience = [e.copy() for e in self.experience_section.doc_section_items]
         return FullCVDocument(self.statement, self.experience_section.copy())

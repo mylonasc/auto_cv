@@ -16,8 +16,13 @@ MODEL_PROVIDERS = [
 DEFAULT_MODEL_PROVIDER = 'ollama' # local model
 
 MODEL_DEFAULTS = {
-    'ollama' : 'llama3.1:latest', 
+    'ollama' : 'llama3', 
     'google' : 'models/gemini-2.5-flash-preview-05-20'
+}
+
+MODELS_DEFAULT_CONFIG = {
+    'ollama' : {'num_predict' : 8000, 'temperature' : 0.9},
+    'google' : {'num_predict' : 8000, 'temperature' : 0.9}
 }
 
 def _log_msg(msg):
@@ -25,12 +30,17 @@ def _log_msg(msg):
 
 class OllamaModelWrapper:
     def __init__(self, model_string, config = None):
+        print(model_string)
         self._model_string, self._config = model_string, config
         if self._model_string is None:
             raise Exception("You have not provided a model to initialize! This is not supported - aborting.")
         _avail_models = self.list()
         if self._model_string not in _avail_models:
             raise Exception(f"The model you requested ({self._model_string} is not locally available. List of available models: \n {_avail_models} \n\n \n Please see ollama documentation (https://github.com/ollama/ollama/blob/main/README.md#quickstart) on how to download it.")
+        if self._config is None:
+            pass
+            # self._config = MODELS_DEFAULT_CONFIG['ollama']
+            # print(f"ollama config: {str(self._config)}")
         
     def get_llm_model(self):
         from langchain_ollama.llms import OllamaLLM
