@@ -1,0 +1,198 @@
+import React, { createContext, useContext, useReducer, type Dispatch } from 'react';
+
+// Define the state shape
+export interface AppState {
+  // Job descriptions
+  jobDescriptions: JobDescription[];
+  currentJobDescriptionId: string | null;
+  // Candidate profile
+  candidateProfile: CandidateProfile | null;
+  // Backend configuration
+  backendConfig: BackendConfig;
+  // Processing state
+  processingState: ProcessingState | null;
+  // UI state
+  uiState: UIState;
+}
+
+// Action types
+type AppStateAction =
+  | { type: 'SET_JOB_DESCRIPTIONS'; payload: JobDescription[] }
+  | { type: 'SET_CURRENT_JOB_DESCRIPTION'; payload: string | null }
+  | { type: 'SET_CANDIDATE_PROFILE'; payload: CandidateProfile | null }
+  | { type: 'SET_BACKEND_CONFIG'; payload: BackendConfig }
+  | { type: 'SET_PROCESSING_STATE'; payload: ProcessingState | null }
+  | { type: 'SET_UI_STATE'; payload: Partial<UIState> }
+  | { type: 'RESET_STATE' };
+
+// Define sub-interfaces
+export interface JobDescription {
+  id: string;
+  title: string;
+  company: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CandidateProfile {
+  name: string;
+  professionalSignature: string;
+  companyTarget: string | null;
+  personalStatementOptions: string[];
+  experienceSectionTitle: string;
+  experienceItems: ExperienceItem[];
+}
+
+export interface ExperienceItem {
+  company: string;
+  duration: string;
+  position: string;
+  textItems: string[];
+}
+
+export interface BackendConfig {
+  // LLM settings
+  analysisModel: ModelConfig;
+  statementEditorModel: ModelConfig;
+  coverLetterEditorModel: ModelConfig;
+  // Processing policies
+  rewritePolicy: RewritePolicy;
+  analysisPolicy: AnalysisPolicy;
+  // Outputs
+  outputs: OutputsConfig;
+}
+
+export interface ModelConfig {
+  provider: 'ollama' | 'google';
+  model: string;
+  config: Record<string, any>;
+}
+
+export interface RewritePolicy {
+  maxSectionItemsKeep: number;
+  minSectionItemsKeep: number;
+  minRelevanceScore: number;
+}
+
+export interface AnalysisPolicy {
+  maxSectionParseRetries: number;
+}
+
+export interface OutputsConfig {
+  includeCoverLetter: boolean;
+  renderPDF: boolean;
+  includeLaTeX: boolean;
+  includeScoringComments: boolean;
+}
+
+export interface ProcessingState {
+  jobId: string | null;
+  status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'cancelled';
+  progress: string | null;
+  message: string | null;
+  result: CVJobResult | null;
+  error: string | null;
+}
+
+export interface UIState {
+  sidebarCollapsed: boolean;
+  activeTab: 'jobInput' | 'processing' | 'results' | 'editor';
+  // Modals
+  showJobDescriptionManager: boolean;
+  showConfigurationPanel: boolean;
+  showExportDialog: boolean;
+  // Others
+  isLoading: boolean;
+}
+
+export interface CVJobResult {
+  job_id: string;
+  status: string;
+  summary_metrics: any;
+  experience_analysis: any[];
+  artifacts: any[];
+}
+
+// Initial state
+const initialState: AppState = {
+  jobDescriptions: [],
+  currentJobDescriptionId: null,
+  candidateProfile: null,
+  backendConfig: {
+    analysisModel: { provider: 'ollama', model: 'llama3.1:latest', config: {} },
+    statementEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
+    coverLetterEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
+    rewritePolicy: {
+      maxSectionItemsKeep: 6,
+      minSectionItemsKeep: 1,
+      minRelevanceScore: 3
+    },
+    analysisPolicy: {
+      maxSectionParseRetries: 3
+    },
+    outputs: {
+      includeCoverLetter: true,
+      renderPDF: true,
+      includeLaTeX: true,
+      includeScoringComments: true
+    }
+  },
+  processingState: null,
+  uiState: {
+    sidebarCollapsed: false,
+    activeTab: 'jobInput',
+    showJobDescriptionManager: false,
+    showConfigurationPanel: false,
+    showExportDialog: false,
+    isLoading: false
+  }
+};
+
+// Reducer
+function appStateReducer(state: AppState, action: AppStateAction): AppState {
+  switch (action.type) {
+    case 'SET_JOB_DESCRIPTIONS':
+      return { ...state, jobDescriptions: action.payload };
+    case 'SET_CURRENT_JOB_DESCRIPTION':
+      return { ...state, currentJobDescriptionId: action.payload };
+    case 'SET_CANDIDATE_PROFILE':
+      return { ...state, candidateProfile: action.payload };
+    case 'SET_BACKEND_CONFIG':
+      return { ...state, backendConfig: action.payload };
+    case 'SET_PROCESSING_STATE':
+      return { ...state, processingState: action.payload };
+    case 'SET_UI_STATE':
+      return { ...state, uiState: { ...state.uiState, ...action.payload } };
+    case 'RESET_STATE':
+      return initialState;
+    default:
+      return state;
+  }
+}
+
+// Context
+const AppStateContext = createContext<{
+  state: AppState;
+  dispatch: Dispatch<AppStateAction>;
+}>({
+  state: initialState,
+  dispatch: () => null
+});
+
+export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(appStateReducer, initialState);
+  return (
+    <AppStateContext.Provider value={{ state, dispatch }}>
+      {children}
+    </AppStateContext.Provider>
+  );
+};
+
+export const useAppState = () => {
+  const context = useContext(AppStateContext);
+  if (!context) {
+    throw new Error('useAppState must be used within an AppStateProvider');
+  }
+  return context;
+};

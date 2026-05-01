@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: auto-cv-backend
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./server_application/backend:/app/server_application/backend
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./cv_section_data:/app/cv_section_data
+    environment:
+      - CV_CUSTOMIZER_ROOT=/app
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
+    networks:
+      - auto-cv-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: auto-cv-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - auto-cv-network
+
+  # Optional: Ollama service for local LLM support
+  ollama:
+    image: ollama/ollama:latest
+    container_name: auto-cv-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - auto-cv-network
+    profiles:
+      - with-ollama
+
+networks:
+  auto-cv-network:
+    driver: bridge
+
+volumes:
+  ollama_data:
