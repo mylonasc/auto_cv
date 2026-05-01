@@ -5,15 +5,20 @@ WORKDIR /app
 # Install system dependencies for LaTeX/PDF generation
 RUN apt-get update && apt-get install -y \
     curl \
+    wget \
+    zstd \
     texlive \
     texlive-xetex \
     texlive-fonts-recommended \
     texlive-latex-extra \
-    fontawesome \
     && rm -rf /var/lib/apt/lists/*
 
+# Install additional TeX packages
+RUN tlmgr init-usertree && \
+    (tlmgr install fontawesome academicons || echo "Warning: Could not install TeX packages via tlmgr")
+
 # Install Ollama (optional - for local LLM support)
-RUN curl -fsSL https://ollama.com/install.sh | sh
+RUN curl -fsSL https://ollama.com/install.sh | sh || echo "Warning: Ollama installation failed"
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .

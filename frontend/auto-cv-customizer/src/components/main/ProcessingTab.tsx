@@ -100,7 +100,7 @@ const ProcessingTab: React.FC = () => {
         dispatch({ 
           type: 'SET_PROCESSING_STATE', 
           payload: { 
-            jobId,
+            jobId: jobId ?? null,
             status: data.status,
             progress: data.progress,
             message: data.message,
@@ -138,11 +138,16 @@ const ProcessingTab: React.FC = () => {
   const pollJobStatus = async (jobId: string) => {
     try {
       const status = await apiService.getJob(jobId);
+      
       dispatch({ 
         type: 'SET_PROCESSING_STATE', 
         payload: { 
-          ...state.processingState,
-          ...status
+          jobId: status.jobId ?? null,
+          status: status.status,
+          progress: status.progress,
+          message: status.message,
+          result: state.processingState?.result ?? null,
+          error: state.processingState?.error ?? null
         } 
       });
 
@@ -154,9 +159,12 @@ const ProcessingTab: React.FC = () => {
           dispatch({ 
             type: 'SET_PROCESSING_STATE', 
             payload: { 
-              ...state.processingState,
+              jobId: state.processingState?.jobId ?? null,
+              status: 'succeeded',
+              progress: state.processingState?.progress ?? null,
+              message: state.processingState?.message ?? null,
               result,
-              status: 'succeeded'
+              error: state.processingState?.error ?? null
             } 
           });
           dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results' } });

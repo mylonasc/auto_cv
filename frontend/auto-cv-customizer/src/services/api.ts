@@ -2,10 +2,11 @@
  * API service for communicating with the CV Customizer backend.
  * All API calls go through this service.
  */
-import axios, { AxiosInstance } from 'axios';
-import { 
-  JobDescription, ProcessingState, CVJobResult, 
-  BackendConfig, SectionResult 
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
+import type { 
+  ProcessingState, CVJobResult, 
+  BackendConfig 
 } from '../contexts/AppStateContext';
 
 const API_BASE_URL = 'http://127.0.0.1:8005/v1';
@@ -83,12 +84,12 @@ class ApiService {
   // Transform backend job format to frontend ProcessingState
   private transformJobToProcessingState(job: any): ProcessingState {
     return {
-      jobId: job.id,
+      jobId: job.id ?? null,
       status: job.status,
-      progress: job.progress,
-      message: job.message,
+      progress: job.progress ?? null,
+      message: job.message ?? null,
       result: job.result ? this.transformResult(job.result) : null,
-      error: job.error,
+      error: job.error ?? null,
     };
   }
 
