@@ -23,6 +23,9 @@ personal_statement_analysis = {
         You should return a score from 0 to 10 about how relevant the personal statement of that candidate is, 
         together with a short explanation about your scoring. 
         
+        IMPORTANT:
+        Please note that the text will be fed-into latex! Make sure that you properly escape (or avoid) latex special characters, while not breaking python parsing!
+
         Job posting information:
         ------------------------
         {job_posting_data}
@@ -129,7 +132,6 @@ section_experience_analysis = {
         'prompt_provides' : 'experience_section_analysis'
 }
 
-
 from .models import ModelFactory
 
 def _load_defaults():
@@ -157,10 +159,9 @@ class CoverLetterDrafter:
         ```
         
     """
-    draft_prompt = """ I want you to draft a short cover letter for a job candidate. I will add a job description, a personal statement from a candidate, and
-        the different professional experience of that candidate. I want you to first carefully analyze the most important differentiating aspects of 
-        that candidate as
-        it pertains to that job. Then I want you to create a professional cover letter, stressing the candidate's eagerness for being considered in 
+    draft_prompt = """ I want you to draft a short cover letter for a job candidate. I will add a job description, a personal statement from the candidate, and
+        the different professional experiences of that candidate. I want you to first carefully analyze the most important differentiating aspects of 
+        that candidate as it pertains to that job. Based on these inputs, I want you to create a professional cover letter, stressing the candidate's eagerness for being considered in 
         this position, while shortly summarizing why this candidate  is appropriate for that position. Return the cover letter enclosed in tags <COVERLETTER>.
 
         The address to the hiring manager before and after the cover letter should be outside the <COVERLETTER> tag. 
@@ -232,6 +233,9 @@ class CoverLetterDrafter:
 class CVCrossAnalyzer:
     """ This class contains utilities to cross-analyze the job posting and the cv.
     It returns a set of scores for each section of the CV (e.g., relevance) and the job posting.
+
+    It also contains a utility (and chain) to analyze alternative personal introduction statements, 
+    and align them with the job postings' requirements. 
     """
     def __init__(
                 self, 

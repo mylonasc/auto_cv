@@ -1,0 +1,78 @@
+%% start of file `template.tex'.
+%% Copyright 2006-2013 Xavier Danaux (xdanaux@gmail.com).
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License version 1.3c,
+% available at http://www.latex-project.org/lppl/.
+
+
+\documentclass[12pt,letter,sans]{moderncv}        % possible options include font size ('10pt', '11pt' and '12pt'), paper size ('a4paper', 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape') and font family ('sans' and 'roman')
+\renewcommand\refname{References}
+
+% moderncv themes
+\moderncvstyle{classic}                            % style options are 'casual' (default), 'classic', 'oldstyle' and 'banking'
+%\moderncvcolor{green}                              % color options 'blue' (default), 'orange', 'green', 'red', 'purple', 'grey' and 'black'
+%\renewcommand{\familydefault}{\sfdefault}         % to set the default font; use '\sfdefault' for the default sans serif font, '\rmdefault' for the default roman one, or any tex font name
+\nopagenumbers{}                                  % uncomment to suppress automatic page numbering for CVs longer than one page
+
+% character encoding
+\usepackage[utf8]{inputenc}                       % if you are not using xelatex ou lualatex, replace by the encoding you are using
+%\usepackage{CJKutf8}                              % if you need to use CJK to typeset your resume in Chinese, Japanese or Korean
+
+% adjust the page margins
+\usepackage[scale=0.85]{geometry}
+%\setlength{\hintscolumnwidth}{3cm}                % if you want to change the width of the column with the dates
+%\setlength{\makecvtitlenamewidth}{10cm}           % for the 'classic' style, if you want to force the width allocated to your name and avoid line breaks. be careful though, the length is normally calculated to avoid any overlap with your personal info; use this at your own typographical risks...
+
+\name{Charilaos Mylonas}{\\ \\Senior Deep Learning Engineer \\ Zurich \\ Z\"urich}
+%\address{8093 Z\"urich}{Switzerland}% optional, remove / comment the line if not wanted; the "postcode city" and and "country" arguments can be omitted or provided empty
+%\phone[mobile]{+1~(234)~567~890}                   % optional, remove / comment the line if not wanted
+%\phone[fixed]{+41 44 633 75 55}                    % optional, remove / comment the line if not wanted
+%\phone[fax]{+3~(456)~789~012}                      % optional, remove / comment the line if not wanted
+\email{mylonas.charilaos@gmail.com}                               % optional, remove / comment the line if not wanted
+\homepage{https://mylonasc.netlify.app}                         % optional, remove / comment the line if not wanted
+%\extrainfo{additional information}                 % optional, remove / comment the line if not wanted
+\photo[64pt][0.4pt]{my_pic.jpg}                       % optional, remove / comment the line if not wanted; '64pt' is the height the picture must be resized to, 0.4pt is the thickness of the frame around it (put it to 0pt for no frame) and 'picture' is the name of the picture file
+
+% to show numerical labels in the bibliography (default is to show no labels); only useful if you make citations in your resume
+\makeatletter
+\renewcommand*{\bibliographyitemlabel}{\@biblabel{\arabic{enumiv}}}
+%\makeatother
+%\renewcommand*{\bibliographyitemlabel}{[\arabic{enumiv}]}% CONSIDER REPLACING THE ABOVE BY THIS
+
+% bibliography with mutiple entries
+%\usepackage{multibib}
+%\newcites{book,misc}{{Books},{Others}}
+%----------------------------------------------------------------------------------
+%            content
+%----------------------------------------------------------------------------------
+\begin{document}
+%-----       letter       ---------------------------------------------------------
+% recipient data
+\recipient{Addressed to:}{Mistral AI}%Summer School \\123 somestreet\\some city}
+\date{16 October 2025}
+\opening{Dear Hiring Manager,}
+\closing{Sincerely,}
+
+\makelettertitle
+
+
+I am writing to express my profound interest in the Expert in Large Language Models and Distributed Systems position at Mistral, a role I discovered on LinkedIn. Your mission to democratize AI through open-source, frontier models deeply resonates with my own professional and academic background, and I am incredibly enthusiastic about the prospect of contributing to your pioneering work.
+
+My profile is a direct match for your requirements, combining a Ph.D. with original contributions in generative models and over seven years of hands-on deep learning experience with frameworks like PyTorch. This deep theoretical foundation is complemented by robust, practical expertise in building the very systems you are looking for. Specifically, I have extensive experience designing GenAI prototypes with Retrieval Augmented Generation (RAG), developing agentic frameworks, and deploying scalable, production-grade solutions using Kubernetes and Docker.
+
+I am not just a researcher but also a builder, having developed original deep learning architectures and even created an open-source GNN library. I am confident that this unique blend of foundational research capabilities and high-competence systems engineering would allow me to immediately contribute to your efforts in pushing the frontier of large language models and shipping AI systems with real-world impact.
+
+I am very eager to discuss how my background in both novel model development and scalable MLOps can support the Mistral team. Thank you for your time and consideration. I look forward to hearing from you soon.
+
+
+\makeletterclosing
+
+
+\newpage
+
+\end{document}
+
+
+%% end of file `template.tex'.
+

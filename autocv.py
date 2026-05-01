@@ -29,13 +29,25 @@ def _log(*s):
 # job_posting_path = 'job_postings_text/ON_SeniorMLScientist_02072025.txt' 
 # job_posting_path = 'job_postings_text/RepRisk_SeniorMachineLearningEngineer_02072025.tex'
 # job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/AIMLQuality_GoogleYoutube_300825.txt'
-job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Mistral_AIResearcher_161025.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Mistral_AIResearcher_161025.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/NVIdia_SeniorDeeplearningEng_151125.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Anthropic_151125.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Meta_151125.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/CloeRecruiter_linkedin_171125.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/DeepMind-280126.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Google-YoutubeAIML_14022026.txt'
+# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/DeepMind-gemini-app_250426.txt'
+job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Microsoft-MAI-MachineLearning_250426.txt'
+job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/FictionalJobPosting_Apr26.txt'
+job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Google_GNNs_Apr30-2026.txt'
+
+
 output_folder = 'autocv_output_' + job_posting_path.split('/')[-1][:-4]
 
-company_name = 'Mistral AI'
+company_name = 'Google'
 name = 'Charilaos Mylonas'
-prof_signature = "\\\\" + 'Senior Deep Learning Engineer \\\\ Zurich'
-MAX_SECTION_ITEMS_KEEP = 4
+prof_signature = "\\\\" + 'Lead Software Engineer \\\\ Zurich'
+MAX_SECTION_ITEMS_KEEP = 10
 MIN_RELEVANCE_SCORE_KEEP = 5
 MIN_SECTION_ITEMS_KEEP = 1
 
@@ -43,6 +55,7 @@ ALT_STATEMENTS_PATH = 'assets/statements.txt'
 # EXP_PATH= 'assets/experience_fields.json'
 # EXP_PATH= 'assets/experience_fields_oct_25.json'
 EXP_PATH= '/home/charilaos/Workspace/auto_cv/assets/experience_fields_oct25.json'
+
 
 TMP_FOLDER = tempfile.mkdtemp()
 #_ = input('temp folder is (press any key to continue)' + TMP_FOLDER)
@@ -70,10 +83,10 @@ doc_section_copy = doc_section.copy()
 #     'model_str' : 'models/gemini-2.5-flash-preview-05-20'
 # }
 
-authoring_model_params = {
-    'model_provider' : 'google',
-    'model_str' : 'models/gemini-2.5-pro'
-}
+# authoring_model_params = {
+#     'model_provider' : 'google',
+#     'model_str' : 'models/gemini-2.5-pro'
+# }
 
 analysis_model_params = {
     'model_provider' : 'ollama',
@@ -82,8 +95,12 @@ analysis_model_params = {
 
 cover_letter_model_params = {
     'model_provider' : 'google',
-    'model_str' : 'gemini-2.5-pro'
+    # 'model_str' : 'gemini-2.5-pro'
+    'model_str' : 'gemini-3.1-pro-preview'
 }
+analysis_model_params = cover_letter_model_params
+authoring_model_params = cover_letter_model_params
+
 
 # cover_letter_model_params = {
 #     'model_provider' : 'google',
@@ -97,6 +114,8 @@ llm_analysis_model = ModelFactory(**analysis_model_params).get_llm_model()
 llm_cover_letter_editor = ModelFactory(**cover_letter_model_params).get_llm_model()
 
 jpa = JobPostAnalysis(job_posting_path, llm_model = llm_analysis_model)
+
+
 jpa.analyze()
 
 fcv = FullCVDocument(alt_statements[-1], doc_section_copy)
@@ -113,7 +132,12 @@ cvca.analyze_rewrite_personal_statement(alt_statements)
 
 doc_section_copy = doc_section.copy()
 fcv = FullCVDocument(cvca.data['edited_statement'], doc_section_copy)
-cvca = CVCrossAnalyzer(jpa, fcv)
+cvca = CVCrossAnalyzer(
+    jpa,
+    fcv,
+    llm_model = llm_analysis_model,  
+    llm_editor_model = llm_statement_editor    
+)
 fcv_copy = fcv.copy()
 
 ## 2. Analyze the job experience section
