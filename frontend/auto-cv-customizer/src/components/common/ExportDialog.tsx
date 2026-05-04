@@ -9,7 +9,7 @@ interface ExportDialogProps {
 }
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
-  const { state } = useAppState();
+  const { state, dispatch } = useAppState();
   const [isExporting, setIsExporting] = useState<string | null>(null);
 
   if (!isOpen) return null;
