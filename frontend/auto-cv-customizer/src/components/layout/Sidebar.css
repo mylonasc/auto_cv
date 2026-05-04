@@ -176,3 +176,13 @@
   color: white;
   text-transform: capitalize;
 }
+.current-version-tag {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

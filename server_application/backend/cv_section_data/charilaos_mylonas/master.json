@@ -1,0 +1,72 @@
+{
+    "personal_statement": "I am a data science and scientific computing expert, with a strong mathematical and high performance computing background, and more than 7 years of machine learning / deep learning experience. I hold a Ph.D. on Machine Learning for Structural Health Monitoring, with original contributions on the use of deep learning and generative ML in predictive maintenance. I have extensive demonstrable experience in setting up and executing large scale Monte-Carlo simulations, working with industrial monitoring data (Wind turbine SCADA data).",
+    "alternative_statements": [],
+    "experience_sections": [
+        {
+            "company": "EPAM, Zurich",
+            "duration": "Aug 2025 -- current",
+            "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+            "text_items": [
+                "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+                "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+                "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+                "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+                "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service."
+            ]
+        },
+        {
+            "company": "Modulai, Basel",
+            "duration": "Feb 2025 -- Jun 2025",
+            "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+            "text_items": [
+                "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+                "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data."
+            ]
+        },
+        {
+            "company": "Deloitte, Zurich",
+            "duration": "Feb 2022 -- Jan 2025",
+            "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+            "text_items": [
+                "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+                "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+                "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+                "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+                "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+                "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+                "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+                "Contributed to successful AI business development in energy trading by shaping technical pitch content and presenting deep-learning expertise in in-person client pitch sessions, translating doctoral research on wind energy into client-facing advisory material."
+            ]
+        },
+        {
+            "company": "ETH Zurich",
+            "duration": "Sep 2016--Nov 2021",
+            "position": "Ph.D. Candidate/Research Assistant",
+            "text_items": [
+                "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+                "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+                "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+                "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+                "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal."
+            ]
+        },
+        {
+            "company": "ETH Zurich",
+            "duration": "Dec 2015--Sep 2016",
+            "position": "Research Assistant",
+            "text_items": [
+                "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+                "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab)."
+            ]
+        },
+        {
+            "company": "Credit Suisse, Zurich",
+            "duration": "Jul 2014--Dec 2014",
+            "position": "Full-Stack Trading Tool Developer (internship)",
+            "text_items": [
+                "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+                "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL)."
+            ]
+        }
+    ]
+}

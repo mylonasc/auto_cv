@@ -5,19 +5,27 @@ import uuid
 import json
 import os
 from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from models.api_models import (
     CVJobResponse, JobStatus, CVJobResult, 
     SectionResult, ExperienceItem, ArtifactResponse
 )
 
 
+# Add project root to path
+CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 class JobManager:
     """Manages job creation, tracking, and persistence."""
     
-    def __init__(self, storage_dir: str = "jobs"):
-        self.storage_dir = storage_dir
-        os.makedirs(storage_dir, exist_ok=True)
+    def __init__(self, storage_dir: Optional[str] = None):
+        if storage_dir is None:
+            # Workspace root jobs folder
+            self.storage_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'jobs')
+        else:
+            self.storage_dir = storage_dir
+            
+        os.makedirs(self.storage_dir, exist_ok=True)
         self._jobs: Dict[str, CVJobResponse] = {}
         self._load_jobs()
     
@@ -69,6 +77,7 @@ class JobManager:
         progress: Optional[str] = None,
         message: Optional[str] = None,
         result: Optional[CVJobResult] = None,
+        job_analysis: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None
     ) -> Optional[CVJobResponse]:
         """Update job status and details."""
@@ -85,6 +94,8 @@ class JobManager:
             job.message = message
         if result is not None:
             job.result = result
+        if job_analysis is not None:
+            job.job_analysis = job_analysis
         if error is not None:
             job.error = error
         

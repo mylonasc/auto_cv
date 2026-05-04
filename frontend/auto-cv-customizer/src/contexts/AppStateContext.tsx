@@ -5,8 +5,9 @@ export interface AppState {
   // Job descriptions
   jobDescriptions: JobDescription[];
   currentJobDescriptionId: string | null;
-  // Candidate profile
-  candidateProfile: CandidateProfile | null;
+  // CV Versions
+  cvVersions: CVVersionInfo[];
+  currentCVVersionId: string | null;
   // Backend configuration
   backendConfig: BackendConfig;
   // Processing state
@@ -19,7 +20,8 @@ export interface AppState {
 type AppStateAction =
   | { type: 'SET_JOB_DESCRIPTIONS'; payload: JobDescription[] }
   | { type: 'SET_CURRENT_JOB_DESCRIPTION'; payload: string | null }
-  | { type: 'SET_CANDIDATE_PROFILE'; payload: CandidateProfile | null }
+  | { type: 'SET_CV_VERSIONS'; payload: CVVersionInfo[] }
+  | { type: 'SET_CURRENT_CV_VERSION'; payload: string | null }
   | { type: 'SET_BACKEND_CONFIG'; payload: BackendConfig }
   | { type: 'SET_PROCESSING_STATE'; payload: ProcessingState | null }
   | { type: 'SET_UI_STATE'; payload: Partial<UIState> }
@@ -35,20 +37,23 @@ export interface JobDescription {
   updatedAt: string;
 }
 
-export interface CandidateProfile {
+export interface CVVersionInfo {
+  id: string;
   name: string;
-  professionalSignature: string;
-  companyTarget: string | null;
-  personalStatementOptions: string[];
-  experienceSectionTitle: string;
-  experienceItems: ExperienceItem[];
+  last_modified: number;
 }
 
-export interface ExperienceItem {
+export interface CVData {
+  personal_statement: string;
+  alternative_statements: string[];
+  experience_sections: ExperienceSection[];
+}
+
+export interface ExperienceSection {
   company: string;
   duration: string;
   position: string;
-  textItems: string[];
+  text_items: string[];
 }
 
 export interface BackendConfig {
@@ -61,6 +66,7 @@ export interface BackendConfig {
   analysisPolicy: AnalysisPolicy;
   // Outputs
   outputs: OutputsConfig;
+  concurrency_limit: number;
 }
 
 export interface ModelConfig {
@@ -92,12 +98,14 @@ export interface ProcessingState {
   progress: string | null;
   message: string | null;
   result: CVJobResult | null;
+  jobAnalysis: any | null;
   error: string | null;
+  lastSuccessfulJobId?: string | null;
 }
 
 export interface UIState {
   sidebarCollapsed: boolean;
-  activeTab: 'jobInput' | 'processing' | 'results' | 'editor';
+  activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history';
   // Modals
   showJobDescriptionManager: boolean;
   showConfigurationPanel: boolean;
@@ -118,7 +126,8 @@ export interface CVJobResult {
 const initialState: AppState = {
   jobDescriptions: [],
   currentJobDescriptionId: null,
-  candidateProfile: null,
+  cvVersions: [],
+  currentCVVersionId: 'master',
   backendConfig: {
     analysisModel: { provider: 'ollama', model: 'llama3.1:latest', config: {} },
     statementEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
@@ -136,7 +145,8 @@ const initialState: AppState = {
       renderPDF: true,
       includeLaTeX: true,
       includeScoringComments: true
-    }
+    },
+    concurrency_limit: 5
   },
   processingState: null,
   uiState: {
@@ -156,12 +166,25 @@ function appStateReducer(state: AppState, action: AppStateAction): AppState {
       return { ...state, jobDescriptions: action.payload };
     case 'SET_CURRENT_JOB_DESCRIPTION':
       return { ...state, currentJobDescriptionId: action.payload };
-    case 'SET_CANDIDATE_PROFILE':
-      return { ...state, candidateProfile: action.payload };
+    case 'SET_CV_VERSIONS':
+      return { ...state, cvVersions: action.payload };
+    case 'SET_CURRENT_CV_VERSION':
+      return { ...state, currentCVVersionId: action.payload };
     case 'SET_BACKEND_CONFIG':
       return { ...state, backendConfig: action.payload };
-    case 'SET_PROCESSING_STATE':
-      return { ...state, processingState: action.payload };
+    case 'SET_PROCESSING_STATE': {
+      const lastSuccessfulJobId = action.payload?.status === 'succeeded' 
+        ? action.payload.jobId 
+        : state.processingState?.lastSuccessfulJobId;
+      
+      return { 
+        ...state, 
+        processingState: action.payload ? {
+          ...action.payload,
+          lastSuccessfulJobId
+        } : null 
+      };
+    }
     case 'SET_UI_STATE':
       return { ...state, uiState: { ...state.uiState, ...action.payload } };
     case 'RESET_STATE':

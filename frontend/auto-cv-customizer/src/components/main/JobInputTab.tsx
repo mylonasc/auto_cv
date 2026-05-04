@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
+import apiService from '../../services/api';
 import './JobInputTab.css';
 
 const JobInputTab: React.FC = () => {
@@ -7,7 +8,29 @@ const JobInputTab: React.FC = () => {
   const [jobText, setJobText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Experience preview state
+  const [cvData, setCvData] = useState<any>(null);
+  const [editingItemId, setEditingItemId] = useState<{type: 'experience' | 'personal', sectionIdx?: number, itemIdx?: number} | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [isSavingCV, setIsSavingCV] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const versions = await apiService.listCVVersions();
+        dispatch({ type: 'SET_CV_VERSIONS', payload: versions });
+        
+        // Fetch current version data
+        const versionId = state.currentCVVersionId || 'master';
+        const data = await apiService.getCVVersion(versionId);
+        setCvData(data);
+      } catch (error) {
+        console.error('Failed to fetch initial data:', error);
+      }
+    };
+    fetchInitialData();
+  }, [dispatch, state.currentCVVersionId]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJobText(e.target.value);
@@ -21,10 +44,13 @@ const JobInputTab: React.FC = () => {
     setCompanyName(e.target.value);
   };
 
+  const handleVersionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    dispatch({ type: 'SET_CURRENT_CV_VERSION', payload: e.target.value });
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
@@ -60,7 +86,6 @@ const JobInputTab: React.FC = () => {
     setJobText('');
     setJobTitle('');
     setCompanyName('');
-    setSelectedFile(null);
   };
 
   const handleLoadExample = () => {
@@ -90,96 +115,139 @@ Nice to have:
     setCompanyName('TechCorp AI');
   };
 
+  // Editing handlers
+  const handleEditPersonal = () => {
+    setEditingItemId({ type: 'personal' });
+    setEditingText(cvData.personal_statement);
+  };
+
+  const handleEditItem = (sectionIdx: number, itemIdx: number, text: string) => {
+    setEditingItemId({ type: 'experience', sectionIdx, itemIdx });
+    setEditingText(text);
+  };
+
+  const handleSaveCVEdit = async () => {
+    if (!editingItemId || !cvData) return;
+    
+    const updated = JSON.parse(JSON.stringify(cvData));
+    if (editingItemId.type === 'personal') {
+      updated.personal_statement = editingText;
+    } else {
+      updated.experience_sections[editingItemId.sectionIdx!].text_items[editingItemId.itemIdx!] = editingText;
+    }
+    
+    try {
+      setIsSavingCV(true);
+      await apiService.updateCVVersion(state.currentCVVersionId || 'master', updated);
+      setCvData(updated);
+      setEditingItemId(null);
+    } catch (error) {
+      console.error('Failed to save CV edit:', error);
+      alert('Failed to save CV changes.');
+    } finally {
+      setIsSavingCV(false);
+    }
+  };
+
   return (
     <div className="job-input-tab">
-      <div className="input-section">
-        <h2>Job Description Input</h2>
-        <p className="section-description">
-          Paste a job description, upload a text file, or load an example.
-        </p>
+      <div className="input-grid">
+        <div className="input-section">
+          <h2>1. Job Description</h2>
+          <div className="form-group">
+            <label htmlFor="jobTitle">Job Title</label>
+            <input id="jobTitle" type="text" value={jobTitle} onChange={handleTitleChange} placeholder="e.g., Senior ML Engineer" className="form-input" />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="jobTitle">Job Title</label>
-          <input
-            id="jobTitle"
-            type="text"
-            value={jobTitle}
-            onChange={handleTitleChange}
-            placeholder="e.g., Senior ML Engineer"
-            className="form-input"
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="companyName">Company Name</label>
+            <input id="companyName" type="text" value={companyName} onChange={handleCompanyChange} placeholder="e.g., Google" className="form-input" />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="companyName">Company Name</label>
-          <input
-            id="companyName"
-            type="text"
-            value={companyName}
-            onChange={handleCompanyChange}
-            placeholder="e.g., Google"
-            className="form-input"
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="jobText">Job Description</label>
+            <textarea id="jobText" value={jobText} onChange={handleTextChange} placeholder="Paste the job description here..." className="job-textarea" rows={10} />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="jobText">Job Description</label>
-          <textarea
-            id="jobText"
-            value={jobText}
-            onChange={handleTextChange}
-            placeholder="Paste the job description here..."
-            className="job-textarea"
-            rows={12}
-          />
-          <div className="char-count">
-            {jobText.length} characters
+          <div className="actions-row">
+            <label htmlFor="fileUpload" className="btn btn-secondary">📁 Upload <input id="fileUpload" type="file" onChange={handleFileUpload} accept=".txt" style={{ display: 'none' }} /></label>
+            <button className="btn btn-secondary" onClick={handleLoadExample}>Example</button>
+            <button className="btn btn-primary" onClick={handleSaveJob} disabled={!jobText.trim()}>Save Job</button>
           </div>
         </div>
 
-        <div className="actions-row">
-          <div className="file-upload">
-            <label htmlFor="fileUpload" className="btn btn-secondary">
-              📁 Upload File
-              <input
-                id="fileUpload"
-                type="file"
-                onChange={handleFileUpload}
-                accept=".txt,.pdf,.doc,.docx"
-                style={{ display: 'none' }}
-              />
-            </label>
-            {selectedFile && (
-              <span className="file-name">{selectedFile.name}</span>
-            )}
+        <div className="cv-preview-section">
+          <h2>2. Review CV Draft</h2>
+          <div className="form-group">
+            <label htmlFor="cvVersion">Using CV Version:</label>
+            <select id="cvVersion" className="form-input" value={state.currentCVVersionId || 'master'} onChange={handleVersionChange}>
+              {state.cvVersions.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            </select>
           </div>
 
-          <button className="btn btn-secondary" onClick={handleLoadExample}>
-            Load Example
-          </button>
+          <div className="cv-items-preview">
+            {/* Personal Statement Preview */}
+            <div className="preview-block">
+               <div className="preview-section-header"><strong>Master Personal Statement</strong></div>
+               <div className="preview-item">
+                  {editingItemId?.type === 'personal' ? (
+                    <div className="inline-edit">
+                      <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={4} />
+                      <div className="inline-actions">
+                        <button className="btn btn-xs" onClick={() => setEditingItemId(null)}>Cancel</button>
+                        <button className="btn btn-xs btn-primary" onClick={handleSaveCVEdit} disabled={isSavingCV}>Save</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="item-text" onClick={handleEditPersonal}>
+                      {cvData?.personal_statement}
+                      <span className="edit-hint">✎</span>
+                    </div>
+                  )}
+               </div>
+            </div>
 
-          <button 
-            className="btn btn-primary"
-            onClick={handleSaveJob}
-            disabled={!jobText.trim()}
-          >
-            Save Job Description
-          </button>
+            {/* Experience Sections Preview */}
+            {cvData?.experience_sections.map((section: any, sIdx: number) => (
+              <div key={sIdx} className="preview-section">
+                <div className="preview-section-header">
+                  <strong>{section.company}</strong> ({section.duration})
+                </div>
+                {section.text_items.map((item: string, iIdx: number) => (
+                  <div key={iIdx} className="preview-item">
+                    {editingItemId?.type === 'experience' && editingItemId?.sectionIdx === sIdx && editingItemId?.itemIdx === iIdx ? (
+                      <div className="inline-edit">
+                        <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={3} />
+                        <div className="inline-actions">
+                          <button className="btn btn-xs" onClick={() => setEditingItemId(null)}>Cancel</button>
+                          <button className="btn btn-xs btn-primary" onClick={handleSaveCVEdit} disabled={isSavingCV}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="item-text" onClick={() => handleEditItem(sIdx, iIdx, item)}>
+                        {item}
+                        <span className="edit-hint">✎</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {state.currentJobDescriptionId && (
-        <div className="current-job-info">
-          <h3>Current Job Description</h3>
-          <p>
-            {state.jobDescriptions.find(j => j.id === state.currentJobDescriptionId)?.title}
-          </p>
-          <button 
-            className="btn btn-primary"
-            onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'processing' } })}
-          >
-            Start Processing →
-          </button>
+        <div className="start-banner">
+          <div className="banner-content">
+            <span className="banner-text">
+              Ready to process <strong>{state.jobDescriptions.find(j => j.id === state.currentJobDescriptionId)?.title}</strong> 
+              using <strong>{state.cvVersions.find(v => v.id === state.currentCVVersionId)?.name || state.currentCVVersionId}</strong>
+            </span>
+            <button className="btn btn-lg btn-primary" onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'processing' } })}>
+              Start AI Analysis →
+            </button>
+          </div>
         </div>
       )}
     </div>

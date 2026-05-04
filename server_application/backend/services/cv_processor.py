@@ -5,6 +5,7 @@ import os
 import sys
 import json
 import asyncio
+import shutil
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
@@ -26,17 +27,39 @@ from models.api_models import (
 class CVProcessor:
     """Processes CVs based on job descriptions."""
     
-    def __init__(self, candidate: str = "charilaos_mylonas", config: Optional[BackendConfig] = None):
+    def __init__(self, candidate: str = "charilaos_mylonas", config: Optional[BackendConfig] = None, cv_version_id: str = "master"):
         self.candidate = candidate
         self.config = config or BackendConfig()
-        self.candidate_cv_data_path = os.path.join(
-            CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data', 
-            f'{candidate}_cv_data.json'
-        )
+        self.cv_version_id = cv_version_id
         
     def _load_cv_data(self) -> Dict[str, Any]:
-        """Load the candidate's CV data."""
-        with open(self.candidate_cv_data_path, 'r') as f:
+        """Load the candidate's CV data from the versioned storage."""
+        candidate_dir = os.path.join(
+            CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data', 
+            self.candidate
+        )
+        # Ensure dir exists (it will be created by the API, but let's be safe)
+        if not os.path.exists(candidate_dir):
+            os.makedirs(candidate_dir, exist_ok=True)
+            
+        path = os.path.join(candidate_dir, f'{self.cv_version_id}.json')
+        
+        # Fallback to legacy path if master doesn't exist
+        if not os.path.exists(path) and self.cv_version_id == "master":
+            legacy_path = os.path.join(
+                CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data', 
+                f'{self.candidate}_cv_data.json'
+            )
+            if os.path.exists(legacy_path):
+                # Migrate to new location
+                shutil.copy(legacy_path, path)
+            else:
+                raise FileNotFoundError(f"CV data not found for candidate {self.candidate}")
+        
+        if not os.path.exists(path):
+             raise FileNotFoundError(f"CV version '{self.cv_version_id}' not found for candidate {self.candidate}")
+
+        with open(path, 'r') as f:
             return json.load(f)
     
     def _create_model_factory(self, model_config) -> ModelFactory:
@@ -69,7 +92,7 @@ class CVProcessor:
                 await status_callback(job_id, JobStatus.PROCESSING, "Analyzing job posting...")
             
             jpa = JobPostAnalysis(job_desc_path)
-            jpa.analyze()
+            await jpa.analyze()
             
             # Load CV data
             if status_callback:
@@ -79,47 +102,85 @@ class CVProcessor:
             
             # Create document sections
             experience_fields = cv_data.get('experience_sections', [])
-            personal_statement = cv_data.get('personal_statement', '')
+            master_personal_statement = cv_data.get('personal_statement', '')
+            alternative_statements = cv_data.get('alternative_statements', [])
             
             doc_section_items = [DocSectionItem(**_d) for _d in experience_fields]
             doc_section = DocSection('Work Experience', doc_section_items)
             
-            # Create full CV document
-            fcv = FullCVDocument(personal_statement, doc_section)
-            
-            if status_callback:
-                await status_callback(job_id, JobStatus.PROCESSING, "Cross-analyzing CV with job description...")
+            # Initial full CV document with master statement
+            fcv = FullCVDocument(master_personal_statement, doc_section)
             
             # Perform cross-analysis
             cvca = CVCrossAnalyzer(jpa, fcv)
-            cvca.analyze_job_experience_section()
+            
+            # 1. Rewrite personal statement if alternatives are provided
+            if alternative_statements:
+                if status_callback:
+                    await status_callback(job_id, JobStatus.PROCESSING, "Optimizing personal statement...")
+                
+                # We add the master statement to the alternatives to consider it too
+                all_statements = alternative_statements + [master_personal_statement]
+                await cvca.analyze_rewrite_personal_statement(all_statements)
+                
+                # Update document with optimized statement
+                optimized_statement = cvca.data.get('edited_statement')
+                if optimized_statement:
+                    fcv.statement = optimized_statement
+            
+            if status_callback:
+                await status_callback(job_id, JobStatus.PROCESSING, "Cross-analyzing CV with job description (parallel)...")
+            
+            async def progress_wrapper(msg):
+                if status_callback:
+                    await status_callback(job_id, JobStatus.PROCESSING, msg)
+
+            # Perform experience analysis (parallel fan-out)
+            # Re-initialize cvca with potentially updated fcv
+            cvca = CVCrossAnalyzer(jpa, fcv)
+            await cvca.analyze_job_experience_section(
+                concurrency_limit=self.config.concurrency_limit,
+                progress_callback=progress_wrapper
+            )
             
             if status_callback:
                 await status_callback(job_id, JobStatus.PROCESSING, "Generating optimized CV...")
             
             # Apply rewrite policies
             rewrite_policy = self.config.rewrite_policy
-            cvca.rewrite_reviewed_experience_section(
+            # rewrite_reviewed_experience_section is still synchronous string manipulation
+            await asyncio.to_thread(
+                cvca.rewrite_reviewed_experience_section,
                 max_section_items_keep=rewrite_policy.max_section_items_keep,
                 min_relevance_score=rewrite_policy.min_relevance_score
             )
             
             # Get results
-            cvca.analyze_job_experience_section()
-            agg_metrics = cvca.get_section_aggregate_metrics()
+            # Update metrics after rewrite
+            await cvca.analyze_job_experience_section(
+                concurrency_limit=self.config.concurrency_limit,
+                progress_callback=progress_wrapper
+            )
+            agg_metrics_tuple = await asyncio.to_thread(cvca.get_section_aggregate_metrics)
+            agg_metrics_summary = agg_metrics_tuple[0]
             
             # Generate output artifacts
             artifacts = []
+            artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
+            os.makedirs(artifacts_dir, exist_ok=True)
             
             # Generate PDF if configured
             if self.config.outputs.render_pdf:
                 if status_callback:
                     await status_callback(job_id, JobStatus.PROCESSING, "Generating PDF...")
-                pdf_path = f"cv_output_{job_id}.pdf"
-                cvca.cv_model.copy().render_pdf(pdf_path)
+                pdf_path = os.path.join(artifacts_dir, f"cv_output_{job_id}.pdf")
+                # render_pdf might also be blocking
+                cv_copy = cvca.cv_model.copy()
+                await asyncio.to_thread(cv_copy.render_pdf, pdf_path)
                 artifacts.append({
-                    "type": "pdf",
-                    "name": "generated_cv.pdf",
+                    "id": f"pdf_{job_id}",
+                    "kind": "pdf",
+                    "filename": "generated_cv.pdf",
                     "path": pdf_path
                 })
             
@@ -127,50 +188,87 @@ class CVProcessor:
             if self.config.outputs.include_latex:
                 if status_callback:
                     await status_callback(job_id, JobStatus.PROCESSING, "Generating LaTeX...")
-                latex_content = cvca.cv_model.get_latex()
-                latex_path = f"cv_output_{job_id}.tex"
+                
+                latex_content = await asyncio.to_thread(cvca.cv_model.make_latex)
+                latex_path = os.path.join(artifacts_dir, f"cv_output_{job_id}.tex")
                 with open(latex_path, 'w') as f:
                     f.write(latex_content)
                 artifacts.append({
-                    "type": "latex",
-                    "name": "generated_cv.tex",
+                    "id": f"latex_{job_id}",
+                    "kind": "latex",
+                    "filename": "generated_cv.tex",
                     "path": latex_path
                 })
             
             # Build result
             sections = []
-            for section in cvca.cv_model.sections:
-                items = []
-                for item in section.doc_section_items:
-                    items.append(ExperienceItem(
-                        company=item.company,
-                        duration=item.duration,
-                        position=item.position,
-                        text_items=[li.text for li in item.section_item_list],
-                        score=getattr(item, 'relevance_score', None),
-                        explanation=getattr(item, 'explanation', None),
-                        kept=True
-                    ))
-                
-                section_result = SectionResult(
-                    title=section.section_title,
-                    items=items,
-                    aggregate_score=agg_metrics.get(section.section_title, {}).get('average_score', None)
-                )
-                sections.append(section_result)
+            # We treat each DocSectionItem as a section for the frontend's benefit
+            experience_section = cvca.cv_model.experience_section
+            analysis_data = cvca.data.get('experience_section_analysis', {})
+            full_section_analysis = analysis_data.get('full_section_analysis', {})
+            by_item_analysis = analysis_data.get('by_section_item_analysis', {})
             
-            result = CVJobResult(
-                personal_statement=cvca.cv_model.personal_statement,
-                sections=sections,
-                overall_score=agg_metrics.get('overall_score', None),
-                artifacts=artifacts
-            )
+            for item in experience_section.doc_section_items:
+                item_analysis = full_section_analysis.get(item, {})
+                
+                # Extract score and explanation
+                score = None
+                explanation = None
+                if isinstance(item_analysis, dict):
+                    score = item_analysis.get('experience_relevance_score')
+                    explanation = item_analysis.get('explanation')
+                elif isinstance(item_analysis, list) and len(item_analysis) > 0:
+                    score = item_analysis[0].get('experience_relevance_score')
+                    explanation = item_analysis[0].get('explanation')
+                
+                # Get individual bullet point analyses
+                bullet_items = []
+                item_bullets_analysis = by_item_analysis.get(item, {})
+                for bullet in item.section_item_list:
+                    bullet_analysis = item_bullets_analysis.get(bullet, {})
+                    bullet_score = None
+                    bullet_explanation = None
+                    bullet_evidence = None
+                    if isinstance(bullet_analysis, dict):
+                        bullet_score = bullet_analysis.get('experience_relevance_score')
+                        bullet_explanation = bullet_analysis.get('explanation')
+                        bullet_evidence = bullet_analysis.get('posting_evidence')
+                    
+                    bullet_items.append({
+                        "text": bullet.text,
+                        "relevance_score": bullet_score,
+                        "explanation": bullet_explanation,
+                        "posting_evidence": bullet_evidence,
+                        "kept": True # Since it was kept in the filtered list
+                    })
+
+                sections.append({
+                    "title": experience_section.section_title,
+                    "company": item.company,
+                    "position": item.position,
+                    "duration": item.duration,
+                    "section_score": score,
+                    "explanation": explanation,
+                    "items": bullet_items
+                })
+            
+            result_data = {
+                "personal_statement": cvca.cv_model.statement,
+                "sections": sections,
+                "overall_score": agg_metrics_summary.get('weighted_mean_section_relevance'),
+                "summary_metrics": agg_metrics_summary,
+                "artifacts": artifacts
+            }
+            
+            # We'll return a dict that matches what the frontend wants more closely, 
+            # even if it slightly deviates from the Pydantic model (FastAPI will serialize it)
+            # Actually, let's just make sure it's a valid dict.
             
             # Cleanup
             if os.path.exists(job_desc_path):
                 os.remove(job_desc_path)
             
-            return result
+            return result_data, jpa.data
             
         except Exception as e:
             # Cleanup on error

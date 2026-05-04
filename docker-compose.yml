@@ -12,10 +12,17 @@ services:
       - ./server_application/backend:/app/server_application/backend
       - ./src:/app/src
       - ./config:/app/config
+      - ./assets:/app/assets
       - ./cv_section_data:/app/cv_section_data
     environment:
       - CV_CUSTOMIZER_ROOT=/app
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Set OLLAMA_HOST to reach the host system's Ollama server.
+      # On Linux, make sure Ollama is listening on 0.0.0.0 (not just 127.0.0.1).
+      # You can do this by setting OLLAMA_HOST=0.0.0.0:11434 on your host machine.
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     networks:
       - auto-cv-network

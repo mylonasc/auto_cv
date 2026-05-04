@@ -13,6 +13,14 @@ const ResultsTab: React.FC = () => {
         <div className="no-results">
           <h2>No Results Yet</h2>
           <p>Process a job description to see scoring results here.</p>
+          <div className="no-results-actions" style={{ marginTop: '24px' }}>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'history' } })}
+            >
+              View History →
+            </button>
+          </div>
         </div>
       </div>
     );

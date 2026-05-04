@@ -2,6 +2,13 @@ import React from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
 import './MainContent.css';
 
+// Import tab components
+import JobInputTab from '../main/JobInputTab';
+import ProcessingTab from '../main/ProcessingTab';
+import ResultsTab from '../main/ResultsTab';
+import EditorTab from '../main/EditorTab';
+import HistoryTab from '../main/HistoryTab';
+
 const MainContent: React.FC = () => {
   const { state, dispatch } = useAppState();
 
@@ -15,6 +22,8 @@ const MainContent: React.FC = () => {
         return <ResultsTab />;
       case 'editor':
         return <EditorTab />;
+      case 'history':
+        return <HistoryTab />;
       default:
         return <JobInputTab />;
     }
@@ -47,6 +56,12 @@ const MainContent: React.FC = () => {
         >
           Editor
         </button>
+        <button 
+          className={state.uiState.activeTab === 'history' ? 'active' : ''}
+          onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'history' } })}
+        >
+          History
+        </button>
       </div>
       <div className="tab-content">
         {renderTabContent()}
@@ -54,11 +69,5 @@ const MainContent: React.FC = () => {
     </main>
   );
 };
-
-// Import tab components (will be created next)
-import JobInputTab from '../main/JobInputTab';
-import ProcessingTab from '../main/ProcessingTab';
-import ResultsTab from '../main/ResultsTab';
-import EditorTab from '../main/EditorTab';
 
 export default MainContent;

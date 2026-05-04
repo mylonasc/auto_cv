@@ -21,6 +21,11 @@ active_tasks = {}
 
 async def status_callback(job_id: str, status: JobStatus, progress: Optional[str] = None, message: Optional[str] = None):
     """Callback to update job status."""
+    # Check if cancelled
+    job = job_manager.get_job(job_id)
+    if job and job.status == JobStatus.CANCELLED:
+        raise asyncio.CancelledError("Job was cancelled by user")
+        
     job_manager.update_job_status(
         job_id=job_id,
         status=status,
@@ -32,6 +37,11 @@ async def status_callback(job_id: str, status: JobStatus, progress: Optional[str
 async def process_job_background(job_id: str, request: CreateJobRequest):
     """Background task to process a CV job."""
     try:
+        # Check if already cancelled
+        job = job_manager.get_job(job_id)
+        if not job or job.status == JobStatus.CANCELLED:
+            return
+
         # Update status to processing
         job_manager.update_job_status(
             job_id=job_id,
@@ -40,14 +50,16 @@ async def process_job_background(job_id: str, request: CreateJobRequest):
             message="Initializing CV processor"
         )
         
-        # Create processor
+        # Run processing
         processor = CVProcessor(
             candidate=request.candidate,
-            config=request.config
+            config=request.config,
+            cv_version_id=request.cv_version_id
         )
+
         
         # Process
-        result = await processor.process(
+        result, job_analysis = await processor.process(
             job_description=request.job_description,
             job_id=job_id,
             status_callback=status_callback
@@ -59,9 +71,13 @@ async def process_job_background(job_id: str, request: CreateJobRequest):
             status=JobStatus.SUCCEEDED,
             progress="Processing complete",
             message="CV has been successfully processed",
-            result=result
+            result=result,
+            job_analysis=job_analysis
         )
         
+    except asyncio.CancelledError:
+        # Job was already marked as CANCELLED in status_callback or cancel_job endpoint
+        pass
     except Exception as e:
         job_manager.update_job_status(
             job_id=job_id,
@@ -91,7 +107,7 @@ async def create_job(request: CreateJobRequest, background_tasks: BackgroundTask
     active_tasks[job.id] = request
     
     # Start background processing
-    asyncio.create_task(process_job_background(job.id, request))
+    background_tasks.add_task(process_job_background, job.id, request)
     
     return job
 
@@ -137,23 +153,57 @@ async def list_jobs():
 @router.get("/{job_id}/artifacts/{artifact_id}")
 async def get_artifact(job_id: str, artifact_id: str):
     """Download a specific artifact from a job."""
+    print(f"Artifact requested: job_id={job_id}, artifact_id={artifact_id}")
     job = job_manager.get_job(job_id)
     if not job or not job.result:
+        print(f"Job or result not found for {job_id}")
         raise HTTPException(status_code=404, detail="Job or result not found")
     
+    # Try to find artifact by ID
     artifact = next((a for a in job.result.artifacts if a.get("id") == artifact_id), None)
+    
     if not artifact:
+        # Fallback: maybe artifact_id is actually the kind (pdf/latex)
+        artifact = next((a for a in job.result.artifacts if a.get("kind") == artifact_id or a.get("type") == artifact_id), None)
+
+    if not artifact:
+        print(f"Artifact {artifact_id} not found in job {job_id}. Available IDs: {[a.get('id') for a in job.result.artifacts]}")
         raise HTTPException(status_code=404, detail="Artifact not found")
     
+    # Try the stored path first
     file_path = artifact.get("path")
+    
+    # If stored path is invalid (e.g. from a different environment/container), 
+    # try to find it in the current artifacts directory by filename
     if not file_path or not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Artifact file not found")
+        artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
+        
+        # Determine the expected filename
+        # Prefer the filename stored in the artifact metadata
+        filename = artifact.get("filename")
+        if not filename:
+            # Fallback: extract from path or construct from job ID and kind
+            if file_path:
+                filename = os.path.basename(file_path)
+            else:
+                kind = artifact.get("kind") or artifact.get("type") or "pdf"
+                ext = "tex" if kind == "latex" else kind
+                filename = f"cv_output_{job_id}.{ext}"
+            
+        alt_path = os.path.join(artifacts_dir, filename)
+        print(f"Stored path invalid. Searching at: {alt_path}")
+        
+        if os.path.exists(alt_path):
+            file_path = alt_path
+        else:
+            print(f"Artifact file not found at {file_path} or {alt_path}")
+            raise HTTPException(status_code=404, detail=f"Artifact file '{filename}' not found on disk")
     
     from fastapi.responses import FileResponse
     return FileResponse(
         path=file_path,
         media_type='application/octet-stream',
-        filename=artifact.get("name", "artifact")
+        filename=artifact.get("filename") or artifact.get("name") or "artifact"
     )
 
 

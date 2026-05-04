@@ -40,12 +40,21 @@ async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, Non
         
         # If job is complete (succeeded, failed, cancelled), send final event and break
         if current_status in ["succeeded", "failed", "cancelled"]:
+            result_data = None
+            if job.result:
+                if hasattr(job.result, 'model_dump'):
+                    result_data = job.result.model_dump()
+                elif isinstance(job.result, dict):
+                    result_data = job.result
+                else:
+                    result_data = str(job.result)
+
             final_data = {
                 "job_id": job.id,
                 "status": current_status,
                 "progress": job.progress,
                 "message": job.message,
-                "result": job.result.model_dump() if job.result else None,
+                "result": result_data,
                 "error": job.error,
                 "updated_at": job.updated_at.isoformat() if job.updated_at else None
             }

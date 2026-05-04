@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
+import apiService from '../../services/api';
 import './ExportDialog.css';
 
 interface ExportDialogProps {
@@ -9,135 +10,94 @@ interface ExportDialogProps {
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   const { state } = useAppState();
-  const [exportFormat, setExportFormat] = React.useState<string[]>(['pdf']);
-  const [includeComments, setIncludeComments] = React.useState(false);
-  const [includeCoverLetter, setIncludeCoverLetter] = React.useState(true);
-  const [isExporting, setIsExporting] = React.useState(false);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleExport = async () => {
-    if (!state.processingState?.jobId) {
+  const handleDownload = async (artifactId: string, filename: string) => {
+    const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
+    if (!jobId) {
       alert('No job ID available. Please process a job first.');
       return;
     }
 
-    setIsExporting(true);
+    setIsExporting(artifactId);
     try {
-      // In a real implementation, this would call the API to get the ZIP
-      // For now, simulate download
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate file download
-      const link = document.createElement('a');
-      link.href = '#'; // Would be actual blob URL
-      link.download = 'cv_export.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      alert('Export completed! (Simulation)');
-      onClose();
+      await apiService.downloadArtifact(jobId, artifactId, filename);
     } catch (error) {
-      console.error('Export error:', error);
-      alert('Export failed. Please try again.');
+      console.error('Download error:', error);
+      alert('Download failed. Please try again.');
     } finally {
-      setIsExporting(false);
+      setIsExporting(null);
     }
   };
 
-  const toggleFormat = (format: string) => {
-    if (exportFormat.includes(format)) {
-      setExportFormat(exportFormat.filter(f => f !== format));
-    } else {
-      setExportFormat([...exportFormat, format]);
-    }
-  };
+  const artifacts = state.processingState?.result?.artifacts || [];
+  const hasJob = !!(state.processingState?.jobId || state.processingState?.lastSuccessfulJobId);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Export CV</h2>
+          <h2>Export & Download</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         
         <div className="modal-body">
-          <div className="form-group">
-            <label>Export Format</label>
-            <div className="checkbox-group">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={exportFormat.includes('pdf')} 
-                  onChange={() => toggleFormat('pdf')} 
-                />
-                PDF (Customized CV)
-              </label>
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={exportFormat.includes('latex')} 
-                  onChange={() => toggleFormat('latex')} 
-                />
-                LaTeX Sources
-              </label>
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={exportFormat.includes('zip')} 
-                  onChange={() => toggleFormat('zip')} 
-                />
-                ZIP Bundle (All files)
-              </label>
+          {!hasJob ? (
+            <div className="no-artifacts">
+              <p>No job history found in the current session.</p>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                style={{ marginTop: '12px' }}
+                onClick={() => {
+                  onClose();
+                  dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'history' } });
+                }}
+              >
+                Go to History →
+              </button>
+              <p className="hint" style={{ marginTop: '12px' }}>
+                If you have previously run an analysis, you can load it from the <strong>History</strong> tab to download its artifacts.
+              </p>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Options</label>
-            <div className="checkbox-group">
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={includeComments} 
-                  onChange={e => setIncludeComments(e.target.checked)} 
-                />
-                Include Scoring Comments
-              </label>
-              <label>
-                <input 
-                  type="checkbox" 
-                  checked={includeCoverLetter} 
-                  onChange={e => setIncludeCoverLetter(e.target.checked)} 
-                />
-                Include Cover Letter
-              </label>
-            </div>
-          </div>
-
-          {state.processingState?.result?.artifacts && (
-            <div className="artifacts-list">
-              <h3>Available Artifacts</h3>
-              {state.processingState.result.artifacts.map((artifact: any, idx: number) => (
-                <div key={idx} className="artifact-item">
-                  <span className="artifact-name">{artifact.filename}</span>
-                  <span className="artifact-type">{artifact.kind}</span>
-                </div>
-              ))}
-            </div>
+          ) : (
+            <>
+              <p>The following artifacts have been generated for your customized CV:</p>
+              
+              <div className="artifacts-grid">
+                {artifacts.length > 0 ? (
+                  artifacts.map((artifact: any) => (
+                    <div key={artifact.id} className="artifact-card">
+                      <div className="artifact-icon">
+                        {artifact.kind === 'pdf' ? '📄' : '🛠️'}
+                      </div>
+                      <div className="artifact-info">
+                        <div className="artifact-filename">{artifact.filename}</div>
+                        <div className="artifact-meta">{artifact.kind.toUpperCase()} File</div>
+                      </div>
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleDownload(artifact.id, artifact.filename)}
+                        disabled={isExporting === artifact.id}
+                      >
+                        {isExporting === artifact.id ? 'Downloading...' : 'Download'}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-artifacts">
+                    No artifacts generated for the current job.
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleExport}
-            disabled={isExporting || exportFormat.length === 0}
-          >
-            {isExporting ? 'Exporting...' : 'Export'}
+            Close
           </button>
         </div>
       </div>

@@ -32,8 +32,26 @@ This will start:
 
 ### Ollama (Optional)
 - Local LLM service
-- Enable with: `docker-compose --profile with-ollama up -d`
+- Enable containerized Ollama with: `docker-compose --profile with-ollama up -d`
 - Pull models: `docker exec auto-cv-ollama ollama pull llama3`
+
+#### Using Host Ollama Server
+If you already have Ollama running on your host machine and want the Docker containers to use it:
+
+1.  **Configure Ollama to listen on all interfaces**: By default, Ollama only listens on `127.0.0.1`.
+    *   **On Linux (systemd)**:
+        *   Run `sudo systemctl edit ollama.service`
+        *   Add the following lines:
+            ```ini
+            [Service]
+            Environment="OLLAMA_HOST=0.0.0.0:11434"
+            ```
+        *   Reload and restart:
+            ```bash
+            sudo systemctl daemon-reload
+            sudo systemctl restart ollama
+            ```
+2.  **Verify Host Gateway**: The `docker-compose.yml` is configured to reach the host via `http://host.docker.internal:11434`.
 
 ## Environment Variables
 

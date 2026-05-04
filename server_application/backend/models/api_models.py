@@ -45,11 +45,13 @@ class BackendConfig(BaseModel):
     rewrite_policy: RewritePolicy = Field(default_factory=lambda: RewritePolicy())
     analysis_policy: AnalysisPolicy = Field(default_factory=lambda: AnalysisPolicy())
     outputs: OutputsConfig = Field(default_factory=lambda: OutputsConfig())
+    concurrency_limit: int = 5
 
 
 class CreateJobRequest(BaseModel):
     job_description: str
     candidate: str = "charilaos_mylonas"
+    cv_version_id: str = "master"
     config: Optional[BackendConfig] = None
 
 
@@ -65,7 +67,12 @@ class ExperienceItem(BaseModel):
 
 class SectionResult(BaseModel):
     title: str
-    items: List[ExperienceItem]
+    company: Optional[str] = None
+    position: Optional[str] = None
+    duration: Optional[str] = None
+    section_score: Optional[float] = None
+    explanation: Optional[str] = None
+    items: List[Dict[str, Any]] = []
     aggregate_score: Optional[float] = None
 
 
@@ -73,6 +80,7 @@ class CVJobResult(BaseModel):
     personal_statement: Optional[str] = None
     sections: List[SectionResult]
     overall_score: Optional[float] = None
+    summary_metrics: Optional[Dict[str, Any]] = None
     artifacts: List[Dict[str, Any]] = []
 
 
@@ -82,6 +90,7 @@ class CVJobResponse(BaseModel):
     progress: Optional[str] = None
     message: Optional[str] = None
     result: Optional[CVJobResult] = None
+    job_analysis: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     created_at: datetime
     updated_at: datetime

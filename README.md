@@ -62,6 +62,8 @@ Then pull a model:
 docker exec auto-cv-ollama ollama pull llama3
 ```
 
+**Note:** If you want to use an Ollama server already running on your host machine, please refer to [DOCKER-README.md](DOCKER-README.md) for configuration instructions.
+
 ## Manual Setup (Without Docker)
 
 ### Backend Setup

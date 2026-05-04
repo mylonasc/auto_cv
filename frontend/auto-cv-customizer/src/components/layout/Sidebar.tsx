@@ -41,6 +41,12 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
               <span className="nav-text">Editor</span>
             </button>
           </li>
+          <li className={state.uiState.activeTab === 'history' ? 'active' : ''}>
+            <button onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'history' } })}>
+              <span className="nav-icon">📜</span>
+              <span className="nav-text">History</span>
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -84,6 +90,9 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
               {state.processingState.status}
             </div>
           )}
+          <div className="current-version-tag">
+            CV: {state.cvVersions.find(v => v.id === state.currentCVVersionId)?.name || state.currentCVVersionId}
+          </div>
         </div>
       </div>
     </aside>

@@ -47,8 +47,8 @@ output_folder = 'autocv_output_' + job_posting_path.split('/')[-1][:-4]
 company_name = 'Google'
 name = 'Charilaos Mylonas'
 prof_signature = "\\\\" + 'Lead Software Engineer \\\\ Zurich'
-MAX_SECTION_ITEMS_KEEP = 10
-MIN_RELEVANCE_SCORE_KEEP = 5
+MAX_SECTION_ITEMS_KEEP = 5
+MIN_RELEVANCE_SCORE_KEEP = 7
 MIN_SECTION_ITEMS_KEEP = 1
 
 ALT_STATEMENTS_PATH = 'assets/statements.txt'
@@ -109,103 +109,109 @@ authoring_model_params = cover_letter_model_params
 
 
 
-llm_statement_editor = ModelFactory(**authoring_model_params).get_llm_model()
-llm_analysis_model = ModelFactory(**analysis_model_params).get_llm_model()
-llm_cover_letter_editor = ModelFactory(**cover_letter_model_params).get_llm_model()
+import asyncio
 
-jpa = JobPostAnalysis(job_posting_path, llm_model = llm_analysis_model)
+async def main():
+    llm_statement_editor = ModelFactory(**authoring_model_params).get_llm_model()
+    llm_analysis_model = ModelFactory(**analysis_model_params).get_llm_model()
+    llm_cover_letter_editor = ModelFactory(**cover_letter_model_params).get_llm_model()
 
+    jpa = JobPostAnalysis(job_posting_path, llm_model = llm_analysis_model)
 
-jpa.analyze()
+    await jpa.analyze()
 
-fcv = FullCVDocument(alt_statements[-1], doc_section_copy)
+    fcv = FullCVDocument(alt_statements[-1], doc_section_copy)
 
-cvca = CVCrossAnalyzer(
-    jpa, 
-    fcv, 
-    llm_model = llm_analysis_model,  
-    llm_editor_model = llm_statement_editor
-)
+    cvca = CVCrossAnalyzer(
+        jpa, 
+        fcv, 
+        llm_model = llm_analysis_model,  
+        llm_editor_model = llm_statement_editor
+    )
 
-## 1. Analyze and re-write the personal statement.
-cvca.analyze_rewrite_personal_statement(alt_statements)
+    ## 1. Analyze and re-write the personal statement.
+    await cvca.analyze_rewrite_personal_statement(alt_statements)
 
-doc_section_copy = doc_section.copy()
-fcv = FullCVDocument(cvca.data['edited_statement'], doc_section_copy)
-cvca = CVCrossAnalyzer(
-    jpa,
-    fcv,
-    llm_model = llm_analysis_model,  
-    llm_editor_model = llm_statement_editor    
-)
-fcv_copy = fcv.copy()
+    doc_section_copy = doc_section.copy()
+    fcv = FullCVDocument(cvca.data['edited_statement'], doc_section_copy)
+    cvca = CVCrossAnalyzer(
+        jpa,
+        fcv,
+        llm_model = llm_analysis_model,  
+        llm_editor_model = llm_statement_editor    
+    )
+    fcv_copy = fcv.copy()
 
-## 2. Analyze the job experience section
-agg_metrics_prev = cvca.analyze_job_experience_section()
+    ## 2. Analyze the job experience section
+    agg_metrics_prev = await cvca.analyze_job_experience_section()
 
-## 2.1 Preview some metrics coming out of the analysis
-agg_metrics_prev = cvca.get_section_aggregate_metrics()
-_log_agg_metrics(agg_metrics_prev, 'prev')
+    ## 2.1 Preview some metrics coming out of the analysis
+    agg_metrics_prev = cvca.get_section_aggregate_metrics()
+    _log_agg_metrics(agg_metrics_prev, 'prev')
 
-## 3. Write a cover letter (use the best LLM available to get better authoring capabilities)
-clm = CoverLetterModel()
-cld = CoverLetterDrafter(cvca, llm_cover_letter_editor)
+    ## 3. Write a cover letter (use the best LLM available to get better authoring capabilities)
+    clm = CoverLetterModel()
+    cld = CoverLetterDrafter(cvca, llm_cover_letter_editor)
 
-letter_body = cld.get_cover_letter_text()
-letter_body = letter_body.replace('&','\\&')
+    letter_body = await cld.get_cover_letter_text()
+    letter_body = letter_body.replace('&','\\&')
 
-date_str = datetime.now().strftime('%-d %B %Y')
-clm.set_data(date_str, company_name, letter_body, name , prof_signature)
+    date_str = datetime.now().strftime('%-d %B %Y')
+    clm.set_data(date_str, company_name, letter_body, name , prof_signature)
 
-# 4. Store the cover letter PDF (for easier inspection as PDF)
-clm.to_pdf(os.path.join(TMP_FOLDER,'cover_letter_tmp.pdf'))
+    # 4. Store the cover letter PDF (for easier inspection as PDF)
+    clm.to_pdf(os.path.join(TMP_FOLDER,'cover_letter_tmp.pdf'))
 
-# 4.1 Store the cover letter as tex file (can be used for latter manual edits)
-with open(os.path.join(TMP_FOLDER, 'cover_letter_tmp.tex'),'w') as f:
-    f.write(clm.render_tex_template())
-    
+    # 4.1 Store the cover letter as tex file (can be used for latter manual edits)
+    with open(os.path.join(TMP_FOLDER, 'cover_letter_tmp.tex'),'w') as f:
+        f.write(clm.render_tex_template())
+        
 
-cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, "test_before_edits.pdf"))
+    cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, "test_before_edits.pdf"))
 
-rewrite_output = cvca.rewrite_reviewed_experience_section(
-    max_section_items_keep=MAX_SECTION_ITEMS_KEEP,
-    min_relevance_score=MIN_RELEVANCE_SCORE_KEEP, 
-    min_section_items_keep=MIN_SECTION_ITEMS_KEEP
-)
+    rewrite_output = cvca.rewrite_reviewed_experience_section(
+        max_section_items_keep=MAX_SECTION_ITEMS_KEEP,
+        min_relevance_score=MIN_RELEVANCE_SCORE_KEEP, 
+        min_section_items_keep=MIN_SECTION_ITEMS_KEEP
+    )
 
-agg_metrics_post = cvca.get_section_aggregate_metrics()
-_log_agg_metrics(agg_metrics_post, 'after edits')
+    agg_metrics_post = cvca.get_section_aggregate_metrics()
+    _log_agg_metrics(agg_metrics_post, 'after edits')
 
-metrics_summary = agg_metrics_post[0]
-with open(os.path.join(TMP_FOLDER, 'metrics_summary.txt'),'w') as f:
-    f.write(json.dumps(metrics_summary))
-    
-# Render the CV with comments on scoring etc
-cvca.cv_model.render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits.pdf'))
+    metrics_summary = agg_metrics_post[0]
+    with open(os.path.join(TMP_FOLDER, 'metrics_summary.txt'),'w') as f:
+        f.write(json.dumps(metrics_summary))
+        
+    # Render the CV with comments on scoring etc
+    cvca.cv_model.render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits.pdf'))
 
-# copy to remove the comments
-cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits_nocomments.pdf'))
+    # copy to remove the comments
+    cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits_nocomments.pdf'))
 
-# 5. Copy to the output folder for further editing and inspection
-try:
-    shutil.move(TMP_FOLDER, output_folder)
-    os.mkdir(os.path.join(output_folder,'latex_folder'))
-except:
-    print("file exists")
+    # 5. Copy to the output folder for further editing and inspection
+    global output_folder # Use the one calculated outside or pass it
+    try:
+        shutil.move(TMP_FOLDER, output_folder)
+        os.mkdir(os.path.join(output_folder,'latex_folder'))
+    except:
+        print("file exists")
 
-with open('job_post.txt','w') as f:
-    f.write(jpa.post_txt)
+    with open('job_post.txt','w') as f:
+        f.write(jpa.post_txt)
 
-shutil.copy('job_post.txt', os.path.join(output_folder, 'job_post.txt'))
+    shutil.copy('job_post.txt', os.path.join(output_folder, 'job_post.txt'))
 
-latex_root = os.path.join(output_folder, 'latex_folder')
-fdat_with_comments = cvca.cv_model.make_latex()
-with open(os.path.join(latex_root, 'cv_edited_with_comments.tex'),'w') as f:
-    f.write(fdat_with_comments)
-    
-fdat_no_comments = cvca.cv_model.copy().make_latex()
-with open(os.path.join(latex_root,'cv_edited_no_comments.tex'),'w') as f:
-    f.write(fdat_no_comments)
-    
-shutil.copy('assets/images/my_pic.jpeg',latex_root)
-shutil.copy('assets/resume.cls',latex_root)
+    latex_root = os.path.join(output_folder, 'latex_folder')
+    fdat_with_comments = cvca.cv_model.make_latex()
+    with open(os.path.join(latex_root, 'cv_edited_with_comments.tex'),'w') as f:
+        f.write(fdat_with_comments)
+        
+    fdat_no_comments = cvca.cv_model.copy().make_latex()
+    with open(os.path.join(latex_root,'cv_edited_no_comments.tex'),'w') as f:
+        f.write(fdat_no_comments)
+        
+    shutil.copy('assets/images/my_pic.jpeg',latex_root)
+    shutil.copy('assets/resume.cls',latex_root)
+
+if __name__ == "__main__":
+    asyncio.run(main())
