@@ -34,30 +34,36 @@ class OllamaModelWrapper:
         self._model_string, self._config = model_string, config
         if self._model_string is None:
             raise Exception("You have not provided a model to initialize! This is not supported - aborting.")
-        _avail_models = self.list()
+        
+        self.ollama_host = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+        
+        _avail_models = self.list(host=self.ollama_host)
         if self._model_string not in _avail_models:
-            raise Exception(f"The model you requested ({self._model_string} is not locally available. List of available models: \n {_avail_models} \n\n \n Please see ollama documentation (https://github.com/ollama/ollama/blob/main/README.md#quickstart) on how to download it.")
-        if self._config is None:
-            pass
-            # self._config = MODELS_DEFAULT_CONFIG['ollama']
-            # print(f"ollama config: {str(self._config)}")
+            # Try to see if there's a tag mismatch (e.g. llama3 vs llama3:latest)
+            if ":" not in self._model_string and f"{self._model_string}:latest" in _avail_models:
+                self._model_string = f"{self._model_string}:latest"
+            else:
+                raise Exception(f"The model you requested ({self._model_string}) is not locally available on {self.ollama_host}. List of available models: \n {_avail_models} \n\n \n Please see ollama documentation (https://github.com/ollama/ollama/blob/main/README.md#quickstart) on how to download it.")
         
     def get_llm_model(self):
-        from langchain_ollama.llms import OllamaLLM
-        if self._config is None:
-            return OllamaLLM(model = self._model_string)
-        return OllamaLLM(model = self._model_string, **self._config)
+        from langchain_ollama import ChatOllama
+        params = (self._config or {}).copy()
+        params['model'] = self._model_string
+        params['base_url'] = self.ollama_host
+        return ChatOllama(**params)
     
     @classmethod
-    def list(str_output = True):
+    def list(cls, str_output = True, host = None):
         """Returns the models that are locally available
         
         Args:
           str_output : (str) whether the output is going to be a string.
             if "False" it returns the "Model" objects.         
+          host : (str) Optional host URL for Ollama server.
         """
         import ollama
-        return [m.model for m in ollama.list().models]
+        client = ollama.Client(host=host or os.getenv('OLLAMA_HOST', 'http://localhost:11434'))
+        return [m.model for m in client.list().models]
         
 def _gemini_api_key_setup(set_environ = False):
     """ This function attempts to sort-out where to find the 
@@ -129,7 +135,7 @@ class GoogleModelWrapper:
         if check_avail:
             self.check_model_avail()
         
-        from langchain_google_genai import GoogleGenerativeAI
+        from langchain_google_genai import ChatGoogleGenerativeAI
         
         if self._config is not None:
             config = self._config.copy()
@@ -137,9 +143,9 @@ class GoogleModelWrapper:
             for _prop_rm in _config_props_remove:
                 if _prop_rm in config:
                     del config[_prop_rm]
-            return GoogleGenerativeAI(model = self._model_string, api_key = self._api_key, **config)
+            return ChatGoogleGenerativeAI(model = self._model_string, api_key = self._api_key, **config)
         else:
-            return GoogleGenerativeAI(model = self._model_string, api_key = self._api_key)
+            return ChatGoogleGenerativeAI(model = self._model_string, api_key = self._api_key)
         
     def list_models(self, return_string = True):
         from google import genai

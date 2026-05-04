@@ -1,0 +1,20 @@
+/* // MainApp styles */
+.main-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  margin-top: var(--header-height);
+  margin-bottom: var(--footer-height);
+}
+
+/* // Responsive adjustments */
+@media (max-width: 768px) {
+  .app-body {
+    flex-direction: column;
+  }
+}

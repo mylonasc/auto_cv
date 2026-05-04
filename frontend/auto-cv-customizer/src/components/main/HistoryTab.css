@@ -1,0 +1,94 @@
+.history-tab {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.history-list {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background-color: var(--background-color);
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.history-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+}
+
+.history-row:hover {
+  background-color: rgba(26, 115, 232, 0.02);
+}
+
+.job-date {
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-succeeded { background-color: rgba(52, 168, 83, 0.1); color: #34a853; }
+.status-failed { background-color: rgba(234, 67, 53, 0.1); color: #ea4335; }
+.status-processing { background-color: rgba(26, 115, 232, 0.1); color: #1a73e8; }
+.status-cancelled { background-color: rgba(128, 128, 128, 0.1); color: #808080; }
+
+.job-artifacts {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-link:hover {
+  background-color: var(--background-color);
+}
+
+.no-jobs {
+  padding: 80px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 40px;
+}

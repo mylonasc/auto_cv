@@ -1,0 +1,55 @@
+/* // ScoreVisualization styles */
+.score-visualization {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &.score-small {
+    .score-bar-back-ground {
+      height: 6px;
+    }
+    .score-value {
+      font-size: 12px;
+    }
+  }
+  
+  &.score-medium {
+    .score-bar-back-ground {
+      height: 8px;
+    }
+    .score-value {
+      font-size: 14px;
+    }
+  }
+  
+  &.score-large {
+    .score-bar-back-ground {
+      height: 12px;
+    }
+    .score-value {
+      font-size: 16px;
+    }
+  }
+}
+
+.score-bar-back-ground {
+  flex: 1;
+  height: 8px;
+  background-color: #e8eaed;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.score-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+}

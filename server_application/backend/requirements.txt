@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+langchain
+langchain_ollama
+langchain-google-genai
+google-genai
+langchain_community
+tqdm
+pandas
+bs4
+python-multipart
+websockets

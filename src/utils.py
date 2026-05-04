@@ -2,33 +2,49 @@ import json
 import os
 import subprocess
 import tempfile
-from typing import Any, Dict, Optional
+import asyncio
+from typing import Any, Dict, Optional, List
+from pydantic import BaseModel, Field
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 
 
-TEMPLATE_NAME = os.path.join('assets','latex_cv_template_v0.tex')
-TEMPLATE_COVER_LETTER = os.path.join('assets','cover_letter', 'CoverLetter_Template.tex')
+from pathlib import Path
 
-def _trim_encap_tag_load_json(_res: str, encap_tag: str = "output") -> Dict[str, Any]:
-    f1 = _res.find("<" + encap_tag + ">") + len(encap_tag) + 2
-    f2 = _res.find("</" + encap_tag + ">")
+# Define project root
+_here = Path(__file__).resolve().parent.parent
+CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', str(_here))
+
+TEMPLATE_NAME = os.path.join(CV_CUSTOMIZER_ROOT, 'assets', 'latex_cv_template_v0.tex')
+TEMPLATE_COVER_LETTER = os.path.join(CV_CUSTOMIZER_ROOT, 'assets', 'cover_letter', 'CoverLetter_Template.tex')
+
+def _trim_encap_tag_load_json(_res: Any, encap_tag: str = "output") -> Dict[str, Any]:
+    # Handle AIMessage or other objects by casting to string
+    res_str = str(_res.content) if hasattr(_res, 'content') else str(_res)
+    f1 = res_str.find("<" + encap_tag + ">") + len(encap_tag) + 2
+    f2 = res_str.find("</" + encap_tag + ">")
     try:
-        return json.loads(_res[f1:f2])
+        return json.loads(res_str[f1:f2])
     except Exception as exc:
         print("----")
         print(f1, " to ", f2)
         print("----")
-        print(_res[f1:f2])
+        print(res_str[f1:f2])
         print("")
         raise Exception("json decode failed") from exc
 
 def _latex_to_pdf(latex_string: str, output_pdf: str) -> None:
+    import shutil
     # Create a temporary directory to store intermediate files
     with tempfile.TemporaryDirectory() as tempdir:
         # Define the path for the temporary .tex file
         tex_file_path = os.path.join(tempdir, "temp.tex")
+
+        # Copy resume.cls if it exists in assets
+        resume_cls_src = os.path.join(CV_CUSTOMIZER_ROOT, 'assets', 'resume.cls')
+        if os.path.exists(resume_cls_src):
+            shutil.copy(resume_cls_src, os.path.join(tempdir, 'resume.cls'))
 
         # Write the LaTeX string to the .tex file
         with open(tex_file_path, "w") as tex_file:
@@ -45,7 +61,7 @@ def _latex_to_pdf(latex_string: str, output_pdf: str) -> None:
             # Move the generated PDF to the specified output path
             pdf_path = os.path.join(tempdir, "temp.pdf")
             if os.path.exists(pdf_path):
-                os.rename(pdf_path, output_pdf)
+                shutil.move(pdf_path, output_pdf)
                 print(f"PDF generated successfully: {output_pdf}")
             else:
                 print("Error: PDF was not generated.")
@@ -207,78 +223,29 @@ class CoverLetterModel:
     def to_pdf(self, file):
         _latex_to_pdf(self.render_tex_template(), file)
 
+class BasicAnalysis(BaseModel):
+    skills: str = Field(..., description="Semicolon separated list of required skills.")
+    qualifications: str = Field(..., description="Semicolon separated list of required qualifications.")
+    preferred_qualifications: Optional[str] = Field(None, description="Semicolon separated list of preferred qualifications.")
+
+class IndustryPositionAnalysis(BaseModel):
+    company_name: Optional[str] = Field(None, description="Name of the company.")
+    industry: Optional[str] = Field(None, description="Industry the company operates in.")
+    job_title: str = Field(..., description="Title of the position.")
+    business_skills: float = Field(..., description="Business skills required (0-10).")
+    hands_on_skills: float = Field(..., description="Hands-on skills required (0-10).")
+
 analyses_prompts = [
     {
-    'prompt_txt' : '''
-        You are a job analysis expert bot. You answer concisely, 
-        and in a structured format. In what follows there is a post for a job position. 
-        
-        Job posting:
-        ----
-        {job_posting_text}
-        
-        Return in JSON format, a structured output that contains:
-        1. the skills required for this position.
-        2. the qualifications required for this position. 
-        
-        Wrap the answer in a <output> tag. 
-            
-        Example output:
-        -----
-        <output>
-        {{ 
-            "skills" : "python;machine learning;llm;German C1 level"
-            "qualifications" : "PhD;Assembly;MS Word;5 years of experience;ability to work in teams;able to do double backflip;20 years of LLM experience"
-            "preferred_qualifications" : "C++;NeurIPS first-authored publications"
-        }}
-        </output>
-        
-        Answer:
-        ''',
-        'prompt_provides' : 'basic_analysis'
+        'prompt_txt' : 'Analyze this job posting for required skills and qualifications: {job_posting_text}',
+        'prompt_provides' : 'basic_analysis',
+        'schema': BasicAnalysis
     },
     {
-    'prompt_txt' : '''You are a job analysis expert bot. You answer concisely, and in a structured format. 
-        In what follows there is a post for a job position. 
-        
-        Job posting:
-        ----
-        {job_posting_text}
-        
-        Return in JSON format, a structured output that contains:
-        1. The company name (if stated in the posting)
-        2. The industry the company is operating in (if it is possible to infer from the posting)
-        3. The title of the position
-        4. Whether there are business and/or hands-on skills required for the position rated from 0 to 10 
-        
-        Wrap the answer in an <output> tag.
-        
-        Example output 1:
-        -----
-        <output>
-        {{
-            "company_name" : "Google",
-            "industry" : "Software engineering, IT", 
-            "job_title" : "Software Engineering III",
-            "business_skills" :  2,
-            "hands_on_skills" : 10
-        }}
-        </output>
-        
-        Example output 2:
-        -----
-        <output>
-        {{
-            "company_name" : "Meta",
-            "industry" : "Software engineering, IT", 
-            "job_title" : "Executive Assistant",
-            "business_skills" :  10, 
-            "hands_on_skills" : 1 
-        }}
-        </output>
-        ''',
-            'prompt_provides' : 'industry_and_position_analysis'     
-        }    
+        'prompt_txt' : 'Analyze this job posting for company, industry, title and skill balance: {job_posting_text}',
+        'prompt_provides' : 'industry_and_position_analysis',
+        'schema': IndustryPositionAnalysis
+    }
 ]
 
 from .models import ModelFactory
@@ -297,33 +264,28 @@ def _make_default_model_job_post_analysis():
 
 class JobPostAnalysis:
     def __init__(self, post_txt_file, analysis_prompts = analyses_prompts, llm_model = None):
-        """ A class to manage analysis of the job posting. 
-        
-        Args:
-            post_txt_file: (str) the text file containing the job posting info
-            analysis_prompts: The prompts used for analyzing the job posting (they have default values)
-            llm_model : (None) a model to be used with the `src.utils.ModelFactory`. To get a list of set-up models 
-                check the corresponding class.
-        """
+        """ A class to manage analysis of the job posting. """
         self.post_txt_file = post_txt_file
         with open(self.post_txt_file ,'r') as f:
             self.post_txt = f.read()
         
-        if llm_model is None:
-            self.model = _make_default_model_job_post_analysis()
-        else:
-            self.model = llm_model
+        self.model = llm_model or _make_default_model_job_post_analysis()
         
         self.chains = []
-        for an_t in analyses_prompts:
-            prompt_str, prompt_provides = an_t['prompt_txt'], an_t['prompt_provides']
-            prompt = ChatPromptTemplate.from_template(prompt_str)
-            c = prompt | self.model
-            self.chains.append({'chain' : c, 'provides' : prompt_provides})
+        for an_t in analysis_prompts:
+            prompt = ChatPromptTemplate.from_template(an_t['prompt_txt'])
+            # Use structured output
+            c = prompt | self.model.with_structured_output(an_t['schema'])
+            self.chains.append({'chain' : c, 'provides' : an_t['prompt_provides']})
         self.data = {} 
     
-    def analyze(self):
+    async def analyze(self):
+        tasks = []
         for c in self.chains:
-            res = c['chain'].invoke({'job_posting_text' : self.post_txt})
-            print(res)
-            self.data[c['provides']] =_trim_encap_tag_load_json(res)
+            tasks.append(c['chain'].ainvoke({'job_posting_text' : self.post_txt}))
+
+        results = await asyncio.gather(*tasks)
+        for c, res in zip(self.chains, results):
+            # res is already a Pydantic object
+            self.data[c['provides']] = res.model_dump()
+
