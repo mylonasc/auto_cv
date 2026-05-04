@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
+import apiService from '../../services/api';
 import './ConfigurationPanel.css';
 
 interface ConfigurationPanelProps {
@@ -10,12 +11,50 @@ interface ConfigurationPanelProps {
 const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
   const [config, setConfig] = useState(state.backendConfig);
+  const [availableModels, setAvailableModels] = useState<{ ollama: string[]; google: string[] }>({
+    ollama: [],
+    google: [],
+  });
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+  useEffect(() => {
+    setConfig(state.backendConfig);
+  }, [state.backendConfig, isOpen]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      if (!isOpen) {
+        return;
+      }
+      try {
+        setIsLoadingModels(true);
+        const models = await apiService.getAvailableModels();
+        setAvailableModels({
+          ollama: models.ollama || [],
+          google: models.google || [],
+        });
+      } catch (error) {
+        console.error('Failed to fetch available models:', error);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    dispatch({ type: 'SET_BACKEND_CONFIG', payload: config });
-    onClose();
+  const handleSave = async () => {
+    try {
+      const updatedConfig = await apiService.updateConfig(config);
+      dispatch({ type: 'SET_BACKEND_CONFIG', payload: updatedConfig });
+    } catch (error) {
+      console.error('Failed to persist backend config, using local state:', error);
+      dispatch({ type: 'SET_BACKEND_CONFIG', payload: config });
+    } finally {
+      onClose();
+    }
   };
 
   const updateModelConfig = (modelKey: 'analysisModel' | 'statementEditorModel' | 'coverLetterEditorModel', 
@@ -49,6 +88,52 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
     }));
   };
 
+  const renderModelField = (modelKey: 'analysisModel' | 'statementEditorModel' | 'coverLetterEditorModel') => {
+    const provider = config[modelKey].provider;
+    const options = availableModels[provider] || [];
+    const selectedModel = config[modelKey].model;
+    const dropdownOptions = selectedModel && !options.includes(selectedModel)
+      ? [selectedModel, ...options]
+      : options;
+
+    return (
+      <>
+        <label>
+          Available Models:
+          <select
+            value={selectedModel}
+            onChange={e => updateModelConfig(modelKey, 'model', e.target.value)}
+            disabled={isLoadingModels || dropdownOptions.length === 0}
+          >
+            {dropdownOptions.length === 0 ? (
+              <option value="">No models available</option>
+            ) : (
+              dropdownOptions.map(model => (
+                <option key={`${modelKey}-${provider}-${model}`} value={model}>
+                  {model}
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+        <label>
+          Custom Model:
+          <input
+            type="text"
+            value={config[modelKey].model}
+            onChange={e => updateModelConfig(modelKey, 'model', e.target.value)}
+            placeholder={provider === 'ollama' ? 'e.g., gemma4:31b' : 'e.g., models/gemini-1.5-pro'}
+          />
+        </label>
+        <p className="model-hint">
+          {isLoadingModels
+            ? 'Loading model list...'
+            : `Provider reports ${dropdownOptions.length} available model(s).`}
+        </p>
+      </>
+    );
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -73,15 +158,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
                   <option value="google">Google</option>
                 </select>
               </label>
-              <label>
-                Model:
-                <input 
-                  type="text"
-                  value={config.analysisModel.model}
-                  onChange={e => updateModelConfig('analysisModel', 'model', e.target.value)}
-                  placeholder="e.g., llama3.1:latest"
-                />
-              </label>
+              {renderModelField('analysisModel')}
             </div>
 
             <div className="model-config">
@@ -96,14 +173,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
                   <option value="google">Google</option>
                 </select>
               </label>
-              <label>
-                Model:
-                <input 
-                  type="text"
-                  value={config.statementEditorModel.model}
-                  onChange={e => updateModelConfig('statementEditorModel', 'model', e.target.value)}
-                />
-              </label>
+              {renderModelField('statementEditorModel')}
             </div>
 
             <div className="model-config">
@@ -118,14 +188,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
                   <option value="google">Google</option>
                 </select>
               </label>
-              <label>
-                Model:
-                <input 
-                  type="text"
-                  value={config.coverLetterEditorModel.model}
-                  onChange={e => updateModelConfig('coverLetterEditorModel', 'model', e.target.value)}
-                />
-              </label>
+              {renderModelField('coverLetterEditorModel')}
             </div>
           </div>
 

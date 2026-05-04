@@ -10,6 +10,42 @@
   margin-bottom: 24px;
 }
 
+.rewrite-controls-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.rewrite-controls-card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.rewrite-controls-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.rewrite-controls-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.rewrite-controls-grid input {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  padding: 8px 10px;
+}
+
 .status-card {
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);

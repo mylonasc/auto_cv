@@ -150,6 +150,42 @@
   margin-bottom: 4px;
 }
 
+.job-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.job-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.job-item:hover .job-item-actions,
+.job-item.active .job-item-actions {
+  opacity: 1;
+}
+
+.job-action-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  border-radius: 6px;
+  padding: 2px 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.job-action-btn:hover {
+  border-color: var(--primary-color);
+}
+
+.job-action-btn.delete:hover {
+  border-color: #ea4335;
+}
+
 .job-company {
   font-size: 12px;
   color: var(--text-secondary);

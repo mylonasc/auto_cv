@@ -5,7 +5,7 @@ import uuid
 import json
 import os
 from datetime import datetime
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Union
 from models.api_models import (
     CVJobResponse, JobStatus, CVJobResult, 
     SectionResult, ExperienceItem, ArtifactResponse
@@ -51,12 +51,14 @@ class JobManager:
         with open(self._job_path(job.id), 'w') as f:
             json.dump(job.model_dump(mode='json'), f, default=str)
     
-    def create_job(self, candidate: str = "charilaos_mylonas") -> CVJobResponse:
+    def create_job(self, candidate: str = "charilaos_mylonas", job_description: Optional[str] = None) -> CVJobResponse:
         """Create a new job."""
         now = datetime.now()
         job = CVJobResponse(
             id=str(uuid.uuid4()),
             status=JobStatus.QUEUED,
+            archived=False,
+            job_description=job_description,
             progress="Job created",
             message="Job has been queued for processing",
             created_at=now,
@@ -76,7 +78,7 @@ class JobManager:
         status: JobStatus,
         progress: Optional[str] = None,
         message: Optional[str] = None,
-        result: Optional[CVJobResult] = None,
+        result: Optional[Union[CVJobResult, Dict[str, Any]]] = None,
         job_analysis: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None
     ) -> Optional[CVJobResponse]:
@@ -93,7 +95,17 @@ class JobManager:
         if message is not None:
             job.message = message
         if result is not None:
-            job.result = result
+            if isinstance(result, CVJobResult):
+                job.result = result
+            elif isinstance(result, dict):
+                try:
+                    job.result = CVJobResult(**result)
+                except Exception:
+                    # Last-resort fallback to preserve backward compatibility
+                    # if older payloads are slightly malformed.
+                    job.result = result
+            else:
+                job.result = result
         if job_analysis is not None:
             job.job_analysis = job_analysis
         if error is not None:
@@ -118,6 +130,27 @@ class JobManager:
     def list_jobs(self) -> List[CVJobResponse]:
         """List all jobs."""
         return list(self._jobs.values())
+
+    def archive_job(self, job_id: str, archived: bool = True) -> Optional[CVJobResponse]:
+        """Archive or unarchive a job."""
+        job = self._jobs.get(job_id)
+        if not job:
+            return None
+        job.archived = archived
+        job.updated_at = datetime.now()
+        self._save_job(job)
+        return job
+
+    def delete_job(self, job_id: str) -> bool:
+        """Delete a job and remove it from persistence."""
+        job = self._jobs.get(job_id)
+        if not job:
+            return False
+        self._jobs.pop(job_id, None)
+        path = self._job_path(job_id)
+        if os.path.exists(path):
+            os.remove(path)
+        return True
     
     def add_artifact(self, job_id: str, artifact_type: str, name: str, path: str) -> Optional[ArtifactResponse]:
         """Add an artifact to a job."""

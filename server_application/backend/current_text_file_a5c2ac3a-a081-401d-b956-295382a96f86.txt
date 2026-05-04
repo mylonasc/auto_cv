@@ -1,0 +1,20 @@
+We are looking for a Senior Machine Learning Engineer to join our AI team. 
+    
+Responsibilities:
+- Design and implement machine learning models for production use
+- Work with cross-functional teams to identify ML opportunities
+- Optimize existing models for performance and scalability
+- Mentor junior engineers and review code
+
+Requirements:
+- MSc or PhD in Computer Science, Machine Learning, or related field
+- 5+ years of experience in machine learning engineering
+- Strong Python programming skills
+- Experience with TensorFlow, PyTorch, or similar frameworks
+- Knowledge of cloud platforms (GCP, AWS, or Azure)
+- Excellent communication skills in English
+
+Nice to have:
+- Experience with transformer models and LLMs
+- Background in GNNs or graph-based ML
+- Experience with MLOps practices

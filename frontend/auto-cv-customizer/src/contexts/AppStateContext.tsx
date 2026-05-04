@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, type Dispatch } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, type Dispatch } from 'react';
 
 // Define the state shape
 export interface AppState {
@@ -122,6 +122,20 @@ export interface CVJobResult {
   artifacts: any[];
 }
 
+const JOB_STORAGE_KEY = 'auto_cv_saved_jobs_v1';
+
+const isValidJobDescription = (value: any): value is JobDescription => {
+  return (
+    value &&
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.company === 'string' &&
+    typeof value.content === 'string' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string'
+  );
+};
+
 // Initial state
 const initialState: AppState = {
   jobDescriptions: [],
@@ -129,7 +143,7 @@ const initialState: AppState = {
   cvVersions: [],
   currentCVVersionId: 'master',
   backendConfig: {
-    analysisModel: { provider: 'ollama', model: 'llama3.1:latest', config: {} },
+    analysisModel: { provider: 'ollama', model: 'gemma4:31b', config: {} },
     statementEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
     coverLetterEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
     rewritePolicy: {
@@ -159,11 +173,53 @@ const initialState: AppState = {
   }
 };
 
+const getInitialState = (): AppState => {
+  if (typeof window === 'undefined') {
+    return initialState;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(JOB_STORAGE_KEY);
+    if (!raw) {
+      return initialState;
+    }
+
+    const parsed = JSON.parse(raw);
+    const savedJobs = Array.isArray(parsed?.jobDescriptions)
+      ? parsed.jobDescriptions.filter(isValidJobDescription)
+      : [];
+    const savedCurrentId =
+      typeof parsed?.currentJobDescriptionId === 'string'
+        ? parsed.currentJobDescriptionId
+        : null;
+
+    const currentExists = savedCurrentId
+      ? savedJobs.some((job: JobDescription) => job.id === savedCurrentId)
+      : false;
+
+    return {
+      ...initialState,
+      jobDescriptions: savedJobs,
+      currentJobDescriptionId: currentExists ? savedCurrentId : null,
+    };
+  } catch (error) {
+    console.error('Failed to load saved jobs from localStorage:', error);
+    return initialState;
+  }
+};
+
 // Reducer
 function appStateReducer(state: AppState, action: AppStateAction): AppState {
   switch (action.type) {
     case 'SET_JOB_DESCRIPTIONS':
-      return { ...state, jobDescriptions: action.payload };
+      return {
+        ...state,
+        jobDescriptions: action.payload,
+        currentJobDescriptionId:
+          state.currentJobDescriptionId && action.payload.some((job: JobDescription) => job.id === state.currentJobDescriptionId)
+            ? state.currentJobDescriptionId
+            : action.payload[0]?.id || null,
+      };
     case 'SET_CURRENT_JOB_DESCRIPTION':
       return { ...state, currentJobDescriptionId: action.payload };
     case 'SET_CV_VERSIONS':
@@ -204,7 +260,24 @@ const AppStateContext = createContext<{
 });
 
 export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(appStateReducer, initialState);
+  const [state, dispatch] = useReducer(appStateReducer, undefined, getInitialState);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const payload = {
+        jobDescriptions: state.jobDescriptions,
+        currentJobDescriptionId: state.currentJobDescriptionId,
+      };
+      window.localStorage.setItem(JOB_STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.error('Failed to save jobs to localStorage:', error);
+    }
+  }, [state.jobDescriptions, state.currentJobDescriptionId]);
+
   return (
     <AppStateContext.Provider value={{ state, dispatch }}>
       {children}

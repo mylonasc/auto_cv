@@ -151,6 +151,7 @@ class CVProcessor:
             # rewrite_reviewed_experience_section is still synchronous string manipulation
             await asyncio.to_thread(
                 cvca.rewrite_reviewed_experience_section,
+                min_section_items_keep=rewrite_policy.min_section_items_keep,
                 max_section_items_keep=rewrite_policy.max_section_items_keep,
                 min_relevance_score=rewrite_policy.min_relevance_score
             )

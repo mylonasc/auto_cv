@@ -8,6 +8,7 @@ const JobInputTab: React.FC = () => {
   const [jobText, setJobText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
   
   // Experience preview state
   const [cvData, setCvData] = useState<any>(null);
@@ -31,6 +32,18 @@ const JobInputTab: React.FC = () => {
     };
     fetchInitialData();
   }, [dispatch, state.currentCVVersionId]);
+
+  useEffect(() => {
+    const selectedJob = state.jobDescriptions.find((job) => job.id === state.currentJobDescriptionId);
+    if (!selectedJob) {
+      return;
+    }
+
+    setEditingJobId(selectedJob.id);
+    setJobTitle(selectedJob.title || '');
+    setCompanyName(selectedJob.company || '');
+    setJobText(selectedJob.content || '');
+  }, [state.currentJobDescriptionId, state.jobDescriptions]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJobText(e.target.value);
@@ -69,20 +82,61 @@ const JobInputTab: React.FC = () => {
       return;
     }
 
+    const now = new Date().toISOString();
+
+    if (editingJobId) {
+      const updatedJobs = state.jobDescriptions.map((job) =>
+        job.id === editingJobId
+          ? {
+              ...job,
+              title: jobTitle || 'Untitled Job',
+              company: companyName || 'Unknown Company',
+              content: jobText,
+              updatedAt: now,
+            }
+          : job
+      );
+      dispatch({ type: 'SET_JOB_DESCRIPTIONS', payload: updatedJobs });
+      dispatch({ type: 'SET_CURRENT_JOB_DESCRIPTION', payload: editingJobId });
+      return;
+    }
+
     const newJob = {
       id: Date.now().toString(),
       title: jobTitle || 'Untitled Job',
       company: companyName || 'Unknown Company',
       content: jobText,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: now,
+      updatedAt: now,
     };
 
     const updatedJobs = [...state.jobDescriptions, newJob];
     dispatch({ type: 'SET_JOB_DESCRIPTIONS', payload: updatedJobs });
     dispatch({ type: 'SET_CURRENT_JOB_DESCRIPTION', payload: newJob.id });
-    
-    // Reset form
+    setEditingJobId(newJob.id);
+  };
+
+  const resetJobForm = () => {
+    setEditingJobId(null);
+    setJobText('');
+    setJobTitle('');
+    setCompanyName('');
+    dispatch({ type: 'SET_CURRENT_JOB_DESCRIPTION', payload: null });
+  };
+
+  const handleDeleteJob = () => {
+    if (!editingJobId) {
+      return;
+    }
+
+    const confirmed = window.confirm('Delete this saved job posting?');
+    if (!confirmed) {
+      return;
+    }
+
+    const updatedJobs = state.jobDescriptions.filter((job) => job.id !== editingJobId);
+    dispatch({ type: 'SET_JOB_DESCRIPTIONS', payload: updatedJobs });
+    setEditingJobId(null);
     setJobText('');
     setJobTitle('');
     setCompanyName('');
@@ -154,6 +208,9 @@ Nice to have:
       <div className="input-grid">
         <div className="input-section">
           <h2>1. Job Description</h2>
+          {editingJobId && (
+            <div className="editing-banner">Editing saved job posting</div>
+          )}
           <div className="form-group">
             <label htmlFor="jobTitle">Job Title</label>
             <input id="jobTitle" type="text" value={jobTitle} onChange={handleTitleChange} placeholder="e.g., Senior ML Engineer" className="form-input" />
@@ -172,7 +229,9 @@ Nice to have:
           <div className="actions-row">
             <label htmlFor="fileUpload" className="btn btn-secondary">📁 Upload <input id="fileUpload" type="file" onChange={handleFileUpload} accept=".txt" style={{ display: 'none' }} /></label>
             <button className="btn btn-secondary" onClick={handleLoadExample}>Example</button>
-            <button className="btn btn-primary" onClick={handleSaveJob} disabled={!jobText.trim()}>Save Job</button>
+            <button className="btn btn-primary" onClick={handleSaveJob} disabled={!jobText.trim()}>{editingJobId ? 'Update Job' : 'Save Job'}</button>
+            <button className="btn btn-secondary" onClick={resetJobForm}>New</button>
+            {editingJobId && <button className="btn btn-danger" onClick={handleDeleteJob}>Delete</button>}
           </div>
         </div>
 

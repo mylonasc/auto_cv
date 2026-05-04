@@ -6,6 +6,22 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
   ({ sidebarCollapsed, onToggleSidebar }) => {
   const { state, dispatch } = useAppState();
 
+  const handleEditJob = (jobId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    dispatch({ type: 'SET_CURRENT_JOB_DESCRIPTION', payload: jobId });
+    dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'jobInput' } });
+  };
+
+  const handleDeleteJob = (jobId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const confirmed = window.confirm('Delete this saved job posting?');
+    if (!confirmed) {
+      return;
+    }
+    const updatedJobs = state.jobDescriptions.filter((job) => job.id !== jobId);
+    dispatch({ type: 'SET_JOB_DESCRIPTIONS', payload: updatedJobs });
+  };
+
   return (
     <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
@@ -65,7 +81,25 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
               className={`job-item ${state.currentJobDescriptionId === job.id ? 'active' : ''}`}
               onClick={() => dispatch({ type: 'SET_CURRENT_JOB_DESCRIPTION', payload: job.id })}
             >
-              <div className="job-title">{job.title || 'Untitled'}</div>
+              <div className="job-item-header">
+                <div className="job-title">{job.title || 'Untitled'}</div>
+                <div className="job-item-actions">
+                  <button
+                    className="job-action-btn"
+                    onClick={(event) => handleEditJob(job.id, event)}
+                    title="Edit job"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="job-action-btn delete"
+                    onClick={(event) => handleDeleteJob(job.id, event)}
+                    title="Delete job"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
               <div className="job-company">{job.company}</div>
               <div className="job-date">{new Date(job.createdAt).toLocaleDateString()}</div>
             </div>

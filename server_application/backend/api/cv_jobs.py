@@ -1,10 +1,13 @@
 """
 API routes for CV job management.
 """
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from typing import List, Optional
 from datetime import datetime
 import asyncio
+import os
+import sys
+import glob
 
 from models.api_models import (
     CreateJobRequest, CVJobResponse, JobStatus, 
@@ -15,8 +18,48 @@ from services.cv_processor import CVProcessor
 
 router = APIRouter(prefix="/v1/cv-jobs", tags=["CV Jobs"])
 
+CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', '/home/charilaos/Workspace/auto_cv')
+if CV_CUSTOMIZER_ROOT not in sys.path:
+    sys.path.append(CV_CUSTOMIZER_ROOT)
+
 # Store active background tasks
 active_tasks = {}
+
+
+def _resolve_artifact_file_path(job_id: str, artifact: dict) -> Optional[str]:
+    """Resolve the on-disk artifact path across environments."""
+    artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
+    kind = artifact.get("kind") or artifact.get("type") or "pdf"
+    ext = "tex" if kind == "latex" else kind
+
+    candidates = []
+    stored_path = artifact.get("path")
+    if stored_path:
+        candidates.append(stored_path)
+        candidates.append(os.path.join(artifacts_dir, os.path.basename(stored_path)))
+
+    filename = artifact.get("filename")
+    if filename:
+        candidates.append(os.path.join(artifacts_dir, filename))
+
+    name = artifact.get("name")
+    if name:
+        candidates.append(os.path.join(artifacts_dir, name))
+
+    candidates.append(os.path.join(artifacts_dir, f"cv_output_{job_id}.{ext}"))
+
+    wildcard_matches = glob.glob(os.path.join(artifacts_dir, f"cv_output_{job_id}.*"))
+    candidates.extend(wildcard_matches)
+
+    seen = set()
+    for candidate in candidates:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        if os.path.exists(candidate):
+            return candidate
+
+    return None
 
 
 async def status_callback(job_id: str, status: JobStatus, progress: Optional[str] = None, message: Optional[str] = None):
@@ -101,7 +144,7 @@ async def create_job(request: CreateJobRequest, background_tasks: BackgroundTask
     - **config**: Optional backend configuration
     """
     # Create job
-    job = job_manager.create_job(candidate=request.candidate)
+    job = job_manager.create_job(candidate=request.candidate, job_description=request.job_description)
     
     # Store request for background task
     active_tasks[job.id] = request
@@ -132,6 +175,33 @@ async def cancel_job(job_id: str):
     return job
 
 
+@router.post("/{job_id}/archive", response_model=CVJobResponse)
+async def archive_job(job_id: str):
+    """Archive a job to declutter history views."""
+    job = job_manager.archive_job(job_id, archived=True)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+
+@router.post("/{job_id}/unarchive", response_model=CVJobResponse)
+async def unarchive_job(job_id: str):
+    """Restore an archived job."""
+    job = job_manager.archive_job(job_id, archived=False)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+
+@router.delete("/{job_id}")
+async def delete_job(job_id: str):
+    """Permanently delete a job from history."""
+    success = job_manager.delete_job(job_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {"ok": True, "job_id": job_id}
+
+
 @router.get("/{job_id}/result", response_model=CVJobResult)
 async def get_job_result(job_id: str):
     """Get the result of a completed job."""
@@ -151,59 +221,58 @@ async def list_jobs():
 
 
 @router.get("/{job_id}/artifacts/{artifact_id}")
-async def get_artifact(job_id: str, artifact_id: str):
+async def get_artifact(job_id: str, artifact_id: str, inline: bool = Query(default=False)):
     """Download a specific artifact from a job."""
     print(f"Artifact requested: job_id={job_id}, artifact_id={artifact_id}")
     job = job_manager.get_job(job_id)
     if not job or not job.result:
         print(f"Job or result not found for {job_id}")
         raise HTTPException(status_code=404, detail="Job or result not found")
+
+    result_obj = job.result
+    if isinstance(result_obj, dict):
+        artifacts = result_obj.get("artifacts") or []
+    else:
+        artifacts = getattr(result_obj, "artifacts", None) or []
+
+    if not isinstance(artifacts, list):
+        artifacts = []
     
     # Try to find artifact by ID
-    artifact = next((a for a in job.result.artifacts if a.get("id") == artifact_id), None)
+    artifact = next((a for a in artifacts if isinstance(a, dict) and a.get("id") == artifact_id), None)
     
     if not artifact:
         # Fallback: maybe artifact_id is actually the kind (pdf/latex)
-        artifact = next((a for a in job.result.artifacts if a.get("kind") == artifact_id or a.get("type") == artifact_id), None)
+        artifact = next((a for a in artifacts if isinstance(a, dict) and (a.get("kind") == artifact_id or a.get("type") == artifact_id)), None)
 
     if not artifact:
-        print(f"Artifact {artifact_id} not found in job {job_id}. Available IDs: {[a.get('id') for a in job.result.artifacts]}")
+        print(f"Artifact {artifact_id} not found in job {job_id}. Available IDs: {[a.get('id') for a in artifacts if isinstance(a, dict)]}")
         raise HTTPException(status_code=404, detail="Artifact not found")
     
-    # Try the stored path first
-    file_path = artifact.get("path")
-    
-    # If stored path is invalid (e.g. from a different environment/container), 
-    # try to find it in the current artifacts directory by filename
-    if not file_path or not os.path.exists(file_path):
-        artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
-        
-        # Determine the expected filename
-        # Prefer the filename stored in the artifact metadata
-        filename = artifact.get("filename")
-        if not filename:
-            # Fallback: extract from path or construct from job ID and kind
-            if file_path:
-                filename = os.path.basename(file_path)
-            else:
-                kind = artifact.get("kind") or artifact.get("type") or "pdf"
-                ext = "tex" if kind == "latex" else kind
-                filename = f"cv_output_{job_id}.{ext}"
-            
-        alt_path = os.path.join(artifacts_dir, filename)
-        print(f"Stored path invalid. Searching at: {alt_path}")
-        
-        if os.path.exists(alt_path):
-            file_path = alt_path
-        else:
-            print(f"Artifact file not found at {file_path} or {alt_path}")
-            raise HTTPException(status_code=404, detail=f"Artifact file '{filename}' not found on disk")
-    
+    file_path = _resolve_artifact_file_path(job_id, artifact)
+    if not file_path:
+        expected_filename = artifact.get("filename") or artifact.get("name") or f"cv_output_{job_id}"
+        print(f"Artifact file not found for job {job_id}, artifact {artifact_id}")
+        raise HTTPException(status_code=404, detail=f"Artifact file '{expected_filename}' not found on disk")
+
     from fastapi.responses import FileResponse
+    response_filename = artifact.get("filename") or artifact.get("name") or os.path.basename(file_path)
+    lower = response_filename.lower()
+    media_type = 'application/octet-stream'
+    if lower.endswith('.pdf'):
+        media_type = 'application/pdf'
+    elif lower.endswith('.tex'):
+        media_type = 'application/x-tex'
+
+    headers = None
+    if inline:
+        headers = {"Content-Disposition": f'inline; filename="{response_filename}"'}
+
     return FileResponse(
         path=file_path,
-        media_type='application/octet-stream',
-        filename=artifact.get("filename") or artifact.get("name") or "artifact"
+        media_type=media_type,
+        filename=response_filename,
+        headers=headers
     )
 
 

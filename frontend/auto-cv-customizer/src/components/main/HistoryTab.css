@@ -10,6 +10,36 @@
   margin-bottom: 24px;
 }
 
+.history-controls {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px 180px auto;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-controls input,
+.history-controls select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.history-meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .history-list {
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);
@@ -43,6 +73,10 @@
   background-color: rgba(26, 115, 232, 0.02);
 }
 
+.history-row.archived {
+  opacity: 0.8;
+}
+
 .job-date {
   white-space: nowrap;
   color: var(--text-secondary);
@@ -61,9 +95,66 @@
 .status-processing { background-color: rgba(26, 115, 232, 0.1); color: #1a73e8; }
 .status-cancelled { background-color: rgba(128, 128, 128, 0.1); color: #808080; }
 
+.archived-pill {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  background: rgba(128, 128, 128, 0.15);
+  color: #666;
+}
+
+.job-company,
+.job-title {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-posting {
+  min-width: 280px;
+  max-width: 420px;
+}
+
+.job-posting-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+
+.job-posting-preview.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  overflow: visible;
+}
+
+.posting-toggle {
+  margin-top: 6px;
+  padding: 0;
+  font-size: 12px;
+}
+
 .job-artifacts {
   display: flex;
   gap: 12px;
+}
+
+.artifact-mini-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-link {
@@ -91,4 +182,26 @@
   align-items: center;
   height: 100%;
   padding: 40px;
+}
+
+@media (max-width: 1000px) {
+  .history-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .job-company,
+  .job-title {
+    max-width: 140px;
+  }
+
+  .job-posting {
+    min-width: 180px;
+    max-width: 240px;
+  }
 }

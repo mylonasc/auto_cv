@@ -94,6 +94,12 @@
   margin-top: 2px;
 }
 
+.artifact-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .no-artifacts {
   text-align: center;
   padding: 40px;

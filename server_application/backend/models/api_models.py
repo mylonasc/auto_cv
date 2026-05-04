@@ -17,7 +17,7 @@ class JobStatus(str, Enum):
 
 class ModelConfig(BaseModel):
     provider: str = "ollama"
-    model: str = "llama3"
+    model: str = "gemma4:31b"
     config: Optional[Dict[str, Any]] = None
 
 
@@ -87,6 +87,8 @@ class CVJobResult(BaseModel):
 class CVJobResponse(BaseModel):
     id: str
     status: JobStatus
+    archived: bool = False
+    job_description: Optional[str] = None
     progress: Optional[str] = None
     message: Optional[str] = None
     result: Optional[CVJobResult] = None

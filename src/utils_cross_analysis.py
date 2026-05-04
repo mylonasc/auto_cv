@@ -1,5 +1,7 @@
 import json
 import asyncio
+import hashlib
+import threading
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import numpy as np
@@ -64,6 +66,70 @@ section_synthesis_analysis_prompt = '''
 '''
 
 from .models import ModelFactory
+
+
+class AnalysisResultCache:
+    """Simple disk-backed cache for analysis calls."""
+
+    def __init__(self, cache_path: Optional[str] = None):
+        self._lock = threading.RLock()
+        self.cache_path = cache_path or self._default_cache_path()
+        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._load()
+
+    def _default_cache_path(self) -> str:
+        cv_root = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+        cache_dir = os.path.join(cv_root, 'server_application', 'backend', 'cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        return os.path.join(cache_dir, 'analysis_results_cache.json')
+
+    def _load(self):
+        with self._lock:
+            if not os.path.exists(self.cache_path):
+                self._cache = {}
+                return
+            try:
+                with open(self.cache_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        self._cache = data
+                    else:
+                        self._cache = {}
+            except Exception:
+                self._cache = {}
+
+    def _save(self):
+        with self._lock:
+            tmp_path = f"{self.cache_path}.tmp"
+            with open(tmp_path, 'w', encoding='utf-8') as f:
+                json.dump(self._cache, f)
+            os.replace(tmp_path, self.cache_path)
+
+    def get(self, key: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            value = self._cache.get(key)
+            return value.copy() if isinstance(value, dict) else None
+
+    def set(self, key: str, value: Dict[str, Any], persist: bool = True):
+        with self._lock:
+            self._cache[key] = value
+            if persist:
+                self._save()
+
+    def flush(self):
+        self._save()
+
+
+_analysis_cache = AnalysisResultCache()
+
+
+def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
+    key_obj = {
+        'scope': scope,
+        'payload': payload,
+    }
+    key_json = json.dumps(key_obj, sort_keys=True, ensure_ascii=True)
+    return hashlib.sha256(key_json.encode('utf-8')).hexdigest()
 
 def _load_defaults():
     from pathlib import Path
@@ -151,6 +217,7 @@ class CVCrossAnalyzer:
     async def analyze_job_experience_section(self, concurrency_limit=5, progress_callback=None):
         section = self.cv_model.experience_section
         _job_post_data = str(self.job_post_analyzer.data)
+        _job_post_raw = getattr(self.job_post_analyzer, 'post_txt', _job_post_data)
         by_section_item_analysis = {}
         by_section_analysis = {}
         
@@ -169,8 +236,15 @@ class CVCrossAnalyzer:
         async def analyze_bullet(s_item, bullet):
             async with semaphore:
                 try:
-                    res = await self.chains['experience_section_analysis']['chain'].ainvoke({'cv_experience' : bullet.text, 'job_posting_data' : _job_post_data})
-                    jdata = res.model_dump()
+                    cache_key = _make_cache_key('experience_bullet_v1', {
+                        'job_posting_text': _job_post_raw,
+                        'cv_experience': bullet.text,
+                    })
+                    jdata = _analysis_cache.get(cache_key)
+                    if jdata is None:
+                        res = await self.chains['experience_section_analysis']['chain'].ainvoke({'cv_experience' : bullet.text, 'job_posting_data' : _job_post_data})
+                        jdata = res.model_dump()
+                        _analysis_cache.set(cache_key, jdata, persist=False)
                     bullet.set_comment(str(jdata).replace(' & ',' and '))
                     await update_progress(f"Analyzed bullet: {bullet.text[:30]}...")
                     return s_item, bullet, jdata
@@ -192,11 +266,22 @@ class CVCrossAnalyzer:
                     analysis = by_section_item_analysis.get(s_item, {}).get(bullet, {})
                     bullet_analyses += f"Bullet {i+1}: {bullet.text}\n Score: {analysis.get('experience_relevance_score', 'N/A')}\n\n"
                 try:
-                    res = await self.chains['section_synthesis_analysis']['chain'].ainvoke({
-                        'cv_experience' : s_item.get_markdown(), 'job_posting_data' : _job_post_data,
-                        'company': s_item.company, 'position': s_item.position, 'item_analyses': bullet_analyses
+                    cv_experience = s_item.get_markdown()
+                    cache_key = _make_cache_key('experience_section_synthesis_v1', {
+                        'job_posting_text': _job_post_raw,
+                        'company': s_item.company,
+                        'position': s_item.position,
+                        'cv_experience': cv_experience,
+                        'item_analyses': bullet_analyses,
                     })
-                    jdata = res.model_dump()
+                    jdata = _analysis_cache.get(cache_key)
+                    if jdata is None:
+                        res = await self.chains['section_synthesis_analysis']['chain'].ainvoke({
+                            'cv_experience' : cv_experience, 'job_posting_data' : _job_post_data,
+                            'company': s_item.company, 'position': s_item.position, 'item_analyses': bullet_analyses
+                        })
+                        jdata = res.model_dump()
+                        _analysis_cache.set(cache_key, jdata, persist=False)
                     s_item.set_comment(str(jdata))
                     await update_progress(f"Synthesized section: {s_item.company}")
                     return s_item, jdata
@@ -206,6 +291,8 @@ class CVCrossAnalyzer:
         section_tasks = [synthesize_section(s) for s in section.doc_section_items]
         for res in await asyncio.gather(*section_tasks):
             if res: by_section_analysis[res[0]] = res[1]
+
+        _analysis_cache.flush()
 
         self.data['experience_section_analysis'] = {'full_section_analysis' : by_section_analysis,'by_section_item_analysis' : by_section_item_analysis}
         return self.data['experience_section_analysis']

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
+import PdfPreviewModal from './PdfPreviewModal';
 import './ExportDialog.css';
 
 interface ExportDialogProps {
@@ -11,6 +12,8 @@ interface ExportDialogProps {
 const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
   const [isExporting, setIsExporting] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string>('PDF Preview');
 
   if (!isOpen) return null;
 
@@ -30,6 +33,17 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
     } finally {
       setIsExporting(null);
     }
+  };
+
+  const handlePreview = (artifactId: string, filename: string) => {
+    const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
+    if (!jobId) {
+      alert('No job ID available. Please process a job first.');
+      return;
+    }
+
+    setPreviewUrl(apiService.getArtifactPreviewUrl(jobId, artifactId));
+    setPreviewTitle(filename || 'PDF Preview');
   };
 
   const artifacts = state.processingState?.result?.artifacts || [];
@@ -76,13 +90,23 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
                         <div className="artifact-filename">{artifact.filename}</div>
                         <div className="artifact-meta">{artifact.kind.toUpperCase()} File</div>
                       </div>
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleDownload(artifact.id, artifact.filename)}
-                        disabled={isExporting === artifact.id}
-                      >
-                        {isExporting === artifact.id ? 'Downloading...' : 'Download'}
-                      </button>
+                      <div className="artifact-actions">
+                        {artifact.kind === 'pdf' && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handlePreview(artifact.id, artifact.filename)}
+                          >
+                            Preview
+                          </button>
+                        )}
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleDownload(artifact.id, artifact.filename)}
+                          disabled={isExporting === artifact.id}
+                        >
+                          {isExporting === artifact.id ? 'Downloading...' : 'Download'}
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -101,6 +125,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
       </div>
+      <PdfPreviewModal
+        isOpen={!!previewUrl}
+        url={previewUrl}
+        title={previewTitle}
+        onClose={() => setPreviewUrl(null)}
+      />
     </div>
   );
 };

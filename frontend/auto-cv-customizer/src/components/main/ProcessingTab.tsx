@@ -8,6 +8,30 @@ const ProcessingTab: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
+  const updateRewritePolicy = (field: 'minRelevanceScore' | 'minSectionItemsKeep' | 'maxSectionItemsKeep', value: number) => {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    const current = state.backendConfig.rewritePolicy;
+    const next = {
+      ...current,
+      [field]: safeValue,
+    };
+
+    if (field === 'minSectionItemsKeep' && safeValue > next.maxSectionItemsKeep) {
+      next.maxSectionItemsKeep = safeValue;
+    }
+    if (field === 'maxSectionItemsKeep' && safeValue < next.minSectionItemsKeep) {
+      next.minSectionItemsKeep = safeValue;
+    }
+
+    dispatch({
+      type: 'SET_BACKEND_CONFIG',
+      payload: {
+        ...state.backendConfig,
+        rewritePolicy: next,
+      },
+    });
+  };
+
   const startProcessing = async () => {
     const currentJob = state.jobDescriptions.find(j => j.id === state.currentJobDescriptionId);
     if (!currentJob) {
@@ -20,7 +44,8 @@ const ProcessingTab: React.FC = () => {
       const jobResponse = await apiService.createJob(
         currentJob.content, 
         'charilaos_mylonas',
-        state.currentCVVersionId || 'master'
+        state.currentCVVersionId || 'master',
+        state.backendConfig
       );
 
       dispatch({ 
@@ -164,6 +189,43 @@ const ProcessingTab: React.FC = () => {
               Cancel Job
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="rewrite-controls-card">
+        <h3>Rewrite Cut-offs</h3>
+        <p className="hint">These values apply to the next processing run.</p>
+        <div className="rewrite-controls-grid">
+          <label>
+            Minimum relevance score
+            <input
+              type="number"
+              min={0}
+              max={10}
+              value={state.backendConfig.rewritePolicy.minRelevanceScore}
+              onChange={(e) => updateRewritePolicy('minRelevanceScore', parseInt(e.target.value, 10))}
+            />
+          </label>
+          <label>
+            Minimum bullets per section
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={state.backendConfig.rewritePolicy.minSectionItemsKeep}
+              onChange={(e) => updateRewritePolicy('minSectionItemsKeep', parseInt(e.target.value, 10))}
+            />
+          </label>
+          <label>
+            Maximum bullets per section
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={state.backendConfig.rewritePolicy.maxSectionItemsKeep}
+              onChange={(e) => updateRewritePolicy('maxSectionItemsKeep', parseInt(e.target.value, 10))}
+            />
+          </label>
         </div>
       </div>
 

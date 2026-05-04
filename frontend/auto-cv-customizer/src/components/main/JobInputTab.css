@@ -33,6 +33,18 @@
   display: flex;
   gap: 12px;
   margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.editing-banner {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(26, 115, 232, 0.08);
+  border: 1px solid rgba(26, 115, 232, 0.2);
 }
 
 .cv-items-preview {
