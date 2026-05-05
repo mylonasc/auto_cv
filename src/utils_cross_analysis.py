@@ -77,7 +77,8 @@ class AnalysisResultCache:
 
     def _default_cache_path(self) -> str:
         cv_root = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-        cache_dir = os.path.join(cv_root, 'server_application', 'backend', 'cache')
+        data_root = os.getenv('AUTO_CV_DATA_ROOT', os.path.join(cv_root, 'data'))
+        cache_dir = os.path.join(data_root, 'cache')
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, 'analysis_results_cache.json')
 

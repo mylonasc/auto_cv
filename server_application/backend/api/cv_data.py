@@ -3,15 +3,16 @@ API routes for CV data management with version support.
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional, Dict, Any
 import os
 import json
 import shutil
-from core.paths import CV_CUSTOMIZER_ROOT
+from core.paths import CV_DATA_DIR, ensure_data_dirs
 
 router = APIRouter(prefix="/v1/cv-data", tags=["CV Data"])
 
-CV_DATA_BASE_DIR = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data')
+ensure_data_dirs()
+CV_DATA_BASE_DIR = CV_DATA_DIR
 
 def ensure_candidate_dir(candidate: str):
     candidate_dir = os.path.join(CV_DATA_BASE_DIR, candidate)
@@ -39,9 +40,52 @@ class ExperienceSection(BaseModel):
     text_items: List[str]
 
 class CVData(BaseModel):
-    personal_statement: str
+    candidate: Optional[Dict[str, Any]] = None
+    cv_template: Optional[Dict[str, Any]] = None
+    motivation_letter_template: Optional[Dict[str, Any]] = None
+    personal_statement: str = ""
     alternative_statements: List[str] = Field(default_factory=list)
-    experience_sections: List[ExperienceSection]
+    experience_sections: List[ExperienceSection] = Field(default_factory=list)
+
+
+def _normalize_cv_payload(data: Dict[str, Any], candidate: str) -> Dict[str, Any]:
+    payload = dict(data)
+    candidate_obj = payload.get("candidate") or {}
+    if not isinstance(candidate_obj, dict):
+        candidate_obj = {}
+
+    candidate_obj.setdefault("candidate_id", candidate)
+    candidate_obj.setdefault("full_name", payload.get("full_name", ""))
+    candidate_obj.setdefault("profile", payload.get("profile", {}))
+    candidate_obj.setdefault("personal_statement", payload.get("personal_statement", ""))
+    candidate_obj.setdefault("alternative_statements", payload.get("alternative_statements", []))
+    candidate_obj.setdefault("experience_sections", payload.get("experience_sections", []))
+    payload["candidate"] = candidate_obj
+
+    cv_template = payload.get("cv_template") or {}
+    if not isinstance(cv_template, dict):
+        cv_template = {}
+    payload["cv_template"] = {
+        "template_id": "default_cv",
+        "template_path": "assets/latex_cv_template_v0.tex",
+        "experience_section_title": "Work Experience",
+        **cv_template,
+    }
+
+    motivation_template = payload.get("motivation_letter_template") or {}
+    if not isinstance(motivation_template, dict):
+        motivation_template = {}
+    payload["motivation_letter_template"] = {
+        "template_id": "default_motivation_letter",
+        "template_path": "assets/cover_letter/CoverLetter_Template.tex",
+        **motivation_template,
+    }
+
+    # Backward compatibility fields expected by current frontend
+    payload["personal_statement"] = candidate_obj.get("personal_statement", "")
+    payload["alternative_statements"] = candidate_obj.get("alternative_statements", [])
+    payload["experience_sections"] = candidate_obj.get("experience_sections", [])
+    return payload
 
 class CVVersionInfo(BaseModel):
     id: str
@@ -72,7 +116,8 @@ async def get_cv_version(version_id: str, candidate: str = "charilaos_mylonas"):
         raise HTTPException(status_code=404, detail=f"CV version '{version_id}' not found")
     
     with open(path, 'r') as f:
-        return json.load(f)
+        data = json.load(f)
+    return _normalize_cv_payload(data, candidate)
 
 @router.post("/{candidate}/versions/{version_id}", response_model=CVData)
 async def create_cv_version(version_id: str, data: CVData, candidate: str = "charilaos_mylonas"):
@@ -81,9 +126,10 @@ async def create_cv_version(version_id: str, data: CVData, candidate: str = "cha
     if os.path.exists(path):
         raise HTTPException(status_code=400, detail=f"CV version '{version_id}' already exists")
         
+    payload = _normalize_cv_payload(data.model_dump(), candidate)
     with open(path, 'w') as f:
-        json.dump(data.model_dump(), f, indent=4)
-    return data
+        json.dump(payload, f, indent=4)
+    return payload
 
 @router.put("/{candidate}/versions/{version_id}", response_model=CVData)
 async def update_cv_version(version_id: str, data: CVData, candidate: str = "charilaos_mylonas"):
@@ -94,9 +140,10 @@ async def update_cv_version(version_id: str, data: CVData, candidate: str = "cha
     if os.path.exists(path):
         shutil.copy(path, path + ".bak")
         
+    payload = _normalize_cv_payload(data.model_dump(), candidate)
     with open(path, 'w') as f:
-        json.dump(data.model_dump(), f, indent=4)
-    return data
+        json.dump(payload, f, indent=4)
+    return payload
 
 @router.delete("/{candidate}/versions/{version_id}")
 async def delete_cv_version(version_id: str, candidate: str = "charilaos_mylonas"):

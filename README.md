@@ -157,7 +157,7 @@ Or by defining and setting a new model file.
 ## Running with OpenTelemetry Tracing
 
 It may be helpful to use OpenTelemetry to get statistics about the runtimes, the errors, and intermediate outputs from the chains run.
-There is an automatically instrumented `autocv-otel.py` file you can use for that.
+There is an automatically instrumented script at `tools/autocv-otel.py` you can use for that.
 
 Install the OpenTelemetry dependencies:
 ```bash
@@ -166,22 +166,30 @@ pip install -r requirements-otel.txt
 
 Then run with:
 ```bash
-python autocv-otel.py
+python tools/autocv-otel.py
+```
+
+## Running the CLI Pipeline Script
+
+To run the script-based CV generation flow directly:
+
+```bash
+python tools/autocv.py
 ```
 
 ## API Endpoints
 
-### Current Backend API (main.py)
-- `POST /generate-pdf` - Generate a CV PDF from job description text
-
-### Frontend Expected API (To Be Implemented)
-The frontend expects a job-based async API:
+### Backend API (main.py)
+The backend exposes a job-based async API:
 - `POST /v1/cv-jobs/` - Create a new CV processing job
 - `GET /v1/cv-jobs/{jobId}` - Check job status
 - `GET /v1/cv-jobs/{jobId}/result` - Get processing results
 - `POST /v1/cv-jobs/{jobId}/cancel` - Cancel a job
 
-**Note:** The backend needs to be extended to implement these endpoints for full frontend integration.
+Additional endpoints:
+- `GET/PUT /v1/config/` - backend config
+- `GET /v1/models/available` - model availability
+- `GET/PUT /v1/cv-data/{candidate}` and versioned variants under `/v1/cv-data/{candidate}/versions`
 
 ## System Dependencies
 
@@ -204,6 +212,9 @@ auto_cv/
 ├── server_application/backend/  # FastAPI backend
 ├── frontend/auto-cv-customizer/ # React frontend
 ├── src/                         # Core CV processing logic
+├── data/                        # Runtime data (cv_section_data, artifacts, cache, jobs)
+├── tools/                       # CLI/script workflows (autocv, otel)
+├── research/                    # Notebooks and exploratory analyses
 ├── config/                      # Configuration files
 ├── docker-compose.yml           # Docker Compose setup
 ├── Dockerfile.backend           # Backend Dockerfile

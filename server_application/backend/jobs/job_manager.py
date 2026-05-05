@@ -9,7 +9,9 @@ from typing import Optional, Dict, List, Any, Union
 from models.api_models import (
     CVJobResponse, JobStatus, CVJobResult, ArtifactResponse
 )
-from core.paths import CV_CUSTOMIZER_ROOT
+from core.paths import JOBS_DIR, ensure_data_dirs
+
+ensure_data_dirs()
 
 
 class JobManager:
@@ -17,8 +19,7 @@ class JobManager:
     
     def __init__(self, storage_dir: Optional[str] = None):
         if storage_dir is None:
-            # Workspace root jobs folder
-            self.storage_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'jobs')
+            self.storage_dir = JOBS_DIR
         else:
             self.storage_dir = storage_dir
             

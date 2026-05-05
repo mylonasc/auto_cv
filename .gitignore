@@ -81,10 +81,13 @@ autocv_output*
 
 job_postings_text/*
 
-jobs/*
-server_application/backend/artifacts/
-server_application/backend/jobs/*
+data/artifacts/
+data/jobs/
+data/cache/
+data/cv_section_data/
 server_application/backend/cache/*.tmp
+server_application/backend/artifacts/
+server_application/backend/jobs/
 
 # Frontend generated outputs
 frontend/auto-cv-customizer/dist/

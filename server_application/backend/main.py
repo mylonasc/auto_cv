@@ -6,10 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from core.paths import BACKEND_ROOT, ensure_project_root_on_path, ensure_backend_root_on_path
+from core.paths import ARTIFACTS_DIR, ensure_project_root_on_path, ensure_backend_root_on_path, ensure_data_dirs
 
 ensure_project_root_on_path()
 ensure_backend_root_on_path()
+ensure_data_dirs()
 
 from api import cv_jobs, config, models, cv_data
 
@@ -55,10 +56,7 @@ async def health_check():
     return {"status": "healthy"}
 
 # Mount static files for artifacts if needed
-artifacts_dir = Path(BACKEND_ROOT) / "artifacts"
-if not artifacts_dir.exists():
-    artifacts_dir.mkdir(parents=True, exist_ok=True)
-
+artifacts_dir = Path(ARTIFACTS_DIR)
 app.mount("/artifacts", StaticFiles(directory=str(artifacts_dir)), name="artifacts")
 
 if __name__ == "__main__":

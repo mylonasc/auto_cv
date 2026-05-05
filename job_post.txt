@@ -1,0 +1,25 @@
+enior Applied ML Engineer, Graph Neural Network, ML Frontiers
+corporate_fare
+Google
+place
+Zürich, Switzerland
+Minimum qualifications:
+Bachelor's degree or equivalent practical experience.
+5 years of experience with software development in one or more programming languages.
+2 years of experience with C++ and Python.
+Experience with machine learning (ML)/AI in a software development environment.
+
+Preferred qualifications:
+5 years of experience with data structures and algorithms.
+2 years of experience with applied machine learning/machine learning research.
+Experience with one or more neural network frameworks: PyTorch, TensorFlow or Jax.
+Experience with decision trees.
+About the job
+Google Cloud’s mission is to make every business successful through AI by combining cutting-edge technology, infrastructure, and talent. AI/ML software engineers in Cloud bridge the gap between pioneering models and a massive product vehicle reaching billions. Our talent density and AI-powered tools drive rapid development, rooted in a culture of empowerment and a bias to action. In this role, you aren’t just building technology; you’re shaping the frontier of enterprise and driving the evolution of advanced models.
+Google Cloud accelerates every organization’s ability to digitally transform its business and industry. We deliver enterprise-grade solutions that leverage Google’s cutting-edge technology, and tools that help developers build more sustainably. Customers in more than 200 countries and territories turn to Google Cloud as their trusted partner to enable growth and solve their most critical business problems.
+
+Responsibilities
+Develop feature development (design, coding, doc writing, and maintenance), research exploration (reading papers, benchmarking, and possibly going/submitting to ML conferences), collaborate with clients (from small consultation to large engagements) and partners (e.g., Google Research).
+Implement a distributed graph sampling algorithm (without Flume), benchmark a newly published graph convolution layer in JAX, or develop an interactive Colab component to analyze a trained model.
+Participate in brainstorming and help define future applied research, engineering, and product roadmap priorities.
+Focus on Graph Neural Networks within Graph Flow, collaborate with the remainder of the ML Frontiers teamwhile working on LLM agents and decision forests.

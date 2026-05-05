@@ -4,6 +4,7 @@ for job applications
 from src.models import ModelFactory
 from src.utils import JobPostAnalysis, FullCVDocument, CoverLetterModel, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer, CoverLetterDrafter
+from src.domain import CandidateData, CVTemplateData, MotivationLetterTemplateData
 
 from datetime import datetime
 import json
@@ -68,7 +69,17 @@ with open(ALT_STATEMENTS_PATH,'r') as f:
 with open(EXP_PATH,'r') as f:
     experience_fields = json.loads(f.read())
 
-doc_section_items = [DocSectionItem(**_d) for _d in experience_fields]
+candidate_data = CandidateData(
+    candidate_id="charilaos_mylonas",
+    full_name=name,
+    personal_statement=alt_statements[-1] if alt_statements else "",
+    alternative_statements=alt_statements,
+    experience_sections=experience_fields,
+)
+cv_template = CVTemplateData(template_path='assets/latex_cv_template_v0.tex')
+motivation_template = MotivationLetterTemplateData(template_path='assets/cover_letter/CoverLetter_Template.tex')
+
+doc_section_items = [DocSectionItem(**_d) for _d in candidate_data.model_dump()["experience_sections"]]
 doc_section = DocSection('Work Experience', doc_section_items)
 
 _log(f'- loaded {len(alt_statements) } personal statements.')
@@ -119,7 +130,7 @@ async def main():
 
     await jpa.analyze()
 
-    fcv = FullCVDocument(alt_statements[-1], doc_section_copy)
+    fcv = FullCVDocument(candidate_data.personal_statement, doc_section_copy, cv_template=cv_template)
 
     cvca = CVCrossAnalyzer(
         jpa, 
@@ -132,7 +143,7 @@ async def main():
     await cvca.analyze_rewrite_personal_statement(alt_statements)
 
     rewritten_doc_section_copy = doc_section.copy()
-    fcv = FullCVDocument(cvca.data['edited_statement'], rewritten_doc_section_copy)
+    fcv = FullCVDocument(cvca.data['edited_statement'], rewritten_doc_section_copy, cv_template=cv_template)
     cvca = CVCrossAnalyzer(
         jpa,
         fcv,
@@ -149,7 +160,7 @@ async def main():
     _log_agg_metrics(agg_metrics_prev, 'prev')
 
     ## 3. Write a cover letter (use the best LLM available to get better authoring capabilities)
-    clm = CoverLetterModel()
+    clm = CoverLetterModel(motivation_template=motivation_template)
     cld = CoverLetterDrafter(cvca, llm_cover_letter_editor)
 
     letter_body = await cld.get_cover_letter_text()

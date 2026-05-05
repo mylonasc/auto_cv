@@ -12,7 +12,9 @@ from models.api_models import (
 )
 from jobs.job_manager import job_manager
 from services.cv_processor import CVProcessor
-from core.paths import CV_CUSTOMIZER_ROOT
+from core.paths import ARTIFACTS_DIR, ensure_data_dirs
+
+ensure_data_dirs()
 
 router = APIRouter(prefix="/v1/cv-jobs", tags=["CV Jobs"])
 
@@ -22,7 +24,7 @@ active_tasks = {}
 
 def _resolve_artifact_file_path(job_id: str, artifact: dict) -> Optional[str]:
     """Resolve the on-disk artifact path across environments."""
-    artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
+    artifacts_dir = ARTIFACTS_DIR
     kind = artifact.get("kind") or artifact.get("type") or "pdf"
     ext = "tex" if kind == "latex" else kind
 

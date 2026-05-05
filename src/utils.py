@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 from pathlib import Path
+from .domain import CVTemplateData, MotivationLetterTemplateData
 
 # Define project root
 _here = Path(__file__).resolve().parent.parent
@@ -146,11 +147,12 @@ class FullCVDocument:
     """ A class that takes care of rendering and encapsulating different standardized
     sections of the CV.
     """
-    def __init__(self, statement : str, experience_section : DocSection):
+    def __init__(self, statement : str, experience_section : DocSection, cv_template: Optional[CVTemplateData] = None):
         self.statement, self.experience_section = statement, experience_section
+        self.cv_template = cv_template or CVTemplateData(template_path=TEMPLATE_NAME)
         
     def make_latex(self, newpage_after_experience = True):
-        with open(TEMPLATE_NAME, 'r') as f:
+        with open(self.cv_template.template_path, 'r') as f:
             ff = f.read()
 
         ff = ff.replace('<statement>', self.statement)
@@ -188,11 +190,12 @@ class FullCVDocument:
 
     def copy(self):
         # new_experience = [e.copy() for e in self.experience_section.doc_section_items]
-        return FullCVDocument(self.statement, self.experience_section.copy())
+        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template)
 
 class CoverLetterModel:
-    def __init__(self, cover_letter_template_path = TEMPLATE_COVER_LETTER):
-        self.cover_letter_template_path = cover_letter_template_path
+    def __init__(self, motivation_template: Optional[MotivationLetterTemplateData] = None, cover_letter_template_path = TEMPLATE_COVER_LETTER):
+        self.motivation_template = motivation_template or MotivationLetterTemplateData(template_path=cover_letter_template_path)
+        self.cover_letter_template_path = self.motivation_template.template_path
         with open(self.cover_letter_template_path,'r') as f:
             self.cover_letter_template_tex_contents = f.read()
                     

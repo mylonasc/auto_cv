@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppState, type CVData, type ExperienceSection } from '../../contexts/AppStateContext';
+import {
+  useAppState,
+  type CVData,
+  type ExperienceSection,
+  type CVTemplateMeta,
+  type MotivationLetterTemplateMeta,
+} from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import '../main/EditorTab.css';
 
@@ -217,6 +223,29 @@ const EditorTab: React.FC = () => {
     }
   };
 
+  const updateCVTemplate = (field: keyof CVTemplateMeta, value: string) => {
+    updateCvData(prev => ({
+      ...prev,
+      cv_template: {
+        template_id: prev.cv_template?.template_id || 'default_cv',
+        template_path: prev.cv_template?.template_path || 'assets/latex_cv_template_v0.tex',
+        experience_section_title: prev.cv_template?.experience_section_title || 'Work Experience',
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateMotivationTemplate = (field: keyof MotivationLetterTemplateMeta, value: string) => {
+    updateCvData(prev => ({
+      ...prev,
+      motivation_letter_template: {
+        template_id: prev.motivation_letter_template?.template_id || 'default_motivation_letter',
+        template_path: prev.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex',
+        [field]: value,
+      },
+    }));
+  };
+
   if (isLoading) {
     return <div className="editor-tab"><div className="loading">Loading CV data...</div></div>;
   }
@@ -299,6 +328,49 @@ const EditorTab: React.FC = () => {
           <div className="editor-content">
             <div className="sections-panel">
               {/* Personal Statements Section */}
+              <div className="editor-section-block">
+                <div className="panel-header">
+                  <h3>Template Selection</h3>
+                </div>
+                <div className="section-group">
+                  <div className="subtitle-row" style={{ marginBottom: '8px' }}>
+                    <input
+                      className="inline-input"
+                      value={cvData?.cv_template?.template_id || 'default_cv'}
+                      onChange={(e) => updateCVTemplate('template_id', e.target.value)}
+                      placeholder="CV template ID"
+                    />
+                    <input
+                      className="inline-input-right"
+                      value={cvData?.cv_template?.template_path || 'assets/latex_cv_template_v0.tex'}
+                      onChange={(e) => updateCVTemplate('template_path', e.target.value)}
+                      placeholder="CV template path"
+                    />
+                  </div>
+                  <input
+                    className="inline-input"
+                    value={cvData?.cv_template?.experience_section_title || 'Work Experience'}
+                    onChange={(e) => updateCVTemplate('experience_section_title', e.target.value)}
+                    placeholder="Experience section title"
+                  />
+
+                  <div className="subtitle-row" style={{ marginTop: '12px' }}>
+                    <input
+                      className="inline-input"
+                      value={cvData?.motivation_letter_template?.template_id || 'default_motivation_letter'}
+                      onChange={(e) => updateMotivationTemplate('template_id', e.target.value)}
+                      placeholder="Motivation template ID"
+                    />
+                    <input
+                      className="inline-input-right"
+                      value={cvData?.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex'}
+                      onChange={(e) => updateMotivationTemplate('template_path', e.target.value)}
+                      placeholder="Motivation template path"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="editor-section-block">
                 <div className="panel-header">
                   <h3>Personal Statements</h3>

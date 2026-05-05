@@ -44,9 +44,29 @@ export interface CVVersionInfo {
 }
 
 export interface CVData {
+  candidate?: CandidateMeta;
+  cv_template?: CVTemplateMeta;
+  motivation_letter_template?: MotivationLetterTemplateMeta;
   personal_statement: string;
   alternative_statements: string[];
   experience_sections: ExperienceSection[];
+}
+
+export interface CandidateMeta {
+  candidate_id?: string;
+  full_name?: string;
+  profile?: Record<string, unknown>;
+}
+
+export interface CVTemplateMeta {
+  template_id: string;
+  template_path: string;
+  experience_section_title?: string;
+}
+
+export interface MotivationLetterTemplateMeta {
+  template_id: string;
+  template_path: string;
 }
 
 export interface ExperienceSection {

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -13,9 +11,10 @@ services:
       - ./src:/app/src
       - ./config:/app/config
       - ./assets:/app/assets
-      - ./cv_section_data:/app/cv_section_data
+      - ./data:/app/data
     environment:
       - CV_CUSTOMIZER_ROOT=/app
+      - AUTO_CV_DATA_ROOT=/app/data
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       # Set OLLAMA_HOST to reach the host system's Ollama server.
       # On Linux, make sure Ollama is listening on 0.0.0.0 (not just 127.0.0.1).

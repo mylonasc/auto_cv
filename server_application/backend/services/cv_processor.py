@@ -7,13 +7,15 @@ import asyncio
 import shutil
 from typing import Optional, Dict, Any
 
-from core.paths import CV_CUSTOMIZER_ROOT, ensure_project_root_on_path
+from core.paths import CV_DATA_DIR, ARTIFACTS_DIR, ensure_data_dirs, ensure_project_root_on_path
 
 ensure_project_root_on_path()
+ensure_data_dirs()
 
 from src.utils import JobPostAnalysis, FullCVDocument, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer
 from src.models import ModelFactory
+from src.domain import candidate_bundle_from_legacy
 
 from models.api_models import (
     CVJobResult, BackendConfig, JobStatus
@@ -31,7 +33,7 @@ class CVProcessor:
     def _load_cv_data(self) -> Dict[str, Any]:
         """Load the candidate's CV data from the versioned storage."""
         candidate_dir = os.path.join(
-            CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data', 
+            CV_DATA_DIR,
             self.candidate
         )
         # Ensure dir exists (it will be created by the API, but let's be safe)
@@ -42,11 +44,12 @@ class CVProcessor:
         
         # Fallback to legacy path if master doesn't exist
         if not os.path.exists(path) and self.cv_version_id == "master":
-            legacy_path = os.path.join(
-                CV_CUSTOMIZER_ROOT, 'server_application/backend/cv_section_data', 
-                f'{self.candidate}_cv_data.json'
-            )
-            if os.path.exists(legacy_path):
+            legacy_paths = [
+                os.path.join(CV_DATA_DIR, f'{self.candidate}_cv_data.json'),
+                os.path.join(os.path.dirname(CV_DATA_DIR), f'{self.candidate}_cv_data.json'),
+            ]
+            legacy_path = next((p for p in legacy_paths if os.path.exists(p)), None)
+            if legacy_path:
                 # Migrate to new location
                 shutil.copy(legacy_path, path)
             else:
@@ -95,17 +98,23 @@ class CVProcessor:
                 await status_callback(job_id, JobStatus.PROCESSING, "Loading CV data...")
             
             cv_data = self._load_cv_data()
+            bundle = candidate_bundle_from_legacy(
+                cv_data,
+                candidate_id=self.candidate,
+                cv_template_path=cv_data.get("cv_template", {}).get("template_path", "assets/latex_cv_template_v0.tex"),
+                motivation_template_path=cv_data.get("motivation_letter_template", {}).get("template_path", "assets/cover_letter/CoverLetter_Template.tex"),
+            )
             
             # Create document sections
-            experience_fields = cv_data.get('experience_sections', [])
-            master_personal_statement = cv_data.get('personal_statement', '')
-            alternative_statements = cv_data.get('alternative_statements', [])
+            experience_fields = [i.model_dump() for i in bundle.candidate.experience_sections]
+            master_personal_statement = bundle.candidate.personal_statement
+            alternative_statements = bundle.candidate.alternative_statements
             
             doc_section_items = [DocSectionItem(**_d) for _d in experience_fields]
             doc_section = DocSection('Work Experience', doc_section_items)
             
             # Initial full CV document with master statement
-            fcv = FullCVDocument(master_personal_statement, doc_section)
+            fcv = FullCVDocument(master_personal_statement, doc_section, cv_template=bundle.cv_template)
             
             # Perform cross-analysis
             cvca = CVCrossAnalyzer(jpa, fcv)
@@ -163,7 +172,7 @@ class CVProcessor:
             
             # Generate output artifacts
             artifacts = []
-            artifacts_dir = os.path.join(CV_CUSTOMIZER_ROOT, 'server_application/backend/artifacts')
+            artifacts_dir = ARTIFACTS_DIR
             os.makedirs(artifacts_dir, exist_ok=True)
             
             # Generate PDF if configured
