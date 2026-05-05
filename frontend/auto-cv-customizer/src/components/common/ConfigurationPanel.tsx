@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAppState } from '../../contexts/AppStateContext';
+import { useAppState, type BackendConfig, type ModelConfig, type RewritePolicy, type OutputsConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import './ConfigurationPanel.css';
 
@@ -10,7 +10,7 @@ interface ConfigurationPanelProps {
 
 const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
-  const [config, setConfig] = useState(state.backendConfig);
+  const [config, setConfig] = useState<BackendConfig>(state.backendConfig);
   const [availableModels, setAvailableModels] = useState<{ ollama: string[]; google: string[] }>({
     ollama: [],
     google: [],
@@ -57,8 +57,11 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
     }
   };
 
-  const updateModelConfig = (modelKey: 'analysisModel' | 'statementEditorModel' | 'coverLetterEditorModel', 
-                           field: string, value: any) => {
+  const updateModelConfig = (
+    modelKey: 'analysisModel' | 'statementEditorModel' | 'coverLetterEditorModel',
+    field: keyof ModelConfig,
+    value: ModelConfig[keyof ModelConfig],
+  ) => {
     setConfig(prev => ({
       ...prev,
       [modelKey]: {
@@ -68,7 +71,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
     }));
   };
 
-  const updateRewritePolicy = (field: string, value: any) => {
+  const updateRewritePolicy = (field: keyof RewritePolicy, value: number) => {
     setConfig(prev => ({
       ...prev,
       rewritePolicy: {
@@ -78,7 +81,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
     }));
   };
 
-  const updateOutputs = (field: string, value: boolean) => {
+  const updateOutputs = (field: keyof OutputsConfig, value: boolean) => {
     setConfig(prev => ({
       ...prev,
       outputs: {

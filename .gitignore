@@ -84,3 +84,9 @@ job_postings_text/*
 jobs/*
 server_application/backend/artifacts/
 server_application/backend/jobs/*
+server_application/backend/cache/*.tmp
+
+# Frontend generated outputs
+frontend/auto-cv-customizer/dist/
+frontend/auto-cv-customizer/playwright-report/
+frontend/auto-cv-customizer/test-results/

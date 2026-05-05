@@ -4,7 +4,6 @@ for job applications
 from src.models import ModelFactory
 from src.utils import JobPostAnalysis, FullCVDocument, CoverLetterModel, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer, CoverLetterDrafter
-from src.utils_cross_analysis import CoverLetterDrafter
 
 from datetime import datetime
 import json
@@ -132,8 +131,8 @@ async def main():
     ## 1. Analyze and re-write the personal statement.
     await cvca.analyze_rewrite_personal_statement(alt_statements)
 
-    doc_section_copy = doc_section.copy()
-    fcv = FullCVDocument(cvca.data['edited_statement'], doc_section_copy)
+    rewritten_doc_section_copy = doc_section.copy()
+    fcv = FullCVDocument(cvca.data['edited_statement'], rewritten_doc_section_copy)
     cvca = CVCrossAnalyzer(
         jpa,
         fcv,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState } from '../../contexts/AppStateContext';
+import { useAppState, type Artifact } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import PdfPreviewModal from './PdfPreviewModal';
 import './ExportDialog.css';
@@ -81,7 +81,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
               
               <div className="artifacts-grid">
                 {artifacts.length > 0 ? (
-                  artifacts.map((artifact: any) => (
+                  artifacts.map((artifact: Artifact) => (
                     <div key={artifact.id} className="artifact-card">
                       <div className="artifact-icon">
                         {artifact.kind === 'pdf' ? '📄' : '🛠️'}

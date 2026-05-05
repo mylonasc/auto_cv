@@ -2,25 +2,21 @@
 CV Processing service that wraps the existing CV customization logic.
 """
 import os
-import sys
 import json
 import asyncio
 import shutil
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import Optional, Dict, Any
 
-# Add the project root to the path
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', '/home/charilaos/Workspace/auto_cv')
-if CV_CUSTOMIZER_ROOT not in sys.path:
-    sys.path.append(CV_CUSTOMIZER_ROOT)
+from core.paths import CV_CUSTOMIZER_ROOT, ensure_project_root_on_path
+
+ensure_project_root_on_path()
 
 from src.utils import JobPostAnalysis, FullCVDocument, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer
 from src.models import ModelFactory
 
 from models.api_models import (
-    CVJobResult, SectionResult, ExperienceItem, 
-    BackendConfig, JobStatus
+    CVJobResult, BackendConfig, JobStatus
 )
 
 

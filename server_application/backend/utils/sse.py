@@ -2,8 +2,7 @@
 Event generator for Server-Sent Events (SSE) to provide real-time job updates.
 """
 import json
-from typing import AsyncGenerator, Optional
-from datetime import datetime
+from typing import AsyncGenerator
 
 
 async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, None]:

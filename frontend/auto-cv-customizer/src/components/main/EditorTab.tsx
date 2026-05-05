@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useAppState } from '../../contexts/AppStateContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAppState, type CVData, type ExperienceSection } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import '../main/EditorTab.css';
 
 const EditorTab: React.FC = () => {
   const { state, dispatch } = useAppState();
-  const [cvData, setCvData] = useState<any>(null);
+  const [cvData, setCvData] = useState<CVData | null>(null);
   const [editingText, setEditingText] = useState('');
   const [selectedItem, setSelectedItem] = useState<{ type: 'experience' | 'alternative' | 'personal', sectionIdx?: number, itemIdx?: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,16 +16,16 @@ const EditorTab: React.FC = () => {
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonContent, setJsonContent] = useState('');
 
-  const fetchVersions = async () => {
+  const fetchVersions = useCallback(async () => {
     try {
       const versions = await apiService.listCVVersions();
       dispatch({ type: 'SET_CV_VERSIONS', payload: versions });
     } catch (error) {
       console.error('Failed to fetch CV versions:', error);
     }
-  };
+  }, [dispatch]);
 
-  const fetchCVData = async (versionId: string) => {
+  const fetchCVData = useCallback(async (versionId: string) => {
     try {
       setIsLoading(true);
       const data = await apiService.getCVVersion(versionId);
@@ -41,12 +41,12 @@ const EditorTab: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchVersions();
     fetchCVData(state.currentCVVersionId || 'master');
-  }, [state.currentCVVersionId]);
+  }, [fetchCVData, fetchVersions, state.currentCVVersionId]);
 
   const handleVersionChange = (versionId: string) => {
     if (isDirty && !window.confirm('You have unsaved changes. Discard them?')) {
@@ -106,8 +106,11 @@ const EditorTab: React.FC = () => {
     }
   };
 
-  const updateCvData = (updater: (prev: any) => any) => {
-    setCvData((prev: any) => {
+  const updateCvData = (updater: (prev: CVData) => CVData) => {
+    setCvData((prev) => {
+      if (!prev) {
+        return prev;
+      }
       const next = updater(prev);
       setJsonContent(JSON.stringify(next, null, 4));
       return next;
@@ -122,6 +125,7 @@ const EditorTab: React.FC = () => {
   };
 
   const handlePersonalStatementClick = () => {
+    if (!cvData) return;
     setSelectedItem({ type: 'personal' });
     setEditingText(cvData.personal_statement);
   };
@@ -305,7 +309,7 @@ const EditorTab: React.FC = () => {
                     className={`item-edit-card ${selectedItem?.type === 'personal' ? 'selected' : ''}`}
                     onClick={handlePersonalStatementClick}
                   >
-                    <div className="item-text-review">{cvData.personal_statement?.substring(0, 100)}...</div>
+                    <div className="item-text-review">{cvData?.personal_statement?.substring(0, 100) || ''}...</div>
                   </div>
 
                   <div className="group-label-row">
@@ -313,7 +317,7 @@ const EditorTab: React.FC = () => {
                     <button className="btn btn-xs btn-secondary" onClick={handleAddAlternative}>+ Add Alternative</button>
                   </div>
                   <div className="alternatives-list">
-                    {cvData.alternative_statements?.map((alt: string, idx: number) => (
+                    {cvData?.alternative_statements?.map((alt: string, idx: number) => (
                       <div 
                         key={idx}
                         className={`item-edit-card ${selectedItem?.type === 'alternative' && selectedItem.itemIdx === idx ? 'selected' : ''}`}
@@ -333,7 +337,7 @@ const EditorTab: React.FC = () => {
                   <h3>Experience Sections</h3>
                   <button className="btn btn-xs btn-secondary" onClick={handleAddSection}>+ Add Section</button>
                 </div>
-                {cvData?.experience_sections.map((section: any, sectionIdx: number) => (
+                {cvData?.experience_sections.map((section: ExperienceSection, sectionIdx: number) => (
                   <div key={sectionIdx} className="section-group">
                     <div className="section-title">
                       <div className="title-row">

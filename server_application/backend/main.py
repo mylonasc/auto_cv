@@ -2,22 +2,14 @@
 Main FastAPI application for CV Customizer.
 Uses modular routers for job management, configuration, and model listing.
 """
-import os
-import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from core.paths import BACKEND_ROOT, ensure_project_root_on_path, ensure_backend_root_on_path
 
-# Add project root to path for src imports
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-if CV_CUSTOMIZER_ROOT not in sys.path:
-    sys.path.append(CV_CUSTOMIZER_ROOT)
-
-# Add backend root to path for relative imports
-BACKEND_ROOT = os.path.dirname(os.path.abspath(__file__))
-if BACKEND_ROOT not in sys.path:
-    sys.path.append(BACKEND_ROOT)
+ensure_project_root_on_path()
+ensure_backend_root_on_path()
 
 from api import cv_jobs, config, models, cv_data
 

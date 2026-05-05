@@ -3,11 +3,10 @@ import os
 import subprocess
 import tempfile
 import asyncio
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama.llms import OllamaLLM
 
 
 from pathlib import Path
@@ -288,4 +287,3 @@ class JobPostAnalysis:
         for c, res in zip(self.chains, results):
             # res is already a Pydantic object
             self.data[c['provides']] = res.model_dump()
-

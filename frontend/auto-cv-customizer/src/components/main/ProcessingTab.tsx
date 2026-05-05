@@ -135,14 +135,15 @@ const ProcessingTab: React.FC = () => {
         eventSourceRef.current = null;
       }
       setIsProcessing(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cancelling job:', error);
-      if (error.response?.status === 400) {
+      if (typeof error === 'object' && error !== null && 'response' in error &&
+          typeof (error as { response?: { status?: number } }).response?.status === 'number' &&
+          (error as { response?: { status?: number } }).response?.status === 400) {
         try {
           const job = await apiService.getJob(state.processingState.jobId);
-          const processingState = apiService.transformJobToProcessingState(job);
-          dispatch({ type: 'SET_PROCESSING_STATE', payload: processingState });
-          if (processingState.status === 'succeeded') {
+          dispatch({ type: 'SET_PROCESSING_STATE', payload: job });
+          if (job.status === 'succeeded') {
             dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results' } });
           }
         } catch (e) {
@@ -282,11 +283,11 @@ const ProcessingTab: React.FC = () => {
                     <div className="skill-balance">
                       <div className="balance-row">
                         <span>Hands-on:</span>
-                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${state.processingState.jobAnalysis.industry_and_position_analysis.hands_on_skills * 10}%` }}></div></div>
+                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(state.processingState.jobAnalysis.industry_and_position_analysis.hands_on_skills || 0) * 10}%` }}></div></div>
                       </div>
                       <div className="balance-row">
                         <span>Business:</span>
-                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${state.processingState.jobAnalysis.industry_and_position_analysis.business_skills * 10}%` }}></div></div>
+                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(state.processingState.jobAnalysis.industry_and_position_analysis.business_skills || 0) * 10}%` }}></div></div>
                       </div>
                     </div>
                   </div>

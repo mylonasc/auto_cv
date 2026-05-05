@@ -4,8 +4,7 @@ A set of simplified interfaces to different LLM providers for use with the imple
 This code also implements tools to query available models etc where applicable
 """
 
-from abc import ABC
-from typing import Optional, List
+from typing import Optional
 import os
 
 MODEL_PROVIDERS = [

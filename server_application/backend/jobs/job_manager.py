@@ -7,13 +7,10 @@ import os
 from datetime import datetime
 from typing import Optional, Dict, List, Any, Union
 from models.api_models import (
-    CVJobResponse, JobStatus, CVJobResult, 
-    SectionResult, ExperienceItem, ArtifactResponse
+    CVJobResponse, JobStatus, CVJobResult, ArtifactResponse
 )
+from core.paths import CV_CUSTOMIZER_ROOT
 
-
-# Add project root to path
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class JobManager:
     """Manages job creation, tracking, and persistence."""

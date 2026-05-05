@@ -5,11 +5,61 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { 
-  ProcessingState, CVJobResult, 
-  BackendConfig 
+  ProcessingState, CVJobResult,
+  BackendConfig,
+  BackendJob,
+  CVData,
+  CVVersionInfo,
+  Artifact,
+  CVResultSection,
+  SummaryMetrics,
+  JobAnalysis,
 } from '../contexts/AppStateContext';
 
 const API_BASE_URL = '/api/v1';
+
+type BackendModelConfig = {
+  provider: 'ollama' | 'google';
+  model: string;
+  config?: Record<string, unknown>;
+};
+
+type BackendConfigPayload = {
+  analysisModel?: BackendModelConfig;
+  statementEditorModel?: BackendModelConfig;
+  coverLetterEditorModel?: BackendModelConfig;
+  analysis_model?: BackendModelConfig;
+  statement_editor_model?: BackendModelConfig;
+  cover_letter_editor_model?: BackendModelConfig;
+  rewritePolicy?: {
+    maxSectionItemsKeep?: number;
+    minSectionItemsKeep?: number;
+    minRelevanceScore?: number;
+  };
+  rewrite_policy?: {
+    max_section_items_keep?: number;
+    min_section_items_keep?: number;
+    min_relevance_score?: number;
+  };
+  analysis_policy?: {
+    max_section_parse_retries?: number;
+  };
+  analysisPolicy?: {
+    maxSectionParseRetries?: number;
+  };
+  outputs?: {
+    include_cover_letter?: boolean;
+    render_pdf?: boolean;
+    include_latex?: boolean;
+    include_scoring_comments?: boolean;
+    includeCoverLetter?: boolean;
+    renderPDF?: boolean;
+    includeLaTeX?: boolean;
+    includeScoringComments?: boolean;
+  };
+  concurrency_limit?: number;
+  [key: string]: unknown;
+};
 
 class ApiService {
   private client: AxiosInstance;
@@ -23,7 +73,7 @@ class ApiService {
     });
   }
 
-  private toBackendConfig(config: BackendConfig): any {
+  private toBackendConfig(config: BackendConfig): BackendConfigPayload {
     return {
       analysis_model: config.analysisModel,
       statement_editor_model: config.statementEditorModel,
@@ -46,18 +96,18 @@ class ApiService {
     };
   }
 
-  private fromBackendConfig(config: any): BackendConfig {
-    const analysisModel = config.analysis_model || config.analysisModel || { provider: 'ollama', model: 'gemma4:31b', config: {} };
-    const statementEditorModel = config.statement_editor_model || config.statementEditorModel || {
+  private fromBackendConfig(config: BackendConfigPayload): BackendConfig {
+    const analysisModel = (config.analysis_model || config.analysisModel || { provider: 'ollama', model: 'gemma4:31b', config: {} }) as BackendConfig['analysisModel'];
+    const statementEditorModel = (config.statement_editor_model || config.statementEditorModel || {
       provider: 'google',
       model: 'models/gemini-2.5-flash-preview-05-20',
       config: {},
-    };
-    const coverLetterEditorModel = config.cover_letter_editor_model || config.coverLetterEditorModel || {
+    }) as BackendConfig['statementEditorModel'];
+    const coverLetterEditorModel = (config.cover_letter_editor_model || config.coverLetterEditorModel || {
       provider: 'google',
       model: 'models/gemini-2.5-flash-preview-05-20',
       config: {},
-    };
+    }) as BackendConfig['coverLetterEditorModel'];
 
     return {
       analysisModel,
@@ -107,7 +157,7 @@ class ApiService {
     return this.transformJobToProcessingState(response.data);
   }
 
-  async listJobs(): Promise<any[]> {
+  async listJobs(): Promise<BackendJob[]> {
     const response = await this.client.get('/cv-jobs/');
     return response.data;
   }
@@ -117,12 +167,12 @@ class ApiService {
     return this.transformResult(response.data);
   }
 
-  async archiveJob(jobId: string): Promise<any> {
+  async archiveJob(jobId: string): Promise<BackendJob> {
     const response = await this.client.post(`/cv-jobs/${jobId}/archive`);
     return response.data;
   }
 
-  async unarchiveJob(jobId: string): Promise<any> {
+  async unarchiveJob(jobId: string): Promise<BackendJob> {
     const response = await this.client.post(`/cv-jobs/${jobId}/unarchive`);
     return response.data;
   }
@@ -168,93 +218,96 @@ class ApiService {
   }
 
   // Models
-  async getAvailableModels(provider?: string): Promise<any> {
+  async getAvailableModels(provider?: string): Promise<{ ollama?: string[]; google?: string[] }> {
     const params = provider ? { provider } : {};
     const response = await this.client.get('/models/available', { params });
     return response.data;
   }
 
   // Health check
-  async healthCheck(): Promise<any> {
+  async healthCheck(): Promise<{ status?: string }> {
     const response = await this.client.get('/health');
     return response.data;
   }
 
   // CV Data Management
-  async getCVData(candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async getCVData(candidate: string = 'charilaos_mylonas'): Promise<CVData> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.get(`/cv-data/${c}`);
     return response.data;
   }
 
-  async updateCVData(data: any, candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async updateCVData(data: CVData, candidate: string = 'charilaos_mylonas'): Promise<CVData> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.put(`/cv-data/${c}`, data);
     return response.data;
   }
 
-  async listCVVersions(candidate: string = 'charilaos_mylonas'): Promise<any[]> {
+  async listCVVersions(candidate: string = 'charilaos_mylonas'): Promise<CVVersionInfo[]> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.get(`/cv-data/${c}/versions`);
     return response.data;
   }
 
-  async getCVVersion(versionId: string, candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async getCVVersion(versionId: string, candidate: string = 'charilaos_mylonas'): Promise<CVData> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.get(`/cv-data/${c}/versions/${versionId}`);
     return response.data;
   }
 
-  async createCVVersion(versionId: string, data: any, candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async createCVVersion(versionId: string, data: CVData, candidate: string = 'charilaos_mylonas'): Promise<CVData> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.post(`/cv-data/${c}/versions/${versionId}`, data);
     return response.data;
   }
 
-  async updateCVVersion(versionId: string, data: any, candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async updateCVVersion(versionId: string, data: CVData, candidate: string = 'charilaos_mylonas'): Promise<CVData> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.put(`/cv-data/${c}/versions/${versionId}`, data);
     return response.data;
   }
 
-  async deleteCVVersion(versionId: string, candidate: string = 'charilaos_mylonas'): Promise<any> {
+  async deleteCVVersion(versionId: string, candidate: string = 'charilaos_mylonas'): Promise<{ status: string; message: string }> {
     const c = candidate || 'charilaos_mylonas';
     const response = await this.client.delete(`/cv-data/${c}/versions/${versionId}`);
     return response.data;
   }
 
   // Transform backend job format to frontend ProcessingState
-  public transformJobToProcessingState(job: any): ProcessingState {
+  public transformJobToProcessingState(job: BackendJob): ProcessingState {
     return {
       jobId: job.id ?? null,
       status: job.status,
       progress: job.progress ?? null,
       message: job.message ?? null,
       result: job.result ? this.transformResult(job.result) : null,
-      jobAnalysis: job.job_analysis ?? null,
+      jobAnalysis: (job.job_analysis as JobAnalysis | null) ?? null,
       error: job.error ?? null,
     };
   }
 
   // Transform backend result format to frontend CVJobResult
-  public transformResult(result: any): CVJobResult {
+  public transformResult(result: Record<string, unknown>): CVJobResult {
+    const sections = (result.sections as Array<Record<string, unknown>> | undefined) || [];
+    const summary_metrics = (result.summary_metrics as SummaryMetrics | undefined) || {
+      overall_score: result.overall_score as number | undefined,
+      sections_count: sections.length,
+    };
+
     return {
-      job_id: result.job_id || '',
-      status: result.status || 'succeeded',
-      summary_metrics: result.summary_metrics || {
-        overall_score: result.overall_score,
-        sections_count: result.sections?.length || 0,
-      },
-      experience_analysis: result.sections?.map((section: any) => ({
-        section_title: section.title,
-        company: section.company,
-        position: section.position,
-        duration: section.duration,
-        section_score: section.section_score,
-        explanation: section.explanation,
-        items: section.items || [],
-      })) || [],
-      artifacts: result.artifacts || [],
+      job_id: (result.job_id as string) || '',
+      status: (result.status as string) || 'succeeded',
+      summary_metrics,
+      experience_analysis: sections.map((section) => ({
+        section_title: (section.section_title as string) || (section.title as string) || '',
+        company: section.company as string | undefined,
+        position: section.position as string | undefined,
+        duration: section.duration as string | undefined,
+        section_score: section.section_score as number | undefined,
+        explanation: section.explanation as string | undefined,
+        items: (section.items as CVResultSection['items']) || [],
+      })),
+      artifacts: ((result.artifacts as Artifact[] | undefined) || []),
     };
   }
 }

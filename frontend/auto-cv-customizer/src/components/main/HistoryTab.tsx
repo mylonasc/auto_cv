@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppState } from '../../contexts/AppStateContext';
+import { useAppState, type BackendJob, type Artifact } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import './HistoryTab.css';
@@ -8,7 +8,7 @@ type JobSort = 'created_desc' | 'created_asc' | 'score_desc' | 'score_asc' | 'st
 
 const HistoryTab: React.FC = () => {
   const { dispatch } = useAppState();
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<BackendJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -19,21 +19,21 @@ const HistoryTab: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState<string>('PDF Preview');
 
-  const getJobTitle = (job: any): string =>
+  const getJobTitle = (job: BackendJob): string =>
     job?.job_analysis?.industry_and_position_analysis?.job_title || '';
 
-  const getCompanyName = (job: any): string =>
+  const getCompanyName = (job: BackendJob): string =>
     job?.job_analysis?.industry_and_position_analysis?.company_name || '';
 
-  const getCreatedTimestamp = (job: any): number =>
+  const getCreatedTimestamp = (job: BackendJob): number =>
     new Date(job.created_at || job.createdAt || 0).getTime();
 
-  const getOverallScore = (job: any): number => {
+  const getOverallScore = (job: BackendJob): number => {
     const score = job?.result?.overall_score;
     return typeof score === 'number' ? score : -1;
   };
 
-  const getJobDescription = (job: any): string =>
+  const getJobDescription = (job: BackendJob): string =>
     typeof job?.job_description === 'string' ? job.job_description : '';
 
   const fetchJobs = async () => {
@@ -52,7 +52,7 @@ const HistoryTab: React.FC = () => {
     fetchJobs();
   }, []);
 
-  const handleLoadJob = async (job: any) => {
+  const handleLoadJob = async (job: BackendJob) => {
     if (job.status !== 'succeeded') {
       alert(`This job cannot be loaded as its status is: ${job.status}`);
       return;
@@ -69,7 +69,7 @@ const HistoryTab: React.FC = () => {
     }
   };
 
-  const handleDownload = async (jobId: string, artifact: any) => {
+  const handleDownload = async (jobId: string, artifact: Artifact) => {
     try {
       await apiService.downloadArtifact(jobId, artifact.id, artifact.filename);
     } catch (error) {
@@ -83,7 +83,7 @@ const HistoryTab: React.FC = () => {
     setPreviewTitle(filename || 'PDF Preview');
   };
 
-  const handleArchiveToggle = async (job: any) => {
+  const handleArchiveToggle = async (job: BackendJob) => {
     try {
       setMutatingJobId(job.id);
       if (job.archived) {
@@ -100,7 +100,7 @@ const HistoryTab: React.FC = () => {
     }
   };
 
-  const handleDelete = async (job: any) => {
+  const handleDelete = async (job: BackendJob) => {
     const confirmed = window.confirm('Delete this analysis permanently? This action cannot be undone.');
     if (!confirmed) {
       return;
@@ -241,7 +241,7 @@ const HistoryTab: React.FC = () => {
                 <tr key={job.id} className={`history-row ${job.archived ? 'archived' : ''}`}>
                   <td className="job-date">
                     {job.created_at || job.createdAt
-                      ? new Date(job.created_at || job.createdAt).toLocaleString()
+                      ? new Date((job.created_at || job.createdAt) as string).toLocaleString()
                       : '-'}
                   </td>
                   <td className="job-company">{getCompanyName(job) || '-'}</td>
@@ -276,7 +276,7 @@ const HistoryTab: React.FC = () => {
                     {job.result?.overall_score ? job.result.overall_score.toFixed(1) : '-'}
                   </td>
                   <td className="job-artifacts">
-                    {job.result?.artifacts?.map((art: any) => (
+                    {job.result?.artifacts?.map((art: Artifact) => (
                       <div key={art.id} className="artifact-mini-actions">
                         {art.kind === 'pdf' && (
                           <button

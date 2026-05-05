@@ -3,13 +3,11 @@ import asyncio
 import hashlib
 import threading
 from bs4 import BeautifulSoup
-from tqdm import tqdm
 import numpy as np
 import os
 import pandas as pd
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from .utils import _trim_encap_tag_load_json, JobPostAnalysis, FullCVDocument
+from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 
 class BulletAnalysis(BaseModel):
@@ -101,9 +99,12 @@ class AnalysisResultCache:
     def _save(self):
         with self._lock:
             tmp_path = f"{self.cache_path}.tmp"
-            with open(tmp_path, 'w', encoding='utf-8') as f:
-                json.dump(self._cache, f)
-            os.replace(tmp_path, self.cache_path)
+            try:
+                with open(tmp_path, 'w', encoding='utf-8') as f:
+                    json.dump(self._cache, f)
+                os.replace(tmp_path, self.cache_path)
+            except PermissionError:
+                pass
 
     def get(self, key: str) -> Optional[Dict[str, Any]]:
         with self._lock:
@@ -166,8 +167,9 @@ class CoverLetterDrafter:
         res = await chain.ainvoke(_inputs)
         self._debug['inputs'] = _inputs
         self._debug['raw_llm_output'] = res
-        soup = BeautifulSoup(res,'html.parser')
-        return soup.coverletter.text if soup.coverletter else res
+        res_text = res.content if hasattr(res, 'content') else str(res)
+        soup = BeautifulSoup(res_text, 'html.parser')
+        return soup.coverletter.text if soup.coverletter else res_text
 
 class CVCrossAnalyzer:
     def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3):

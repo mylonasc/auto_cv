@@ -2,14 +2,7 @@
 API routes for model management.
 """
 from fastapi import APIRouter, HTTPException
-from typing import List, Optional
-import sys
-import os
-
-# Add project root to path
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', '/home/charilaos/Workspace/auto_cv')
-if CV_CUSTOMIZER_ROOT not in sys.path:
-    sys.path.append(CV_CUSTOMIZER_ROOT)
+from typing import Optional
 
 router = APIRouter(prefix="/v1/models", tags=["Models"])
 

@@ -39,7 +39,7 @@
                 "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
                 "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
                 "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
-                "Contributed to successful AI business development in energy trading by shaping technical pitch content and presenting deep-learning expertise in in-person client pitch sessions, translating doctoral research on wind energy into client-facing advisory material."
+                "Contributed to business development for AI in energy trading by shaping technical pitch content and taking part in client pitch sessions."
             ]
         },
         {
@@ -50,7 +50,6 @@
                 "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
                 "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
                 "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
-                "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
                 "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal."
             ]
         },

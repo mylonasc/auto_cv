@@ -72,7 +72,75 @@ export interface BackendConfig {
 export interface ModelConfig {
   provider: 'ollama' | 'google';
   model: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
+}
+
+export interface SummaryMetrics {
+  mean_section_relevance?: number;
+  weighted_mean_section_relevance?: number;
+  conciseness_relevance_metric?: number;
+  overall_score?: number;
+  sections_count?: number;
+  [key: string]: unknown;
+}
+
+export interface CVResultItem {
+  text: string;
+  relevance_score?: number;
+  explanation?: string;
+  posting_evidence?: string;
+  kept?: boolean;
+}
+
+export interface CVResultSection {
+  section_title: string;
+  company?: string;
+  position?: string;
+  duration?: string;
+  section_score?: number;
+  explanation?: string;
+  items: CVResultItem[];
+}
+
+export interface Artifact {
+  id: string;
+  kind: string;
+  filename: string;
+  path?: string;
+}
+
+export interface JobAnalysis {
+  basic_analysis?: {
+    skills?: string;
+    qualifications?: string;
+    preferred_qualifications?: string;
+  };
+  industry_and_position_analysis?: {
+    job_title?: string;
+    company_name?: string;
+    industry?: string;
+    hands_on_skills?: number;
+    business_skills?: number;
+  };
+  [key: string]: unknown;
+}
+
+export interface BackendJob {
+  id: string;
+  status: ProcessingState['status'];
+  archived?: boolean;
+  job_description?: string;
+  progress?: string;
+  message?: string;
+  result?: {
+    overall_score?: number;
+    artifacts?: Artifact[];
+    [key: string]: unknown;
+  };
+  job_analysis?: JobAnalysis;
+  error?: string;
+  created_at?: string;
+  createdAt?: string;
 }
 
 export interface RewritePolicy {
@@ -98,7 +166,7 @@ export interface ProcessingState {
   progress: string | null;
   message: string | null;
   result: CVJobResult | null;
-  jobAnalysis: any | null;
+  jobAnalysis: JobAnalysis | null;
   error: string | null;
   lastSuccessfulJobId?: string | null;
 }
@@ -117,22 +185,23 @@ export interface UIState {
 export interface CVJobResult {
   job_id: string;
   status: string;
-  summary_metrics: any;
-  experience_analysis: any[];
-  artifacts: any[];
+  summary_metrics: SummaryMetrics;
+  experience_analysis: CVResultSection[];
+  artifacts: Artifact[];
 }
 
 const JOB_STORAGE_KEY = 'auto_cv_saved_jobs_v1';
 
-const isValidJobDescription = (value: any): value is JobDescription => {
+const isValidJobDescription = (value: unknown): value is JobDescription => {
+  const v = value as Partial<JobDescription>;
   return (
-    value &&
-    typeof value.id === 'string' &&
-    typeof value.title === 'string' &&
-    typeof value.company === 'string' &&
-    typeof value.content === 'string' &&
-    typeof value.createdAt === 'string' &&
-    typeof value.updatedAt === 'string'
+    !!v &&
+    typeof v.id === 'string' &&
+    typeof v.title === 'string' &&
+    typeof v.company === 'string' &&
+    typeof v.content === 'string' &&
+    typeof v.createdAt === 'string' &&
+    typeof v.updatedAt === 'string'
   );
 };
 

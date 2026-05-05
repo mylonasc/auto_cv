@@ -3,24 +3,18 @@ API routes for CV job management.
 """
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from typing import List, Optional
-from datetime import datetime
 import asyncio
 import os
-import sys
 import glob
 
 from models.api_models import (
-    CreateJobRequest, CVJobResponse, JobStatus, 
-    CVJobResult, BackendConfig
+    CreateJobRequest, CVJobResponse, JobStatus, CVJobResult
 )
 from jobs.job_manager import job_manager
 from services.cv_processor import CVProcessor
+from core.paths import CV_CUSTOMIZER_ROOT
 
 router = APIRouter(prefix="/v1/cv-jobs", tags=["CV Jobs"])
-
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', '/home/charilaos/Workspace/auto_cv')
-if CV_CUSTOMIZER_ROOT not in sys.path:
-    sys.path.append(CV_CUSTOMIZER_ROOT)
 
 # Store active background tasks
 active_tasks = {}

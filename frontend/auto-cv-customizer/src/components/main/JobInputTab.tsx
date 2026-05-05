@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState } from '../../contexts/AppStateContext';
+import { useAppState, type CVData, type ExperienceSection } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import './JobInputTab.css';
 
@@ -11,7 +11,7 @@ const JobInputTab: React.FC = () => {
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   
   // Experience preview state
-  const [cvData, setCvData] = useState<any>(null);
+  const [cvData, setCvData] = useState<CVData | null>(null);
   const [editingItemId, setEditingItemId] = useState<{type: 'experience' | 'personal', sectionIdx?: number, itemIdx?: number} | null>(null);
   const [editingText, setEditingText] = useState('');
   const [isSavingCV, setIsSavingCV] = useState(false);
@@ -171,6 +171,7 @@ Nice to have:
 
   // Editing handlers
   const handleEditPersonal = () => {
+    if (!cvData) return;
     setEditingItemId({ type: 'personal' });
     setEditingText(cvData.personal_statement);
   };
@@ -267,7 +268,7 @@ Nice to have:
             </div>
 
             {/* Experience Sections Preview */}
-            {cvData?.experience_sections.map((section: any, sIdx: number) => (
+            {cvData?.experience_sections.map((section: ExperienceSection, sIdx: number) => (
               <div key={sIdx} className="preview-section">
                 <div className="preview-section-header">
                   <strong>{section.company}</strong> ({section.duration})

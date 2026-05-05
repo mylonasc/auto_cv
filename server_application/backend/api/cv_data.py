@@ -2,17 +2,12 @@
 API routes for CV data management with version support.
 """
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
+from typing import List
 import os
 import json
-import sys
 import shutil
-
-# Add project root to path
-CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', '/home/charilaos/Workspace/auto_cv')
-if CV_CUSTOMIZER_ROOT not in sys.path:
-    sys.path.append(CV_CUSTOMIZER_ROOT)
+from core.paths import CV_CUSTOMIZER_ROOT
 
 router = APIRouter(prefix="/v1/cv-data", tags=["CV Data"])
 
@@ -45,7 +40,7 @@ class ExperienceSection(BaseModel):
 
 class CVData(BaseModel):
     personal_statement: str
-    alternative_statements: List[str] = []
+    alternative_statements: List[str] = Field(default_factory=list)
     experience_sections: List[ExperienceSection]
 
 class CVVersionInfo(BaseModel):

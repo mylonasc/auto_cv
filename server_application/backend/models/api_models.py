@@ -72,7 +72,7 @@ class SectionResult(BaseModel):
     duration: Optional[str] = None
     section_score: Optional[float] = None
     explanation: Optional[str] = None
-    items: List[Dict[str, Any]] = []
+    items: List[Dict[str, Any]] = Field(default_factory=list)
     aggregate_score: Optional[float] = None
 
 
@@ -81,7 +81,7 @@ class CVJobResult(BaseModel):
     sections: List[SectionResult]
     overall_score: Optional[float] = None
     summary_metrics: Optional[Dict[str, Any]] = None
-    artifacts: List[Dict[str, Any]] = []
+    artifacts: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class CVJobResponse(BaseModel):
