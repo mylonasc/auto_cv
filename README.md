@@ -177,6 +177,65 @@ To run the script-based CV generation flow directly:
 python tools/autocv.py
 ```
 
+Full argument example:
+
+```bash
+python tools/autocv.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_postings_text/Google_GNNs_Apr30-2026.txt \
+  --candidate-id charilaos_mylonas \
+  --candidate-name "Charilaos Mylonas" \
+  --company-name Google \
+  --analysis-provider google \
+  --analysis-model gemini-3.1-pro-preview \
+  --authoring-provider google \
+  --authoring-model gemini-3.1-pro-preview \
+  --cover-letter-provider google \
+  --cover-letter-model gemini-3.1-pro-preview \
+  --max-section-items-keep 5 \
+  --min-relevance-score-keep 7 \
+  --min-section-items-keep 1
+```
+
+Fast local preset (Ollama):
+
+```bash
+python tools/autocv.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_postings_text/Google_GNNs_Apr30-2026.txt \
+  --analysis-provider ollama \
+  --analysis-model llama3.1:latest \
+  --authoring-provider ollama \
+  --authoring-model llama3.1:latest \
+  --cover-letter-provider ollama \
+  --cover-letter-model llama3.1:latest
+```
+
+High-quality cloud preset (Google):
+
+```bash
+python tools/autocv.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_postings_text/Google_GNNs_Apr30-2026.txt \
+  --analysis-provider google \
+  --analysis-model gemini-3.1-pro-preview \
+  --authoring-provider google \
+  --authoring-model gemini-3.1-pro-preview \
+  --cover-letter-provider google \
+  --cover-letter-model gemini-3.1-pro-preview
+```
+
+Select template 2 from registry:
+
+```bash
+python tools/autocv.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_postings_text/Meta_151125.txt \
+  --cv-template-id template2
+```
+
+Template registry is stored in `config/templates.json`.
+
 ## API Endpoints
 
 ### Backend API (main.py)

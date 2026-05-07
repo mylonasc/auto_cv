@@ -16,9 +16,12 @@
   background-color: var(--surface-color);
   width: 100%;
   max-width: 600px;
+  max-height: 85vh;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   animation: modalScale 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
@@ -50,6 +53,9 @@
 
 .modal-body {
   padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .artifacts-grid {
@@ -115,6 +121,19 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.submission-create-area {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.submission-create-area .hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
 }
 
 .btn-sm {

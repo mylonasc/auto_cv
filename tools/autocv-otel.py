@@ -35,6 +35,15 @@ LangchainInstrumentor().instrument()
 OllamaInstrumentor().instrument()
 
 def _log_agg_metrics(agg_metrics, txt_suff = None):
+    """ log agg metrics.
+
+    Args:
+        agg_metrics: TODO: describe.
+        txt_suff: TODO: describe.
+
+    Returns:
+        TODO: describe return value.
+    """
     if txt_suff is None:
         txt_suff = ' ? '
     _log(f' - ({txt_suff}) Weighted Mean Section Relevance: ' , agg_metrics[0]['weighted_mean_section_relevance'])
@@ -43,6 +52,11 @@ def _log_agg_metrics(agg_metrics, txt_suff = None):
     _log(f' - ({txt_suff}) Section Scores:\n', agg_metrics[1])
 
 def _log(*s):
+    """ log.
+
+    Returns:
+        TODO: describe return value.
+    """
     print(*s)
 
 #job_posting_path = 'job_postings_text/AltusSearch_MLStrategist_Commodities_26062025.txt'
@@ -101,6 +115,26 @@ def run_autocv_pipeline_full(
         cover_letter_model_params
     ):
 
+    """Run autocv pipeline full.
+
+    Args:
+        job_posting_path: TODO: describe.
+        output_folder: TODO: describe.
+        company_name: TODO: describe.
+        name: TODO: describe.
+        prof_signature: TODO: describe.
+        MAX_SECTION_ITEMS_KEEP: TODO: describe.
+        MIN_RELEVANCE_SCORE_KEEP: TODO: describe.
+        alt_statements: TODO: describe.
+        experience_fields: TODO: describe.
+        doc_section: TODO: describe.
+        authoring_model_params: TODO: describe.
+        analysis_model_params: TODO: describe.
+        cover_letter_model_params: TODO: describe.
+
+    Returns:
+        TODO: describe return value.
+    """
     llm_statement_editor = ModelFactory(**authoring_model_params).get_llm_model()
     llm_analysis_model = ModelFactory(**analysis_model_params).get_llm_model()
     llm_cover_letter_editor = ModelFactory(**cover_letter_model_params).get_llm_model()

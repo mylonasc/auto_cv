@@ -12,6 +12,8 @@ export interface AppState {
   backendConfig: BackendConfig;
   // Processing state
   processingState: ProcessingState | null;
+  // Working copy (editable CV derived from analysis result)
+  workingCopy: WorkingCopy | null;
   // UI state
   uiState: UIState;
 }
@@ -24,6 +26,7 @@ type AppStateAction =
   | { type: 'SET_CURRENT_CV_VERSION'; payload: string | null }
   | { type: 'SET_BACKEND_CONFIG'; payload: BackendConfig }
   | { type: 'SET_PROCESSING_STATE'; payload: ProcessingState | null }
+  | { type: 'SET_WORKING_COPY'; payload: WorkingCopy | null }
   | { type: 'SET_UI_STATE'; payload: Partial<UIState> }
   | { type: 'RESET_STATE' };
 
@@ -127,6 +130,24 @@ export interface Artifact {
   kind: string;
   filename: string;
   path?: string;
+  source?: string;
+}
+
+export interface Submission {
+  id: string;
+  job_id: string;
+  company: string;
+  job_title: string;
+  overall_score?: number | null;
+  job_entered_at?: string | null;
+  submitted_at?: string | null;
+  result?: string | null;
+  notes?: string | null;
+  cv_snapshot?: Record<string, unknown> | null;
+  scoring_snapshot?: Record<string, unknown> | null;
+  artifacts?: Artifact[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface JobAnalysis {
@@ -159,6 +180,7 @@ export interface BackendJob {
   };
   job_analysis?: JobAnalysis;
   error?: string;
+  updated_at?: string;
   created_at?: string;
   createdAt?: string;
 }
@@ -193,7 +215,7 @@ export interface ProcessingState {
 
 export interface UIState {
   sidebarCollapsed: boolean;
-  activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history';
+  activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history' | 'submissions';
   // Modals
   showJobDescriptionManager: boolean;
   showConfigurationPanel: boolean;
@@ -208,6 +230,42 @@ export interface CVJobResult {
   summary_metrics: SummaryMetrics;
   experience_analysis: CVResultSection[];
   artifacts: Artifact[];
+}
+
+// ── Working Copy Types ──
+
+export interface SectionFilterConfig {
+  minRelevanceScore: number;
+  minItemsKeep: number;
+  maxItemsKeep: number;
+}
+
+export interface WorkingCopyItem {
+  text: string;
+  originalText: string;
+  relevanceScore: number | null;
+  explanation: string | null;
+  postingEvidence: string | null;
+  kept: boolean;
+}
+
+export interface WorkingCopySection {
+  company: string;
+  position: string;
+  duration: string;
+  sectionScore: number | null;
+  sectionExplanation: string | null;
+  sectionPostingEvidence: string | null;
+  filterConfig: SectionFilterConfig;
+  items: WorkingCopyItem[];
+}
+
+export interface WorkingCopy {
+  jobId: string;
+  personalStatement: string;
+  sections: WorkingCopySection[];
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 const JOB_STORAGE_KEY = 'auto_cv_saved_jobs_v1';
@@ -252,6 +310,7 @@ const initialState: AppState = {
     concurrency_limit: 5
   },
   processingState: null,
+  workingCopy: null,
   uiState: {
     sidebarCollapsed: false,
     activeTab: 'jobInput',
@@ -330,6 +389,8 @@ function appStateReducer(state: AppState, action: AppStateAction): AppState {
         } : null 
       };
     }
+    case 'SET_WORKING_COPY':
+      return { ...state, workingCopy: action.payload };
     case 'SET_UI_STATE':
       return { ...state, uiState: { ...state.uiState, ...action.payload } };
     case 'RESET_STATE':

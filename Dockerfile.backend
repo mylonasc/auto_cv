@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install additional TeX packages
 RUN tlmgr init-usertree && \
-    (tlmgr install fontawesome academicons || echo "Warning: Could not install TeX packages via tlmgr")
+    (tlmgr install fontawesome academicons libertinus || echo "Warning: Could not install TeX packages via tlmgr")
 
 # Install Ollama (optional - for local LLM support)
 RUN curl -fsSL https://ollama.com/install.sh | sh || echo "Warning: Ollama installation failed"

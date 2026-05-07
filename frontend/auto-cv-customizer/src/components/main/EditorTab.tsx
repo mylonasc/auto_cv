@@ -7,6 +7,7 @@ import {
   type MotivationLetterTemplateMeta,
 } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
+import type { TemplateRegistryResponse } from '../../services/api';
 import '../main/EditorTab.css';
 
 const EditorTab: React.FC = () => {
@@ -21,6 +22,10 @@ const EditorTab: React.FC = () => {
   const [showNewVersionInput, setShowNewVersionInput] = useState(false);
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonContent, setJsonContent] = useState('');
+  const [templateRegistry, setTemplateRegistry] = useState<TemplateRegistryResponse>({
+    cv_templates: {},
+    motivation_letter_templates: {},
+  });
 
   const fetchVersions = useCallback(async () => {
     try {
@@ -30,6 +35,15 @@ const EditorTab: React.FC = () => {
       console.error('Failed to fetch CV versions:', error);
     }
   }, [dispatch]);
+
+  const fetchTemplateRegistry = useCallback(async () => {
+    try {
+      const registry = await apiService.getTemplateRegistry();
+      setTemplateRegistry(registry);
+    } catch (error) {
+      console.error('Failed to fetch template registry:', error);
+    }
+  }, []);
 
   const fetchCVData = useCallback(async (versionId: string) => {
     try {
@@ -51,8 +65,9 @@ const EditorTab: React.FC = () => {
 
   useEffect(() => {
     fetchVersions();
+    fetchTemplateRegistry();
     fetchCVData(state.currentCVVersionId || 'master');
-  }, [fetchCVData, fetchVersions, state.currentCVVersionId]);
+  }, [fetchCVData, fetchVersions, fetchTemplateRegistry, state.currentCVVersionId]);
 
   const handleVersionChange = (versionId: string) => {
     if (isDirty && !window.confirm('You have unsaved changes. Discard them?')) {
@@ -101,7 +116,8 @@ const EditorTab: React.FC = () => {
       setIsSaving(true);
       const dataToSave = isJsonMode ? JSON.parse(jsonContent) : cvData;
       await apiService.updateCVVersion(state.currentCVVersionId, dataToSave);
-      setCvData(dataToSave);
+      // Re-fetch to ensure we show the actual saved data
+      await fetchCVData(state.currentCVVersionId);
       setIsDirty(false);
       alert('Version saved successfully!');
     } catch (error) {
@@ -334,12 +350,25 @@ const EditorTab: React.FC = () => {
                 </div>
                 <div className="section-group">
                   <div className="subtitle-row" style={{ marginBottom: '8px' }}>
-                    <input
+                    <select
                       className="inline-input"
                       value={cvData?.cv_template?.template_id || 'default_cv'}
-                      onChange={(e) => updateCVTemplate('template_id', e.target.value)}
-                      placeholder="CV template ID"
-                    />
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        updateCvData(prev => ({
+                          ...prev,
+                          cv_template: {
+                            template_id: selectedId,
+                            template_path: templateRegistry.cv_templates[selectedId] || prev.cv_template?.template_path || 'assets/latex_cv_template_v0.tex',
+                            experience_section_title: prev.cv_template?.experience_section_title || 'Work Experience',
+                          },
+                        }));
+                      }}
+                    >
+                      {Object.keys(templateRegistry.cv_templates).map((templateId) => (
+                        <option key={templateId} value={templateId}>{templateId}</option>
+                      ))}
+                    </select>
                     <input
                       className="inline-input-right"
                       value={cvData?.cv_template?.template_path || 'assets/latex_cv_template_v0.tex'}
@@ -355,12 +384,24 @@ const EditorTab: React.FC = () => {
                   />
 
                   <div className="subtitle-row" style={{ marginTop: '12px' }}>
-                    <input
+                    <select
                       className="inline-input"
                       value={cvData?.motivation_letter_template?.template_id || 'default_motivation_letter'}
-                      onChange={(e) => updateMotivationTemplate('template_id', e.target.value)}
-                      placeholder="Motivation template ID"
-                    />
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        updateCvData(prev => ({
+                          ...prev,
+                          motivation_letter_template: {
+                            template_id: selectedId,
+                            template_path: templateRegistry.motivation_letter_templates[selectedId] || prev.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex',
+                          },
+                        }));
+                      }}
+                    >
+                      {Object.keys(templateRegistry.motivation_letter_templates).map((templateId) => (
+                        <option key={templateId} value={templateId}>{templateId}</option>
+                      ))}
+                    </select>
                     <input
                       className="inline-input-right"
                       value={cvData?.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex'}

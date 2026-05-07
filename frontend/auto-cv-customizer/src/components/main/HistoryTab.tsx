@@ -7,7 +7,7 @@ import './HistoryTab.css';
 type JobSort = 'created_desc' | 'created_asc' | 'score_desc' | 'score_asc' | 'status';
 
 const HistoryTab: React.FC = () => {
-  const { dispatch } = useAppState();
+  const { state, dispatch } = useAppState();
   const [jobs, setJobs] = useState<BackendJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,6 +51,13 @@ const HistoryTab: React.FC = () => {
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  // Refresh when the History tab becomes active (e.g. after rendering from working copy)
+  useEffect(() => {
+    if (state.uiState.activeTab === 'history') {
+      fetchJobs();
+    }
+  }, [state.uiState.activeTab]);
 
   const handleLoadJob = async (job: BackendJob) => {
     if (job.status !== 'succeeded') {
@@ -294,6 +301,9 @@ const HistoryTab: React.FC = () => {
                         >
                           {art.kind === 'pdf' ? '📄' : '🛠️'}
                         </button>
+                        {art.source === 'working_copy' && (
+                          <span className="wc-badge" title="Rendered from Working Copy">WC</span>
+                        )}
                       </div>
                     ))}
                   </td>

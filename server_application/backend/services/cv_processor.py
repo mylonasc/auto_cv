@@ -26,6 +26,16 @@ class CVProcessor:
     """Processes CVs based on job descriptions."""
     
     def __init__(self, candidate: str = "charilaos_mylonas", config: Optional[BackendConfig] = None, cv_version_id: str = "master"):
+        """  init  .
+
+        Args:
+            candidate: TODO: describe.
+            config: TODO: describe.
+            cv_version_id: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         self.candidate = candidate
         self.config = config or BackendConfig()
         self.cv_version_id = cv_version_id
@@ -101,8 +111,10 @@ class CVProcessor:
             bundle = candidate_bundle_from_legacy(
                 cv_data,
                 candidate_id=self.candidate,
-                cv_template_path=cv_data.get("cv_template", {}).get("template_path", "assets/latex_cv_template_v0.tex"),
-                motivation_template_path=cv_data.get("motivation_letter_template", {}).get("template_path", "assets/cover_letter/CoverLetter_Template.tex"),
+                cv_template_id=cv_data.get("cv_template", {}).get("template_id", "default_cv"),
+                cv_template_path=cv_data.get("cv_template", {}).get("template_path"),
+                motivation_template_id=cv_data.get("motivation_letter_template", {}).get("template_id", "default_motivation_letter"),
+                motivation_template_path=cv_data.get("motivation_letter_template", {}).get("template_path"),
             )
             
             # Create document sections
@@ -137,6 +149,14 @@ class CVProcessor:
                 await status_callback(job_id, JobStatus.PROCESSING, "Cross-analyzing CV with job description (parallel)...")
             
             async def progress_wrapper(msg):
+                """Progress wrapper.
+
+                Args:
+                    msg: TODO: describe.
+
+                Returns:
+                    TODO: describe return value.
+                """
                 if status_callback:
                     await status_callback(job_id, JobStatus.PROCESSING, msg)
 
@@ -220,12 +240,15 @@ class CVProcessor:
                 # Extract score and explanation
                 score = None
                 explanation = None
+                posting_evidence = None
                 if isinstance(item_analysis, dict):
                     score = item_analysis.get('experience_relevance_score')
                     explanation = item_analysis.get('explanation')
+                    posting_evidence = item_analysis.get('posting_evidence')
                 elif isinstance(item_analysis, list) and len(item_analysis) > 0:
                     score = item_analysis[0].get('experience_relevance_score')
                     explanation = item_analysis[0].get('explanation')
+                    posting_evidence = item_analysis[0].get('posting_evidence')
                 
                 # Get individual bullet point analyses
                 bullet_items = []
@@ -255,6 +278,7 @@ class CVProcessor:
                     "duration": item.duration,
                     "section_score": score,
                     "explanation": explanation,
+                    "posting_evidence": posting_evidence,
                     "items": bullet_items
                 })
             

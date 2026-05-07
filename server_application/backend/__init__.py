@@ -14,4 +14,9 @@ app.include_router(models.router)
 
 @app.get("/")
 async def root():
+    """Root.
+
+    Returns:
+        TODO: describe return value.
+    """
     return {"message": "CV Customizer API is running"}

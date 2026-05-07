@@ -18,6 +18,14 @@ class JobManager:
     """Manages job creation, tracking, and persistence."""
     
     def __init__(self, storage_dir: Optional[str] = None):
+        """  init  .
+
+        Args:
+            storage_dir: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         if storage_dir is None:
             self.storage_dir = JOBS_DIR
         else:
@@ -28,6 +36,14 @@ class JobManager:
         self._load_jobs()
     
     def _job_path(self, job_id: str) -> str:
+        """ job path.
+
+        Args:
+            job_id: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         return os.path.join(self.storage_dir, f"{job_id}.json")
     
     def _load_jobs(self):

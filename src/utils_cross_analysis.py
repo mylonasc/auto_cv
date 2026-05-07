@@ -11,20 +11,24 @@ from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 
 class BulletAnalysis(BaseModel):
+    """BulletAnalysis model."""
     experience_relevance_score: float = Field(..., description="Score from 0 to 10 based on relevance to the job posting.")
     explanation: str = Field(..., description="Short explanation (less than 20 words) of why the score was assigned.")
     posting_evidence: str = Field(..., description="Which parts of the job posting analysis are relevant to this bullet.")
 
 class SectionAnalysis(BaseModel):
+    """SectionAnalysis model."""
     experience_relevance_score: float = Field(..., description="Overall score from 0 to 10 for the entire role/experience.")
     explanation: str = Field(..., description="Concise summary justifying the overall score based on the individual items.")
     posting_evidence: str = Field(..., description="Key skills/requirements satisfied by this entire section.")
 
 class PersonalStatementAnalysis(BaseModel):
+    """PersonalStatementAnalysis model."""
     experience_relevance_score: float = Field(..., description="Score from 0 to 10 of how well the statement matches the job.")
     explanation: str = Field(..., description="Why this statement is or isn't a good fit.")
 
 class PersonalStatementRewrite(BaseModel):
+    """PersonalStatementRewrite model."""
     edited_statement: str = Field(..., description="The new, concise personal statement using provided points.")
     analysis: str = Field(..., description="Detailed scoring and selection reasoning for the statements.")
 
@@ -70,12 +74,25 @@ class AnalysisResultCache:
     """Simple disk-backed cache for analysis calls."""
 
     def __init__(self, cache_path: Optional[str] = None):
+        """  init  .
+
+        Args:
+            cache_path: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         self._lock = threading.RLock()
         self.cache_path = cache_path or self._default_cache_path()
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._load()
 
     def _default_cache_path(self) -> str:
+        """ default cache path.
+
+        Returns:
+            TODO: describe return value.
+        """
         cv_root = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
         data_root = os.getenv('AUTO_CV_DATA_ROOT', os.path.join(cv_root, 'data'))
         cache_dir = os.path.join(data_root, 'cache')
@@ -83,6 +100,11 @@ class AnalysisResultCache:
         return os.path.join(cache_dir, 'analysis_results_cache.json')
 
     def _load(self):
+        """ load.
+
+        Returns:
+            TODO: describe return value.
+        """
         with self._lock:
             if not os.path.exists(self.cache_path):
                 self._cache = {}
@@ -98,6 +120,11 @@ class AnalysisResultCache:
                 self._cache = {}
 
     def _save(self):
+        """ save.
+
+        Returns:
+            TODO: describe return value.
+        """
         with self._lock:
             tmp_path = f"{self.cache_path}.tmp"
             try:
@@ -108,17 +135,40 @@ class AnalysisResultCache:
                 pass
 
     def get(self, key: str) -> Optional[Dict[str, Any]]:
+        """Get.
+
+        Args:
+            key: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         with self._lock:
             value = self._cache.get(key)
             return value.copy() if isinstance(value, dict) else None
 
     def set(self, key: str, value: Dict[str, Any], persist: bool = True):
+        """Set.
+
+        Args:
+            key: TODO: describe.
+            value: TODO: describe.
+            persist: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         with self._lock:
             self._cache[key] = value
             if persist:
                 self._save()
 
     def flush(self):
+        """Flush.
+
+        Returns:
+            TODO: describe return value.
+        """
         self._save()
 
 
@@ -126,6 +176,15 @@ _analysis_cache = AnalysisResultCache()
 
 
 def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
+    """ make cache key.
+
+    Args:
+        scope: TODO: describe.
+        payload: TODO: describe.
+
+    Returns:
+        TODO: describe return value.
+    """
     key_obj = {
         'scope': scope,
         'payload': payload,
@@ -134,6 +193,11 @@ def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
     return hashlib.sha256(key_json.encode('utf-8')).hexdigest()
 
 def _load_defaults():
+    """ load defaults.
+
+    Returns:
+        TODO: describe return value.
+    """
     from pathlib import Path
     import yaml
     _here = Path(__file__).resolve().parent.parent
@@ -142,10 +206,16 @@ def _load_defaults():
     return res
 
 def _make_default_model():
+    """ make default model.
+
+    Returns:
+        TODO: describe return value.
+    """
     default_model_options = _load_defaults()
     return ModelFactory(**default_model_options['cv_cross_analysis_llm_default']).get_llm_model()
 
 class CoverLetterDrafter:
+    """CoverLetterDrafter model."""
     draft_prompt = """ I want you to draft a short cover letter for a job candidate. I will add a job description, a personal statement from the candidate, and
         the different professional experiences of that candidate.
         Role Description: {job_post_text}
@@ -154,11 +224,25 @@ class CoverLetterDrafter:
         Return the cover letter enclosed in <COVERLETTER> tags.
         """
     def __init__(self, cvca, llm_editor_model = None):
+        """  init  .
+
+        Args:
+            cvca: TODO: describe.
+            llm_editor_model: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         self.cvca = cvca
         self.llm_editor_model = llm_editor_model or cvca.llm_editor_model
         self._debug = {}
         
     async def get_cover_letter_text(self):
+        """Get cover letter text.
+
+        Returns:
+            TODO: describe return value.
+        """
         chain = ChatPromptTemplate.from_template(self.draft_prompt) | self.llm_editor_model
         _inputs = {
             "exp_section" : self.cvca.cv_model.experience_section.get_markdown(),
@@ -173,7 +257,20 @@ class CoverLetterDrafter:
         return soup.coverletter.text if soup.coverletter else res_text
 
 class CVCrossAnalyzer:
+    """CVCrossAnalyzer model."""
     def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3):
+        """  init  .
+
+        Args:
+            job_post_analyzer: TODO: describe.
+            full_cv_document: TODO: describe.
+            llm_model: TODO: describe.
+            llm_editor_model: TODO: describe.
+            max_section_parse_retries: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         self.cv_model = full_cv_document
         self.job_post_analyzer = job_post_analyzer
         self.model = llm_model or _make_default_model()
@@ -202,6 +299,14 @@ class CVCrossAnalyzer:
         self.data = {}
         
     async def analyze_rewrite_personal_statement(self, statements_list = None):
+        """Analyze rewrite personal statement.
+
+        Args:
+            statements_list: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         post_txt = self.job_post_analyzer.post_txt
         statements_list = statements_list or self.personal_statements
         if not statements_list: raise Exception("No personal statements provided")
@@ -211,6 +316,11 @@ class CVCrossAnalyzer:
         self.data['statement_list_analysis'] = res.analysis
         
     async def analyze_personal_statement(self):
+        """Analyze personal statement.
+
+        Returns:
+            TODO: describe return value.
+        """
         res = await self.chains['personal_statement_analysis']['chain'].ainvoke({
             'job_posting_data' : str(self.job_post_analyzer.data), 
             'personal_statement' : self.cv_model.statement
@@ -218,6 +328,15 @@ class CVCrossAnalyzer:
         self.data['personal_statement_analysis'] = res.model_dump()
         
     async def analyze_job_experience_section(self, concurrency_limit=5, progress_callback=None):
+        """Analyze job experience section.
+
+        Args:
+            concurrency_limit: TODO: describe.
+            progress_callback: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         section = self.cv_model.experience_section
         _job_post_data = str(self.job_post_analyzer.data)
         _job_post_raw = getattr(self.job_post_analyzer, 'post_txt', _job_post_data)
@@ -231,12 +350,29 @@ class CVCrossAnalyzer:
         progress_lock = asyncio.Lock()
 
         async def update_progress(msg):
+            """Update progress.
+
+            Args:
+                msg: TODO: describe.
+
+            Returns:
+                TODO: describe return value.
+            """
             nonlocal completed_items
             async with progress_lock:
                 completed_items += 1
                 if progress_callback: await progress_callback(f"[{completed_items}/{total_bullets+total_sections}] {msg}")
 
         async def analyze_bullet(s_item, bullet):
+            """Analyze bullet.
+
+            Args:
+                s_item: TODO: describe.
+                bullet: TODO: describe.
+
+            Returns:
+                TODO: describe return value.
+            """
             async with semaphore:
                 try:
                     cache_key = _make_cache_key('experience_bullet_v1', {
@@ -263,6 +399,14 @@ class CVCrossAnalyzer:
                 by_section_item_analysis[s_item][bullet] = jdata
 
         async def synthesize_section(s_item):
+            """Synthesize section.
+
+            Args:
+                s_item: TODO: describe.
+
+            Returns:
+                TODO: describe return value.
+            """
             async with semaphore:
                 bullet_analyses = ""
                 for i, bullet in enumerate(s_item.section_item_list):
@@ -301,6 +445,11 @@ class CVCrossAnalyzer:
         return self.data['experience_section_analysis']
         
     def get_section_aggregate_metrics(self):
+        """Get section aggregate metrics.
+
+        Returns:
+            TODO: describe return value.
+        """
         section_scoring = []
         section_weights = []
         for section, s in self.data['experience_section_analysis']['full_section_analysis'].items():
@@ -320,6 +469,16 @@ class CVCrossAnalyzer:
         return _res, all_dat, []
     
     def rewrite_reviewed_experience_section(self, min_section_items_keep = 1, max_section_items_keep = 6, min_relevance_score = 3):
+        """Rewrite reviewed experience section.
+
+        Args:
+            min_section_items_keep: TODO: describe.
+            max_section_items_keep: TODO: describe.
+            min_relevance_score: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         bsa = self.data['experience_section_analysis']['by_section_item_analysis']
         fsa = self.data['experience_section_analysis']['full_section_analysis']
         for k in fsa.keys():

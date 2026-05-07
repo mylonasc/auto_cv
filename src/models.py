@@ -25,10 +25,28 @@ MODELS_DEFAULT_CONFIG = {
 }
 
 def _log_msg(msg):
+    """ log msg.
+
+    Args:
+        msg: TODO: describe.
+
+    Returns:
+        TODO: describe return value.
+    """
     print(msg)
 
 class OllamaModelWrapper:
+    """OllamaModelWrapper model."""
     def __init__(self, model_string, config = None):
+        """  init  .
+
+        Args:
+            model_string: TODO: describe.
+            config: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         print(model_string)
         self._model_string, self._config = model_string, config
         if self._model_string is None:
@@ -45,6 +63,11 @@ class OllamaModelWrapper:
                 raise Exception(f"The model you requested ({self._model_string}) is not locally available on {self.ollama_host}. List of available models: \n {_avail_models} \n\n \n Please see ollama documentation (https://github.com/ollama/ollama/blob/main/README.md#quickstart) on how to download it.")
         
     def get_llm_model(self):
+        """Get llm model.
+
+        Returns:
+            TODO: describe return value.
+        """
         from langchain_ollama import ChatOllama
         params = (self._config or {}).copy()
         params['model'] = self._model_string
@@ -86,6 +109,7 @@ def _gemini_api_key_setup(set_environ = False):
     return gemini_api_key
 
 class GoogleModelWrapper:
+    """GoogleModelWrapper model."""
     def __init__(self, model_string, config = None):
         """ Model provider wrapper for google
         Check instructions and documentation in:
@@ -131,6 +155,14 @@ class GoogleModelWrapper:
     
     def get_llm_model(self, check_avail = False):
         
+        """Get llm model.
+
+        Args:
+            check_avail: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         if check_avail:
             self.check_model_avail()
         
@@ -147,6 +179,14 @@ class GoogleModelWrapper:
             return ChatGoogleGenerativeAI(model = self._model_string, api_key = self._api_key)
         
     def list_models(self, return_string = True):
+        """List models.
+
+        Args:
+            return_string: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         from google import genai
         from google.genai import types
         client = genai.Client(
@@ -179,6 +219,16 @@ class ModelFactory:
     MODEL_DEFAULTS = MODEL_DEFAULTS
     
     def __init__(self, model_provider : Optional[str] = None, model_str : Optional[str] = None, config : Optional[dict] = None):        
+        """  init  .
+
+        Args:
+            model_provider: TODO: describe.
+            model_str: TODO: describe.
+            config: TODO: describe.
+
+        Returns:
+            TODO: describe return value.
+        """
         self._model_provider = model_provider
         self._model_str = model_str
         self._config = config
@@ -192,11 +242,26 @@ class ModelFactory:
             _log_msg(f"selecting default model for {self._model_provider}: '{self._model_str}'")
             
     def get_model_wrapper(self):
+        """Get model wrapper.
+
+        Returns:
+            TODO: describe return value.
+        """
         def _make_ollama():
+            """ make ollama.
+
+            Returns:
+                TODO: describe return value.
+            """
             model_wrapper = OllamaModelWrapper(self._model_str, self._config)
             return model_wrapper
         
         def _make_google():
+            """ make google.
+
+            Returns:
+                TODO: describe return value.
+            """
             model_wrapper = GoogleModelWrapper(self._model_str, self._config)
             return model_wrapper
         
@@ -208,5 +273,10 @@ class ModelFactory:
         return _make_model_options[self._model_provider]()
             
     def get_llm_model(self):
+        """Get llm model.
+
+        Returns:
+            TODO: describe return value.
+        """
         self.model_wrapper = self.get_model_wrapper()
         return self.model_wrapper.get_llm_model()

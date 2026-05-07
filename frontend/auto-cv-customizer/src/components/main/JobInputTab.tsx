@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, type CVData, type ExperienceSection } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import './JobInputTab.css';
@@ -15,6 +15,7 @@ const JobInputTab: React.FC = () => {
   const [editingItemId, setEditingItemId] = useState<{type: 'experience' | 'personal', sectionIdx?: number, itemIdx?: number} | null>(null);
   const [editingText, setEditingText] = useState('');
   const [isSavingCV, setIsSavingCV] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -228,7 +229,8 @@ Nice to have:
           </div>
 
           <div className="actions-row">
-            <label htmlFor="fileUpload" className="btn btn-secondary">📁 Upload <input id="fileUpload" type="file" onChange={handleFileUpload} accept=".txt" style={{ display: 'none' }} /></label>
+            <button className="btn btn-secondary" type="button" onClick={() => fileInputRef.current?.click()}>📁 Upload</button>
+            <input ref={fileInputRef} id="fileUpload" type="file" onChange={handleFileUpload} accept=".txt,.md,text/plain" style={{ display: 'none' }} />
             <button className="btn btn-secondary" onClick={handleLoadExample}>Example</button>
             <button className="btn btn-primary" onClick={handleSaveJob} disabled={!jobText.trim()}>{editingJobId ? 'Update Job' : 'Save Job'}</button>
             <button className="btn btn-secondary" onClick={resetJobForm}>New</button>

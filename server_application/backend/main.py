@@ -12,7 +12,7 @@ ensure_project_root_on_path()
 ensure_backend_root_on_path()
 ensure_data_dirs()
 
-from api import cv_jobs, config, models, cv_data
+from api import cv_jobs, config, models, cv_data, submissions
 
 # Create FastAPI app
 app = FastAPI(
@@ -35,6 +35,7 @@ app.include_router(cv_jobs.router)
 app.include_router(config.router)
 app.include_router(models.router)
 app.include_router(cv_data.router)
+app.include_router(submissions.router)
 
 @app.get("/")
 async def root():

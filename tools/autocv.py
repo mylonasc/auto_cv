@@ -1,227 +1,241 @@
-""" AutoCV helps creating a first customized CV and Cover letter draft
-for job applications
-""" 
+"""Run AutoCV pipeline from CLI inputs.
+
+Example:
+  python tools/autocv.py \
+    --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+    --job-posting job_postings_text/Google_GNNs_Apr30-2026.txt
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+from datetime import datetime
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.append(str(REPO_ROOT))
+
+from src.domain import candidate_bundle_from_legacy
 from src.models import ModelFactory
 from src.utils import JobPostAnalysis, FullCVDocument, CoverLetterModel, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer, CoverLetterDrafter
-from src.domain import CandidateData, CVTemplateData, MotivationLetterTemplateData
-
-from datetime import datetime
-import json
-import tempfile 
-import os
-import shutil
-
-def _log_agg_metrics(agg_metrics, txt_suff = None):
-    if txt_suff is None:
-        txt_suff = ' ? '
-    _log(f' - ({txt_suff}) Weighted Mean Section Relevance: ' , agg_metrics[0]['weighted_mean_section_relevance'])
-    _log(f' - ({txt_suff}) Mean Section Relevance: ' , agg_metrics[0]['mean_section_relevance'])
-    _log(f' - ({txt_suff}) Conciseness Relevance Metric: ' , agg_metrics[0]['conciseness_relevance_metric'])
-    _log(f' - ({txt_suff}) Section Scores:\n', agg_metrics[1])
-
-def _log(*s):
-    print(*s)
-
-#job_posting_path = 'job_postings_text/AltusSearch_MLStrategist_Commodities_26062025.txt'
-#job_posting_path = 'job_postings_text/Capgemini_SeniorDataScientist_June3_2025-v2.txt'
-#job_posting_path = 'job_postings_text/KAIKO_SeniorMLEngineer_27062025.txt'
-# job_posting_path = 'job_postings_text/ON_SeniorMLScientist_02072025.txt' 
-# job_posting_path = 'job_postings_text/RepRisk_SeniorMachineLearningEngineer_02072025.tex'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/AIMLQuality_GoogleYoutube_300825.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Mistral_AIResearcher_161025.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/NVIdia_SeniorDeeplearningEng_151125.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Anthropic_151125.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Meta_151125.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/CloeRecruiter_linkedin_171125.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/DeepMind-280126.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Google-YoutubeAIML_14022026.txt'
-# job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/DeepMind-gemini-app_250426.txt'
-job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Microsoft-MAI-MachineLearning_250426.txt'
-job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/FictionalJobPosting_Apr26.txt'
-job_posting_path = '/home/charilaos/Workspace/auto_cv/job_postings_text/Google_GNNs_Apr30-2026.txt'
 
 
-output_folder = 'autocv_output_' + job_posting_path.split('/')[-1][:-4]
+def _log(*parts: object) -> None:
+    """ log.
 
-company_name = 'Google'
-name = 'Charilaos Mylonas'
-prof_signature = "\\\\" + 'Lead Software Engineer \\\\ Zurich'
-MAX_SECTION_ITEMS_KEEP = 5
-MIN_RELEVANCE_SCORE_KEEP = 7
-MIN_SECTION_ITEMS_KEEP = 1
-
-ALT_STATEMENTS_PATH = 'assets/statements.txt'
-# EXP_PATH= 'assets/experience_fields.json'
-# EXP_PATH= 'assets/experience_fields_oct_25.json'
-EXP_PATH= '/home/charilaos/Workspace/auto_cv/assets/experience_fields_oct25.json'
+    Returns:
+        TODO: describe return value.
+    """
+    print(*parts)
 
 
-TMP_FOLDER = tempfile.mkdtemp()
-#_ = input('temp folder is (press any key to continue)' + TMP_FOLDER)
+def _log_agg_metrics(agg_metrics, txt_suff: str) -> None:
+    """ log agg metrics.
 
-# with open(ALT_STATEMENTS_PATH,'r') as f:
-#     alt_statements = json.loads(f.read())
-alt_statements = []
-with open(ALT_STATEMENTS_PATH,'r') as f:
-    alt_statements = f.read().split('\n')
+    Args:
+        agg_metrics: TODO: describe.
+        txt_suff: TODO: describe.
 
-with open(EXP_PATH,'r') as f:
-    experience_fields = json.loads(f.read())
-
-candidate_data = CandidateData(
-    candidate_id="charilaos_mylonas",
-    full_name=name,
-    personal_statement=alt_statements[-1] if alt_statements else "",
-    alternative_statements=alt_statements,
-    experience_sections=experience_fields,
-)
-cv_template = CVTemplateData(template_path='assets/latex_cv_template_v0.tex')
-motivation_template = MotivationLetterTemplateData(template_path='assets/cover_letter/CoverLetter_Template.tex')
-
-doc_section_items = [DocSectionItem(**_d) for _d in candidate_data.model_dump()["experience_sections"]]
-doc_section = DocSection('Work Experience', doc_section_items)
-
-_log(f'- loaded {len(alt_statements) } personal statements.')
-_log(f'- loaded {len(experience_fields)} professional experience')
+    Returns:
+        TODO: describe return value.
+    """
+    _log(f" - ({txt_suff}) Weighted Mean Section Relevance:", agg_metrics[0]["weighted_mean_section_relevance"])
+    _log(f" - ({txt_suff}) Mean Section Relevance:", agg_metrics[0]["mean_section_relevance"])
+    _log(f" - ({txt_suff}) Conciseness Relevance Metric:", agg_metrics[0]["conciseness_relevance_metric"])
+    _log(f" - ({txt_suff}) Section Scores:\n", agg_metrics[1])
 
 
-doc_section_copy = doc_section.copy()
+def _load_json(path: str) -> dict:
+    """ load json.
 
-# authoring_model_params = {
-#     'model_provider' : 'google',
-#     'model_str' : 'models/gemini-2.5-flash-preview-05-20'
-# }
+    Args:
+        path: TODO: describe.
 
-# authoring_model_params = {
-#     'model_provider' : 'google',
-#     'model_str' : 'models/gemini-2.5-pro'
-# }
-
-analysis_model_params = {
-    'model_provider' : 'ollama',
-    'model_str' : 'llama3.1:latest'
-}
-
-cover_letter_model_params = {
-    'model_provider' : 'google',
-    # 'model_str' : 'gemini-2.5-pro'
-    'model_str' : 'gemini-3.1-pro-preview'
-}
-analysis_model_params = cover_letter_model_params
-authoring_model_params = cover_letter_model_params
+    Returns:
+        TODO: describe return value.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
-# cover_letter_model_params = {
-#     'model_provider' : 'google',
-#     'model_str' : 'gemini-2.5-flash-preview-05-20'
-# }
+def _make_parser() -> argparse.ArgumentParser:
+    """ make parser.
+
+    Returns:
+        TODO: describe return value.
+    """
+    parser = argparse.ArgumentParser(description="Generate CV and cover letter for a job posting.")
+    parser.add_argument("--candidate-json", required=True, help="Path to candidate CV json (legacy or new structure).")
+    parser.add_argument("--job-posting", required=True, help="Path to job posting text file.")
+    parser.add_argument("--output-dir", default=None, help="Output directory. Defaults to autocv_output_<job-file-stem>.")
+
+    parser.add_argument("--candidate-id", default="charilaos_mylonas", help="Candidate identifier.")
+    parser.add_argument("--candidate-name", default="Charilaos Mylonas", help="Candidate display name for cover letter.")
+    parser.add_argument("--company-name", default="Company", help="Target company name used in cover letter template.")
+    parser.add_argument("--prof-signature", default="\\\\Machine Learning Engineer \\\\ Zurich", help="Cover letter professional signature.")
+
+    parser.add_argument("--cv-template", default=None, help="CV latex template path (overrides template ID).")
+    parser.add_argument("--cv-template-id", default="default_cv", help="CV template identifier from config/templates.json.")
+    parser.add_argument("--motivation-template", default=None, help="Motivation letter template path (overrides template ID).")
+    parser.add_argument("--motivation-template-id", default="default_motivation_letter", help="Motivation template identifier from config/templates.json.")
+
+    parser.add_argument("--analysis-provider", default="google", choices=["google", "ollama"], help="Analysis model provider.")
+    parser.add_argument("--analysis-model", default="gemini-3.1-pro-preview", help="Analysis model name.")
+    parser.add_argument("--authoring-provider", default="google", choices=["google", "ollama"], help="Statement editor provider.")
+    parser.add_argument("--authoring-model", default="gemini-3.1-pro-preview", help="Statement editor model name.")
+    parser.add_argument("--cover-letter-provider", default="google", choices=["google", "ollama"], help="Cover letter model provider.")
+    parser.add_argument("--cover-letter-model", default="gemini-3.1-pro-preview", help="Cover letter model name.")
+
+    parser.add_argument("--max-section-items-keep", type=int, default=5)
+    parser.add_argument("--min-relevance-score-keep", type=int, default=7)
+    parser.add_argument("--min-section-items-keep", type=int, default=1)
+
+    parser.add_argument("--skip-cover-letter", action="store_true", help="Skip cover letter generation.")
+    return parser
 
 
+async def run_pipeline(args: argparse.Namespace) -> str:
+    """Run pipeline.
 
-import asyncio
+    Args:
+        args: TODO: describe.
 
-async def main():
-    llm_statement_editor = ModelFactory(**authoring_model_params).get_llm_model()
-    llm_analysis_model = ModelFactory(**analysis_model_params).get_llm_model()
-    llm_cover_letter_editor = ModelFactory(**cover_letter_model_params).get_llm_model()
-
-    jpa = JobPostAnalysis(job_posting_path, llm_model = llm_analysis_model)
-
-    await jpa.analyze()
-
-    fcv = FullCVDocument(candidate_data.personal_statement, doc_section_copy, cv_template=cv_template)
-
-    cvca = CVCrossAnalyzer(
-        jpa, 
-        fcv, 
-        llm_model = llm_analysis_model,  
-        llm_editor_model = llm_statement_editor
+    Returns:
+        TODO: describe return value.
+    """
+    candidate_payload = _load_json(args.candidate_json)
+    bundle = candidate_bundle_from_legacy(
+        candidate_payload,
+        candidate_id=args.candidate_id,
+        cv_template_id=args.cv_template_id,
+        cv_template_path=args.cv_template,
+        motivation_template_id=args.motivation_template_id,
+        motivation_template_path=args.motivation_template,
     )
 
-    ## 1. Analyze and re-write the personal statement.
-    await cvca.analyze_rewrite_personal_statement(alt_statements)
+    output_dir = args.output_dir
+    if not output_dir:
+        output_dir = f"autocv_output_{Path(args.job_posting).stem}"
 
-    rewritten_doc_section_copy = doc_section.copy()
-    fcv = FullCVDocument(cvca.data['edited_statement'], rewritten_doc_section_copy, cv_template=cv_template)
+    tmp_dir = tempfile.mkdtemp(prefix="autocv_")
+    _log(f"- using temp folder: {tmp_dir}")
+    _log(f"- loaded {len(bundle.candidate.alternative_statements)} personal statements.")
+    _log(f"- loaded {len(bundle.candidate.experience_sections)} professional experiences.")
+
+    analysis_model = ModelFactory(
+        model_provider=args.analysis_provider,
+        model_str=args.analysis_model,
+    ).get_llm_model()
+    authoring_model = ModelFactory(
+        model_provider=args.authoring_provider,
+        model_str=args.authoring_model,
+    ).get_llm_model()
+    cover_letter_model = ModelFactory(
+        model_provider=args.cover_letter_provider,
+        model_str=args.cover_letter_model,
+    ).get_llm_model()
+
+    jpa = JobPostAnalysis(args.job_posting, llm_model=analysis_model)
+    await jpa.analyze()
+
+    doc_section_items = [DocSectionItem(**item.model_dump()) for item in bundle.candidate.experience_sections]
+    doc_section = DocSection(bundle.cv_template.experience_section_title, doc_section_items)
+    fcv = FullCVDocument(bundle.candidate.personal_statement, doc_section.copy(), cv_template=bundle.cv_template)
+
     cvca = CVCrossAnalyzer(
         jpa,
         fcv,
-        llm_model = llm_analysis_model,  
-        llm_editor_model = llm_statement_editor    
-    )
-    fcv_copy = fcv.copy()
-
-    ## 2. Analyze the job experience section
-    agg_metrics_prev = await cvca.analyze_job_experience_section()
-
-    ## 2.1 Preview some metrics coming out of the analysis
-    agg_metrics_prev = cvca.get_section_aggregate_metrics()
-    _log_agg_metrics(agg_metrics_prev, 'prev')
-
-    ## 3. Write a cover letter (use the best LLM available to get better authoring capabilities)
-    clm = CoverLetterModel(motivation_template=motivation_template)
-    cld = CoverLetterDrafter(cvca, llm_cover_letter_editor)
-
-    letter_body = await cld.get_cover_letter_text()
-    letter_body = letter_body.replace('&','\\&')
-
-    date_str = datetime.now().strftime('%-d %B %Y')
-    clm.set_data(date_str, company_name, letter_body, name , prof_signature)
-
-    # 4. Store the cover letter PDF (for easier inspection as PDF)
-    clm.to_pdf(os.path.join(TMP_FOLDER,'cover_letter_tmp.pdf'))
-
-    # 4.1 Store the cover letter as tex file (can be used for latter manual edits)
-    with open(os.path.join(TMP_FOLDER, 'cover_letter_tmp.tex'),'w') as f:
-        f.write(clm.render_tex_template())
-        
-
-    cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, "test_before_edits.pdf"))
-
-    rewrite_output = cvca.rewrite_reviewed_experience_section(
-        max_section_items_keep=MAX_SECTION_ITEMS_KEEP,
-        min_relevance_score=MIN_RELEVANCE_SCORE_KEEP, 
-        min_section_items_keep=MIN_SECTION_ITEMS_KEEP
+        llm_model=analysis_model,
+        llm_editor_model=authoring_model,
     )
 
-    agg_metrics_post = cvca.get_section_aggregate_metrics()
-    _log_agg_metrics(agg_metrics_post, 'after edits')
+    if bundle.candidate.alternative_statements:
+        await cvca.analyze_rewrite_personal_statement(bundle.candidate.alternative_statements)
+        rewritten_statement = cvca.data.get("edited_statement") or bundle.candidate.personal_statement
+    else:
+        rewritten_statement = bundle.candidate.personal_statement
 
-    metrics_summary = agg_metrics_post[0]
-    with open(os.path.join(TMP_FOLDER, 'metrics_summary.txt'),'w') as f:
-        f.write(json.dumps(metrics_summary))
-        
-    # Render the CV with comments on scoring etc
-    cvca.cv_model.render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits.pdf'))
+    fcv = FullCVDocument(rewritten_statement, doc_section.copy(), cv_template=bundle.cv_template)
+    cvca = CVCrossAnalyzer(
+        jpa,
+        fcv,
+        llm_model=analysis_model,
+        llm_editor_model=authoring_model,
+    )
 
-    # copy to remove the comments
-    cvca.cv_model.copy().render_pdf(os.path.join(TMP_FOLDER, 'test_after_edits_nocomments.pdf'))
+    await cvca.analyze_job_experience_section()
+    metrics_prev = cvca.get_section_aggregate_metrics()
+    _log_agg_metrics(metrics_prev, "prev")
 
-    # 5. Copy to the output folder for further editing and inspection
-    global output_folder # Use the one calculated outside or pass it
-    try:
-        shutil.move(TMP_FOLDER, output_folder)
-        os.mkdir(os.path.join(output_folder,'latex_folder'))
-    except:
-        print("file exists")
+    cvca.rewrite_reviewed_experience_section(
+        max_section_items_keep=args.max_section_items_keep,
+        min_relevance_score=args.min_relevance_score_keep,
+        min_section_items_keep=args.min_section_items_keep,
+    )
 
-    with open('job_post.txt','w') as f:
+    metrics_post = cvca.get_section_aggregate_metrics()
+    _log_agg_metrics(metrics_post, "after edits")
+
+    if not args.skip_cover_letter:
+        clm = CoverLetterModel(motivation_template=bundle.motivation_letter_template)
+        cld = CoverLetterDrafter(cvca, cover_letter_model)
+        letter_body = await cld.get_cover_letter_text()
+        letter_body = letter_body.replace("&", "\\&")
+        date_str = datetime.now().strftime("%-d %B %Y")
+        clm.set_data(date_str, args.company_name, letter_body, args.candidate_name, args.prof_signature)
+        clm.to_pdf(os.path.join(tmp_dir, "cover_letter_tmp.pdf"))
+        with open(os.path.join(tmp_dir, "cover_letter_tmp.tex"), "w", encoding="utf-8") as f:
+            f.write(clm.render_tex_template())
+
+    cvca.cv_model.copy().render_pdf(os.path.join(tmp_dir, "test_before_edits.pdf"))
+    cvca.cv_model.render_pdf(os.path.join(tmp_dir, "test_after_edits.pdf"))
+    cvca.cv_model.copy().render_pdf(os.path.join(tmp_dir, "test_after_edits_nocomments.pdf"))
+
+    with open(os.path.join(tmp_dir, "metrics_summary.txt"), "w", encoding="utf-8") as f:
+        f.write(json.dumps(metrics_post[0]))
+
+    with open(os.path.join(tmp_dir, "job_post.txt"), "w", encoding="utf-8") as f:
         f.write(jpa.post_txt)
 
-    shutil.copy('job_post.txt', os.path.join(output_folder, 'job_post.txt'))
+    latex_root = os.path.join(tmp_dir, "latex_folder")
+    os.makedirs(latex_root, exist_ok=True)
+    with open(os.path.join(latex_root, "cv_edited_with_comments.tex"), "w", encoding="utf-8") as f:
+        f.write(cvca.cv_model.make_latex())
+    with open(os.path.join(latex_root, "cv_edited_no_comments.tex"), "w", encoding="utf-8") as f:
+        f.write(cvca.cv_model.copy().make_latex())
 
-    latex_root = os.path.join(output_folder, 'latex_folder')
-    fdat_with_comments = cvca.cv_model.make_latex()
-    with open(os.path.join(latex_root, 'cv_edited_with_comments.tex'),'w') as f:
-        f.write(fdat_with_comments)
-        
-    fdat_no_comments = cvca.cv_model.copy().make_latex()
-    with open(os.path.join(latex_root,'cv_edited_no_comments.tex'),'w') as f:
-        f.write(fdat_no_comments)
-        
-    shutil.copy('assets/images/my_pic.jpeg',latex_root)
-    shutil.copy('assets/resume.cls',latex_root)
+    resume_cls_src = os.path.join(os.getenv("CV_CUSTOMIZER_ROOT", os.getcwd()), "assets", "resume.cls")
+    pic_src = os.path.join(os.getenv("CV_CUSTOMIZER_ROOT", os.getcwd()), "assets", "images", "my_pic.jpeg")
+    if os.path.exists(resume_cls_src):
+        shutil.copy(resume_cls_src, latex_root)
+    if os.path.exists(pic_src):
+        shutil.copy(pic_src, latex_root)
+
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    shutil.move(tmp_dir, output_dir)
+    _log(f"- output written to: {output_dir}")
+    return output_dir
+
+
+def main() -> None:
+    """Main.
+
+    Returns:
+        TODO: describe return value.
+    """
+    parser = _make_parser()
+    args = parser.parse_args()
+    asyncio.run(run_pipeline(args))
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

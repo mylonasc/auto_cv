@@ -12,13 +12,15 @@ interface ExportDialogProps {
 const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
   const [isExporting, setIsExporting] = useState<string | null>(null);
+  const [isCreatingSubmission, setIsCreatingSubmission] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState<string>('PDF Preview');
 
   if (!isOpen) return null;
 
+  const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
+
   const handleDownload = async (artifactId: string, filename: string) => {
-    const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
     if (!jobId) {
       alert('No job ID available. Please process a job first.');
       return;
@@ -36,7 +38,6 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   };
 
   const handlePreview = (artifactId: string, filename: string) => {
-    const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
     if (!jobId) {
       alert('No job ID available. Please process a job first.');
       return;
@@ -46,8 +47,28 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
     setPreviewTitle(filename || 'PDF Preview');
   };
 
+  const handleCreateSubmission = async (artifactIds?: string[]) => {
+    if (!jobId) {
+      alert('No job ID available.');
+      return;
+    }
+    try {
+      setIsCreatingSubmission(true);
+      await apiService.createSubmission({
+        job_id: jobId,
+        artifact_ids: artifactIds,
+      });
+      alert('Submission created! View it in the Submissions tab.');
+    } catch (err) {
+      console.error('Failed to create submission:', err);
+      alert('Failed to create submission.');
+    } finally {
+      setIsCreatingSubmission(false);
+    }
+  };
+
   const artifacts = state.processingState?.result?.artifacts || [];
-  const hasJob = !!(state.processingState?.jobId || state.processingState?.lastSuccessfulJobId);
+  const hasJob = !!jobId;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -115,11 +136,25 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
                   </div>
                 )}
               </div>
+
+              <div className="submission-create-area">
+                <p className="hint"><strong>Track this application:</strong> Create a submission record with the current CV data and scores.</p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleCreateSubmission()}
+                  disabled={isCreatingSubmission}
+                >
+                  {isCreatingSubmission ? 'Creating...' : '📨 Create Submission'}
+                </button>
+              </div>
             </>
           )}
         </div>
 
         <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={() => { onClose(); dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'submissions' } }); }}>
+            View Submissions
+          </button>
           <button className="btn btn-secondary" onClick={onClose}>
             Close
           </button>

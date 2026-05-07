@@ -13,6 +13,11 @@ from src.utils_cross_analysis import CVCrossAnalyzer
 @pytest.mark.asyncio
 async def test_cv_cross_analysis():
     # 1. Setup Job Post
+    """Test cv cross analysis.
+
+    Returns:
+        TODO: describe return value.
+    """
     job_post_content = """
     We are looking for a Senior Software Engineer at TechCorp.
     Requirements:

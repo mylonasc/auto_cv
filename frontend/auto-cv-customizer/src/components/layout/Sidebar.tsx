@@ -63,6 +63,12 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
               <span className="nav-text">History</span>
             </button>
           </li>
+          <li className={state.uiState.activeTab === 'submissions' ? 'active' : ''}>
+            <button onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'submissions' } })}>
+              <span className="nav-icon">📨</span>
+              <span className="nav-text">Submissions</span>
+            </button>
+          </li>
         </ul>
       </nav>
 

@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
-import type { 
+import type {
   ProcessingState, CVJobResult,
   BackendConfig,
   BackendJob,
@@ -15,6 +15,49 @@ import type {
   SummaryMetrics,
   JobAnalysis,
 } from '../contexts/AppStateContext';
+
+export interface TemplateRegistryResponse {
+  cv_templates: Record<string, string>;
+  motivation_letter_templates: Record<string, string>;
+}
+
+export interface RescoreItemPayload {
+  index: number;
+  text?: string;
+}
+
+export interface RescoreRequestPayload {
+  section_index: number;
+  item_indices: number[];
+  items?: RescoreItemPayload[];
+}
+
+export interface RescoredItemResult {
+  index: number;
+  relevance_score: number;
+  explanation: string;
+  posting_evidence: string;
+}
+
+export interface RescoreResponse {
+  section_index: number;
+  items: RescoredItemResult[];
+}
+
+export interface RenderCVRequestPayload {
+  min_relevance_score: number;
+  min_section_items_keep: number;
+  max_section_items_keep: number;
+  cv_template_id: string;
+  cv_template_path?: string;
+  include_latex: boolean;
+  render_pdf: boolean;
+  working_copy?: Record<string, unknown>;
+}
+
+export interface JobAnalysisOnlyResponse {
+  job_analysis: Record<string, unknown>;
+}
 
 const API_BASE_URL = '/api/v1';
 
@@ -147,6 +190,14 @@ class ApiService {
     return this.transformJobToProcessingState(response.data);
   }
 
+  async analyzeJobOnly(jobDescription: string, config?: BackendConfig): Promise<JobAnalysisOnlyResponse> {
+    const response = await this.client.post('/cv-jobs/job-analysis', {
+      job_description: jobDescription,
+      config: config ? this.toBackendConfig(config) : undefined,
+    });
+    return response.data;
+  }
+
   async getJob(jobId: string): Promise<ProcessingState> {
     const response = await this.client.get(`/cv-jobs/${jobId}`);
     return this.transformJobToProcessingState(response.data);
@@ -273,6 +324,33 @@ class ApiService {
     return response.data;
   }
 
+  async getTemplateRegistry(): Promise<TemplateRegistryResponse> {
+    const response = await this.client.get('/cv-data/templates');
+    return response.data;
+  }
+
+  async renderJobArtifacts(jobId: string, payload: RenderCVRequestPayload): Promise<ProcessingState> {
+    const response = await this.client.post(`/cv-jobs/${jobId}/render`, payload);
+    return this.transformJobToProcessingState(response.data);
+  }
+
+  // ── Working Copy API ──
+
+  async getWorkingCopy(jobId: string): Promise<Record<string, unknown>> {
+    const response = await this.client.get(`/cv-jobs/${jobId}/working-cv`);
+    return response.data;
+  }
+
+  async saveWorkingCopy(jobId: string, workingCopy: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const response = await this.client.put(`/cv-jobs/${jobId}/working-cv`, workingCopy);
+    return response.data;
+  }
+
+  async rescoreWorkingCopyItems(jobId: string, payload: RescoreRequestPayload): Promise<RescoreResponse> {
+    const response = await this.client.post(`/cv-jobs/${jobId}/working-cv/rescore`, payload);
+    return response.data;
+  }
+
   // Transform backend job format to frontend ProcessingState
   public transformJobToProcessingState(job: BackendJob): ProcessingState {
     return {
@@ -309,6 +387,94 @@ class ApiService {
       })),
       artifacts: ((result.artifacts as Artifact[] | undefined) || []),
     };
+  }
+
+  // ── Working Copy Transforms ──
+
+  public transformWorkingCopyFromBackend(data: Record<string, unknown>): import('../contexts/AppStateContext').WorkingCopy {
+    return {
+      jobId: (data.job_id as string) || '',
+      personalStatement: (data.personal_statement as string) || '',
+      sections: ((data.sections as Array<Record<string, unknown>>) || []).map((s: Record<string, unknown>) => ({
+        company: (s.company as string) || '',
+        position: (s.position as string) || '',
+        duration: (s.duration as string) || '',
+        sectionScore: (s.section_score as number | null) ?? null,
+        sectionExplanation: (s.section_explanation as string | null) ?? null,
+        sectionPostingEvidence: (s.section_posting_evidence as string | null) ?? null,
+        filterConfig: {
+          minRelevanceScore: ((s.filter_config as Record<string, unknown>)?.min_relevance_score as number) ?? 3,
+          minItemsKeep: ((s.filter_config as Record<string, unknown>)?.min_items_keep as number) ?? 1,
+          maxItemsKeep: ((s.filter_config as Record<string, unknown>)?.max_items_keep as number) ?? 6,
+        },
+        items: ((s.items as Array<Record<string, unknown>>) || []).map((it: Record<string, unknown>) => ({
+          text: (it.text as string) || '',
+          originalText: (it.original_text as string) || '',
+          relevanceScore: (it.relevance_score as number | null) ?? null,
+          explanation: (it.explanation as string | null) ?? null,
+          postingEvidence: (it.posting_evidence as string | null) ?? null,
+          kept: (it.kept as boolean) ?? true,
+        })),
+      })),
+      createdAt: (data.created_at as string | null) ?? null,
+      updatedAt: (data.updated_at as string | null) ?? null,
+    };
+  }
+
+  public transformWorkingCopyToBackend(wc: import('../contexts/AppStateContext').WorkingCopy): Record<string, unknown> {
+    return {
+      job_id: wc.jobId,
+      personal_statement: wc.personalStatement,
+      sections: wc.sections.map((s) => ({
+        company: s.company,
+        position: s.position,
+        duration: s.duration,
+        section_score: s.sectionScore,
+        section_explanation: s.sectionExplanation,
+        section_posting_evidence: s.sectionPostingEvidence,
+        filter_config: {
+          min_relevance_score: s.filterConfig.minRelevanceScore,
+          min_items_keep: s.filterConfig.minItemsKeep,
+          max_items_keep: s.filterConfig.maxItemsKeep,
+        },
+        items: s.items.map((it) => ({
+          text: it.text,
+          original_text: it.originalText,
+          relevance_score: it.relevanceScore,
+          explanation: it.explanation,
+          posting_evidence: it.postingEvidence,
+          kept: it.kept,
+        })),
+      })),
+      created_at: wc.createdAt,
+      updated_at: wc.updatedAt,
+    };
+  }
+
+  // ── Submissions API ──
+
+  async createSubmission(payload: { job_id: string; artifact_ids?: string[]; notes?: string }): Promise<import('../contexts/AppStateContext').Submission> {
+    const response = await this.client.post('/submissions/', payload);
+    return response.data;
+  }
+
+  async listSubmissions(): Promise<import('../contexts/AppStateContext').Submission[]> {
+    const response = await this.client.get('/submissions/');
+    return response.data;
+  }
+
+  async getSubmission(submissionId: string): Promise<import('../contexts/AppStateContext').Submission> {
+    const response = await this.client.get(`/submissions/${submissionId}`);
+    return response.data;
+  }
+
+  async updateSubmission(submissionId: string, payload: { result?: string; notes?: string }): Promise<import('../contexts/AppStateContext').Submission> {
+    const response = await this.client.put(`/submissions/${submissionId}`, payload);
+    return response.data;
+  }
+
+  async deleteSubmission(submissionId: string): Promise<void> {
+    await this.client.delete(`/submissions/${submissionId}`);
   }
 }
 

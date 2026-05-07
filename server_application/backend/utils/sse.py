@@ -13,6 +13,7 @@ async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, Non
     """
     last_status = None
     last_progress = None
+    idle_loops = 0
     
     while True:
         job = job_manager.get_job(job_id)
@@ -36,6 +37,14 @@ async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, Non
             
             last_status = current_status
             last_progress = current_progress
+            idle_loops = 0
+        else:
+            idle_loops += 1
+
+        # Keep-alive to avoid idle proxy timeouts during long model calls.
+        if idle_loops >= 15:
+            yield ": keepalive\n\n"
+            idle_loops = 0
         
         # If job is complete (succeeded, failed, cancelled), send final event and break
         if current_status in ["succeeded", "failed", "cancelled"]:
