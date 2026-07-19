@@ -292,6 +292,18 @@ const ProcessingTab: React.FC = () => {
     });
   };
 
+  const toggleAnalysis = (key: string) => {
+    setExpandedAnalysis(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   const handleSaveWorkingCopy = async () => {
     if (!localWorkingCopy) return;
     try {
@@ -622,7 +634,35 @@ const ProcessingTab: React.FC = () => {
                   <span className="workcpy-section-score">
                     {section.duration} · Score: {section.sectionScore != null ? Number(section.sectionScore).toFixed(1) : 'N/A'}/10
                   </span>
+                  <button
+                    className="workcpy-btn-link"
+                    onClick={() => toggleAnalysis(`section-${sIdx}`)}
+                    title="Show/hide LLM analysis for this section"
+                  >
+                    {expandedAnalysis.has(`section-${sIdx}`) ? 'Hide Analysis' : 'Show Analysis'}
+                  </button>
                 </div>
+
+                {/* Section analysis panel */}
+                {expandedAnalysis.has(`section-${sIdx}`) && (
+                  <div className="workcpy-analysis-panel">
+                    {section.sectionExplanation && (
+                      <div className="workcpy-analysis-field">
+                        <strong>Explanation:</strong>
+                        <p>{section.sectionExplanation}</p>
+                      </div>
+                    )}
+                    {section.sectionPostingEvidence && (
+                      <div className="workcpy-analysis-field">
+                        <strong>Posting Evidence:</strong>
+                        <p>{section.sectionPostingEvidence}</p>
+                      </div>
+                    )}
+                    {!section.sectionExplanation && !section.sectionPostingEvidence && (
+                      <p className="workcpy-analysis-empty">No analysis data available for this section.</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Per-section filter controls */}
                 <div className="workcpy-filter-row">
@@ -687,7 +727,34 @@ const ProcessingTab: React.FC = () => {
                         >
                           Rescore
                         </button>
+                        <button
+                          className="workcpy-btn-link"
+                          onClick={() => toggleAnalysis(`item-${sIdx}-${iIdx}`)}
+                          title="Show/hide LLM analysis for this bullet"
+                        >
+                          {expandedAnalysis.has(`item-${sIdx}-${iIdx}`) ? 'Hide' : 'Analysis'}
+                        </button>
                       </div>
+                      {/* Item analysis panel */}
+                      {expandedAnalysis.has(`item-${sIdx}-${iIdx}`) && (
+                        <div className="workcpy-analysis-panel inline">
+                          {item.explanation && (
+                            <div className="workcpy-analysis-field">
+                              <strong>Explanation:</strong>
+                              <p>{item.explanation}</p>
+                            </div>
+                          )}
+                          {item.postingEvidence && (
+                            <div className="workcpy-analysis-field">
+                              <strong>Posting Evidence:</strong>
+                              <p>{item.postingEvidence}</p>
+                            </div>
+                          )}
+                          {!item.explanation && !item.postingEvidence && (
+                            <p className="workcpy-analysis-empty">No analysis data available for this bullet.</p>
+                          )}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>

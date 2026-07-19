@@ -1,0 +1,334 @@
+
+
+\documentclass{resume_v2} % Use v2 class overrides for work experience
+\usepackage{titlecaps}
+\usepackage[hidelinks]{hyperref}
+\usepackage{academicons}
+\usepackage{fontawesome}
+\usepackage{tcolorbox}
+
+\usepackage[draft]{pdfcomment}
+
+\usepackage{mathtools}
+\usepackage{tikz}
+\newcommand{\tikzcircle}[2][red,fill=red]{\tikz[baseline=-0.5ex]\draw[#1,radius=#2] (0,0) circle ;}%
+\newcommand{\wcirc}{\tikzcircle[fill=white]{3pt}$\,$}
+\newcommand{\bcirc}{\tikzcircle[fill=black]{3pt}$\,$}
+
+\newtcbox{\entoure}[1][white]{on line,
+arc=3pt,colback=#1!10!white,colframe=#1!50!black,
+before upper={\rule[-3pt]{0pt}{10pt}},boxrule=1pt,
+boxsep=0pt,left=2pt,right=2pt,top=1pt,bottom=.5pt}
+
+\usepackage[left=0.25in,top=0.4in,right=0.25in,bottom=0.4in]{geometry} % Document margins
+
+\usepackage{bibentry}
+
+\name{Charilaos Mylonas, Ph.D.} % Your name
+
+\newcommand{\myhspace}{\hspace{0.0cm}}
+
+\myaddress{\faEnvelope}{ mylonas.charilaos@gmail.com} % Your phone number and email
+\myaddress{\faGlobe{}}{\href{https://mylonasc.netlify.app}{https://mylonasc.netlify.app}}
+\myaddress{\faGithub{}}{ \href{https://github.com/mylonasc}{https://github.com/mylonasc}}
+%\address{ }
+%\address{\faMobile \, +41~787~152~686 \myhspace \faEnvelope \,mylonas.charilaos@gmail.com} % Your phone number and email
+%\myaddress{\hspace{0.1cm}\aiGoogleScholar{}}{ \href{https://scholar.google.com/citations?user=W7giwJEAAAAJ}{Google Scholar profile}} % Your phone number and email
+\myaddress{\faLinkedin}{https://www.linkedin.com/in/charilaos-mylonas-phd-54691948/}
+\begin{document}
+
+\begin{center}
+\end{center}
+\vspace{0.2cm}
+
+\begin{rSection}{About}
+  \begin{tabular}{p{0.99\linewidth}}
+	  I am a Senior AI engineer, with demonstrable experience in scientific computing and maintainable software development. I hold a M.Sc. in Computational Science and Engineering and a Ph.D. on Applied ML for predictive maintenance. Moreover, I have expertise in the Finite Element Method, as I was tasked with teaching it as part of my teaching assistant duties during my Ph.D., and I have implemented FEM and other numerical PDE solution techniques from scratch. Finally, I have extensive practical experience with Ansys and other multi-physics software.
+\end{tabular}
+\end{rSection}
+
+\vspace{-0.5cm}
+%----------------------------------------------------------------------------------------
+%	WORK EXPERIENCE SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Work Experience}
+  \begin{myrSubsection}{EPAM, Zurich}{Aug 2025 -- current}{Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)}
+    \item Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\% across revised agent factory templates for target use cases.
+    \item Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)
+    \item Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.
+    \item Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).
+  \end{myrSubsection}
+
+  \begin{myrSubsection}{Modulai, Basel}{Feb 2025 -- Jun 2025}{Senior Machine Learning Engineer (ended due to strategic branch closure)}
+    \item Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.
+    \item Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\% reduction in false positive rate on test data.
+  \end{myrSubsection}
+
+  \begin{myrSubsection}{Deloitte, Zurich}{Feb 2022 -- Jan 2025}{Senior Consultant; promoted to Assistant Manager in Sep 2024}
+    \item Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.
+    \item Contributed to business development for AI in energy trading by shaping technical pitch content and taking part in client pitch sessions.
+    \item Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.
+    \item Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.
+  \end{myrSubsection}
+
+  \begin{myrSubsection}{ETH Zurich}{Sep 2016--Nov 2021}{Ph.D. Candidate/Research Assistant}
+    \item Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).
+    \item Implemented a message-passing GNN library (\url{https://github.com/mylonasc/tf-gnns/}).
+    \item Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)
+  \end{myrSubsection}
+
+  \begin{myrSubsection}{ETH Zurich}{Dec 2015--Sep 2016}{Research Assistant}
+    \item Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.
+  \end{myrSubsection}
+
+  \begin{myrSubsection}{Credit Suisse, Zurich}{Jul 2014--Dec 2014}{Full-Stack Trading Tool Developer (internship)}
+    \item Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.
+  \end{myrSubsection}
+
+\end{rSection}
+
+\newpage
+
+
+
+
+
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION SECTION
+%----------------------------------------------------------------------------------------
+ % \vspace{-0.65cm}
+ \newpage
+ \begin{rSection}{Education}
+   \begin{myrSubsectionEmpty2}{\bf ETH Zurich}{Sept 2016 -- Sept 2021}{Ph.D. in \textsc{Machine Learning for Structural Health Monitoring under Uncertainty}
+     \newline 
+     Advisor: Prof. Eleni Chatzi}
+ \end{myrSubsectionEmpty2}
+   \vspace{-0.65cm}
+ 
+   \begin{myrSubsectionEmpty2}{\bf ETH Zurich}{\hspace{-0.5cm}Sept 2012 -- Sept 2015}{ {M.Sc. in \textsc{Computational Science and Engineering}} 
+     \newline Specialization: Computational Electromagnetics
+     %\newline Thesis: \textit{Shape Optimization with Boundary Elements} }
+     %\newline }
+    \newline
+     Advisor: Prof. Ralf Hiptmair}
+   \end{myrSubsectionEmpty2}
+   
+    %\vspace{-0.65cm}
+ 
+ %  \begin{myrSubsectionEmpty2}{\bf Aristotle University of Thessaloniki}{\hspace{-0.5cm}Sept 2005 -- May 2012}{MSc \textsc{Civil Engineering} 
+ %    \newline Thesis: \textit{Computational Homogenization for Composites With the Finite Elements} 
+ %    \newline Implementation in COMSOL and FreeFem++
+ %    }
+ %  \end{myrSubsectionEmpty2}
+   %\vspace{1.1cm}
+ \end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	TECHNICAL STRENGTHS SECTION
+%----------------------------------------------------------------------------------------
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\newcommand{\ert}[1]{#1}
+
+\vspace{-1.0cm}
+\begin{rSection}{Technical Strengths}
+  % \begin{tabular}{ @{} >{\bfseries}p{0.27\textwidth} @{\hspace{6ex}} p{0.3\textwidth}  @{\hspace{6ex}} p{0.3\textwidth}}
+   \begin{tabular}{p{0.2\linewidth}  p{0.25\linewidth}  @{\hspace{6ex}} p{0.56\linewidth}}
+   \bf{Programming}&  Python, Matlab, R & \bcirc \bcirc \bcirc \bcirc \bcirc \bcirc \\
+   \bf{Languages} &   {C++}, {Java}, {JavaScript} & \bcirc \bcirc \bcirc \bcirc \wcirc \wcirc 
+   
+   
+   
+\end{tabular}
+  % \begin{tabular}{ @{} >{\bfseries}p{0.27\textwidth} @{\hspace{6ex}} p{0.65\textwidth} }
+\newline
+  \newline
+   \begin{tabular}{p{0.2\linewidth}  p{0.76\linewidth} } % @{\hspace{6ex}} p{0.36\textwidth}}
+     {\bf Other software {development} {skills} } & Linux, Docker, Kubernetes, Classical ML Algorithms, Scientific Computing,  Software Design, Web Development, High Performance Computing, Retrieval Augmented Generation systems, Microcontroller Programming
+     \\
+     \,
+  \end{tabular}
+   \begin{tabular}{p{0.2\linewidth}  p{0.76\linewidth} } % @{\hspace{6ex}} p{0.36\textwidth}}
+     {\bf Deep Learning } & Probabilistic Generative Models (GANs, VAEs, Normalizing Flows, Denoising Diffusion models), Graph Neural Networks, Strong familiarity of all core Deep Learning architectures (gated RNNs, CNNs, Attention Mechanisms \& Transformers) and how they apply to different data modalities (text, audio, images, tabular data).
+  \end{tabular}
+  \vspace{-10.0pt}
+
+
+\end{rSection}
+%\vspace{-.0pt}
+\begin{rSection}{Other Information}
+  \begin{rSubsection}{\,\,\,Teaching assistant roles}{}{}{} 
+    \item High Performance Computing for CSE (C++, OpenMP) (2020) (Prof. O. Schenk).
+    \item Method of Finite Elements (Matlab, Python) (2017 -- 2019) (Prof. E. Chatzi).
+%  \item Linear Algebra Lab (2008) (Prof. C. Charalambous)}
+  \end{rSubsection}
+   \begin{rSubsection}{\,\,\,Other academic engagements}{}{}{}
+   \item \textit{Mentorship}: Serving as mentor for Ph.D. students at ETH Zurich (upon invitation).
+   \item \textit{Student project supervision}: 6 MSc theses and semester projects and consulted on several others.
+  \item \textit{Reviewer assignments}: for Mechanical Systems and Signal Processing and Journal of Sound and Vibration.
+  \end{rSubsection}
+
+%------------------------------------------------
+
+  \begin{rSubsection}{\,\,\,Distinctions and certificates}{}{}{}
+  %\item {\textbf{Best paper award}} in 39th IMAC conference (Feb. 2021) for the paper ``\textit{On an application of graph neural networks in population based SHM}'' %  \item \textit{Human Subject Reseach Certificate} (Data or Specimens Only) CITI-Program Training (April 2020)
+\item {\textbf{Best paper award}} in 39th IMAC conference (Feb. 2021). %  \item \textit{Human Subject Reseach Certificate} (Data or Specimens Only) CITI-Program Training (April 2020)
+  \item \textbf{SIAM Gene Golub Scholarship} for Ph.D. summer school on ``\textit{{High-Performance Data Analytics}}'' \textit{Aussois, France 2019}.
+  \end{rSubsection}
+
+\end{rSection}
+
+\begin{rSection}{Selected Publications}
+  \newcommand{\myvspace}{\vspace{-3pt}}
+\def\arraystretch{1.0}
+\textbf{Please refer to  Google Scholar \href{https://scholar.google.com/citations?user=W7giwJEAAAAJ}{[link]} for full list and updated citation count.} \\ \\
+  \small{
+    \textit{\textbf{Mylonas, C.} (ETH Ph.D. Dissertation)} Machine Learning for Structural Health Assessment under Uncertainty, with applications in Wind Energy, \href{https://www.research-collection.ethz.ch/handle/20.500.11850/511551}{[link]}
+
+    \textit{\textbf{Mylonas C}, Chatzi E.} Remaining Useful Life Estimation for Engineered Systems Operating under Uncertainty with Causal GraphNets. Sensors. 2021; 21(19):6325. \href{https://doi.org/10.3390/s21196325}{https://doi.org/10.3390/s21196325}
+
+    \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} Conditional variational autoencoders for probabilistic wind turbine blade fatigue estimation using SCADA data. Wind Energy. 2021; 1‐ 18. \href{https://doi.org/10.1002/we.2621}{https://doi.org/10.1002/we.2621}
+
+%\textit{Tsialiamanis, G., \textbf{Mylonas, C.}, et al.} Foundations of population-based SHM, Part IV: 
+ % The geometry of spaces of structures and their feature spaces. Mechanical Systems and Signal 
+ % Processing, 157, 107692. 
+
+ \textit{Lai, Z., \textbf{Mylonas, C.}, Nagarajaiah, S., \& Chatzi, E.} Structural identification with physics-informed neural ordinary differential equations. Journal of Sound and Vibration, 508, 116196. 
+
+    \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} (2021) Relational VAE: A Continuous Latent Variable Model for 
+    Graph Structured Data \href{https://arxiv.org/abs/2106.16049}{[link]}
+
+\textit{\textbf{Mylonas, C.}, Tsialiamanis, G., Worden, K. \& Chatzi, E. } Bayesian graph neural networks for 
+strain-based crack localization.  (\textit{39th IMAC conference proc.}) \href{https://arxiv.org/abs/2012.06791}{[link]}
+
+\textit{\textbf{Mylonas, C.}, Abdallah, I., \& Chatzi, E. (2020).} Deep Unsupervised Learning For Condition
+Monitoring and Prediction of High Dimensional Data with Application on Windfarm SCADA Data. \textit{In Model Validation and Uncertainty Quantification, Volume 3 (pp. 189-196).} \textit{Springer, Cham.}
+}
+
+\end{rSection}
+
+% \vspace{-0.2cm}
+% \begin{rSection}{Journal Publications}
+%   \newcommand{\myvspace}{\vspace{-3pt}}
+% \def\arraystretch{1.0}
+%   \small{
+%  \textit{\textbf{Mylonas C}, Chatzi E.} Remaining Useful Life Estimation for Engineered Systems Operating under Uncertainty with Causal GraphNets. Sensors. 2021; 21(19):6325. https://doi.org/10.3390/s21196325
+
+% \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} Conditional variational autoencoders for probabilistic wind turbine blade fatigue estimation using SCADA data. Wind Energy. 2021; 1‐ 18. \url{https://doi.org/10.1002/we.2621}
+
+% \textit{Tsialiamanis, G., \textbf{Mylonas, C.}, et al.} Foundations of population-based SHM, Part IV: 
+%  The geometry of spaces of structures and their feature spaces. Mechanical Systems and Signal 
+%  Processing, 157, 107692. 
+
+%  \textit{ Lai, Z., \textbf{Mylonas, C.}, Nagarajaiah, S., \& Chatzi, E.} Structural identification with physics-informed neural ordinary differential equations. Journal of Sound and Vibration, 508, 116196.
+% }
+
+% \end{rSection}
+
+% \begin{rSection}{Conference papers \& Preprints}
+
+%   \small{
+%     \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} (2021) Relational VAE: A Continuous Latent Variable Model for 
+%  Graph Structured Data \url{https://arxiv.org/abs/2106.16049}
+
+% \textit{\textbf{Mylonas, C.}, Tsialiamanis, G., Worden, K. and Chatzi, E. } Bayesian graph neural networks for 
+% strain-based crack localization. \href{https://arxiv.org/pdf/2012.06791.pdf}{arXiv:2012.06791} (\textit{to appear in 39th IMAC conference proc.})
+
+% \textit{\textbf{Mylonas, C.}, Abdallah, I., \& Chatzi, E. (2020).} Deep Unsupervised Learning For Condition
+% Monitoring and Prediction of High Dimensional Data with Application on Windfarm SCADA Data. \textit{In Model Validation and Uncertainty Quantification, Volume 3 (pp. 189-196).} \textit{Springer, Cham.}
+% }
+% \end{rSection}
+%\begin{rSection}{Theses}
+%  $\cdot$ Machine Learning for Structural Health Assessment under Uncertainty, with applications in Wind Energy, Ph.D. Dissertation \href{https://www.research-collection.ethz.ch/handle/20.500.11850/511551}{(\texttt{link})}
+  
+%  $\cdot$ Shape optimization with Boundary Elements, M.Sc. Thesis \href{https://people.math.ethz.ch/~hiptmair/StudentProjects/Mylonas/MScthesisCMylonas.pdf}{\texttt{(link)}}
+%\end{rSection}
+
+
+
+
+
+
+  
+
+% \begin{tabular}{ @{} >{\bfseries}r @{\hspace{3ex}} l }
+%   
+% 
+%   May 2021 & \hspace{0.1cm} \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} Relational VAE: A Continuous Latent Variable Model for 
+%   \\ & \hspace{7pt} Graph Structured Data (\url{https://arxiv.org/abs/2106.16049}) \\ \myvspace \\
+% 
+%    & \hspace{0.1cm} \textit{Tsialiamanis, G., \textbf{Mylonas, C.}, et al.} Foundations of population-based SHM, Part IV: 
+% \\ & \hspace{7pt} The geometry of spaces of structures and their feature spaces. Mechanical Systems and Signal \\ 
+%    & \hspace{7pt} Processing, 157, 107692. \\ \myvspace \\
+%   
+%   February 2021 & \hspace{0.1cm} \textit{\textbf{Mylonas, C.}, Abdallah, I., Chatzi, E.} Conditional variational autoencoders for probabilistic
+%   \\ & \hspace{7pt} wind turbine blade fatigue estimation using SCADA data. Wind Energy. 2021; 1‐ 18. 
+%   \\ & \hspace{7pt} https://doi.org/10.1002/we.2621 \\ \myvspace \\
+% 
+%   %January 2021 & \hspace{0.1cm} \textit{\textbf{Mylonas C.}, I. Abdallah, and E. Chatzi (2020)} Conditional Variational Autoencoders for 
+%   %\\ & \hspace{7pt} Probabilistic Wind Turbine Blade Fatigue Damage Equivalent Load Estimation using
+%   %\\ & \hspace{7pt} SCADA data, {(To appear in Wind Energy, Wiley)} (\url{https://tinyurl.com/zkohj32f}) \\ \myvspace \\
+% 
+%   December 2020 & \hspace{0.1cm}\textit{\textbf{Mylonas, C.}, Tsialiamanis, G., Worden, K. and Chatzi, E. } Bayesian graph neural networks for 
+%   \\ &  \hspace{7pt} strain-based crack localization. \href{https://arxiv.org/pdf/2012.06791.pdf}{arXiv:2012.06791} \textit{to appear in 39th IMAC conference proc.}\\ \myvspace \\
+%   & \hspace{0.1cm}\textit{Tsialiamanis G., \textbf{Mylonas C.}, Chatzi E., Wagg, D.J., Dervilis N., Worden, K.} On an application 
+%   \\ & \hspace{7pt} of graph neural networks in population based SHM \href{https://arxiv.org/pdf/2103.03655.pdf}{ arXiv:2103.03655} (\textit{to appear in 39th IMAC }
+%   \\ & \hspace{7pt} \textit{conference proceedings})  \\ \myvspace \\ 
+%   
+%   
+%    %\hspace{0.1cm}\textit{\textbf{Mylonas C.} \& Chatzi E. } Remaining Useful Life Estimation Under Uncertainty with Causal 
+%   %\\&  \hspace{7pt} GraphNets. \textit{arXiv preprint arXiv:2011.11740, 2020}\\ \myvspace
+% 
+%   November 2020 & \hspace{0.1cm} \textit{Lai, Z., \textbf{Mylonas, C}., Nagarajaiah, S. and Chatzi, E., 2021.} Structural identification 
+%   \\ & \hspace{7pt} with physics-informed neural ordinary differential equations. Journal of Sound and Vibration,
+%   \\ & \hspace{7pt} 508, p.116196. \\ \myvspace \\
+% 
+%   %January 2020 & \hspace{0.1cm}\textit{\textbf{Mylonas, C.} and Chatzi, E.} Deep CNNs and Adversarial Regularization for Fatigue Damage \\
+%   %& \hspace{7pt} Failure Prediction of Concrete Anchors \textit{3rd general assembly of the Swiss Community for } \\
+%   %& \hspace{7pt} \textit{Computational Methods in Applied Sciences (SWISSCOMMAS)} \\ 
+% 	%\myvspace \\
+% 
+%   January 2019 &  \hspace{0.1cm}\textit{\textbf{Mylonas, C.}, Abdallah, I., \& Chatzi, E. N. (2020).} Deep Unsupervised Learning For Condition 
+%   \\ & \hspace{7pt}  Monitoring and Prediction of High Dimensional Data with Application on Windfarm SCADA 
+%   \\ & \hspace{7pt}  Data. \textit{In Model Validation and Uncertainty Quantification, Volume 3 (pp. 189-196).}
+%     \\ & \hspace{7pt} \textit{Springer, Cham.} \\ & \myvspace\\
+% 
+%   May 2017 & \hspace{0.1cm}Konakli K., \textit{\textbf{Mylonas C.}}, Marelli S.,  Sudret B. UQlab User Manual - Canonical low-rank 
+%   \\ & \hspace{7pt} approximations \textit{Report UQLab-V1.0-108, Chair of Risk, Safety \& Uncertainty Quantification,}
+%   \\ & \hspace{7pt} \textit{ETH Zurich, 2017.} \\ \myvspace \\
+% 
+% 
+%   %\\ & \hspace{7pt} \textit{} \\ \vspace{2pt} \\
+% 
+%   %August 2015 & \hspace{0.1cm}\textit{\textbf{Mylonas C.}} Shape Optimization with Boundary Elements 
+%   %\\ & \hspace{7pt}  (M.Sc. thesis for Computational Science degree)
+% \end{tabular}
+
+
+%\vspace{-10pt}
+%\begin{rSection}{Personal Interests}
+%
+%  %\def\arraystretch{1.}
+%  \hspace{-0.5cm}
+%  \begin{tabular}{p{0.3\textwidth} p{0.25\textwidth} p{0.17\textwidth} p{0.30\textwidth}}
+%    Electronics \& Microcontrollers & Deep learning in art & Guitar playing & Neuroscience \& AI \\
+%  \end{tabular}
+%\end{rSection}
+
+
+
+%----------------------------------------------------------------------------------------
+%	EXAMPLE SECTION
+%----------------------------------------------------------------------------------------
+
+%\begin{rSection}{Section Name}
+
+%Section content\ldots
+
+%\end{rSection}
+
+%----------------------------------------------------------------------------------------
+
+\end{document}

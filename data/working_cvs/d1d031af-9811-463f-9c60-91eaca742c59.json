@@ -1,0 +1,274 @@
+{
+  "job_id": "d1d031af-9811-463f-9c60-91eaca742c59",
+  "personal_statement": "I am a data science and scientific computing expert, with a strong mathematical and high performance computing background, and more than 7 years of machine learning / deep learning experience. I hold a Ph.D. on Machine Learning for Structural Health Monitoring, with original contributions on the use of deep learning and generative ML in predictive maintenance. I have extensive demonstrable experience in setting up and executing large scale Monte-Carlo simulations, working with industrial monitoring data (Wind turbine SCADA data).",
+  "sections": [
+    {
+      "company": "EPAM, Zurich",
+      "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+      "duration": "Aug 2025 -- current",
+      "section_score": 7.2,
+      "section_explanation": "The overall relevance score of this work experience section is determined by taking into account all the individual bullet points and their respective relevance scores. Bullet 1 has a high relevance score of 8.5, which is the highest among all five bullets. The other four bullet points have lower relevance scores ranging from 3.0 to 4.5. To determine the overall score, we can use a weighted average, where each bullet point's weightage can be calculated based on its relevance and importance in relation to the job posting requirements.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "original_text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "relevance_score": 8.5,
+          "explanation": "Although the job posting emphasizes experience with Large Language Models, Agentic AI, and open-source projects, the CV bullet point highlights a specific achievement in building an internal LangGraph evaluation library. This is relevant to the job posting as it demonstrates expertise in Large Language Model development. However, the CV bullet point lacks explicit mention of 'Agentic AI' or experience with open-source projects. Nevertheless, it showcases a strong work ethic and ability to measure agent reliability. The token consumption reduction by 35% also indicates a high level of technical proficiency.",
+          "posting_evidence": "['Machine Learning', 'experience with Large Language Models'], 'hands_on_skills': {'skills': ['Agentic AI']} }",
+          "kept": true
+        },
+        {
+          "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "original_text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "relevance_score": 4.5,
+          "explanation": "Although this experience is relevant to the job posting, it has some limitations. The candidate demonstrates knowledge and experience with agentic AI, which matches one of the preferred qualifications. However, there is no clear evidence of their ability to work with Large Language Models or open-source projects, as stated in the job posting. Additionally, while they mention integration with legacy systems and creation of a reusable template, it is unclear how this skillset translates into the hands-on skills required for the position (7.0 out of 10).",
+          "posting_evidence": "The CV experience bullet point shows evidence of:",
+          "kept": true
+        },
+        {
+          "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "original_text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "relevance_score": 4.0,
+          "explanation": "The candidate has experience with Large Language Models, which aligns well with the job posting. However, the lack of specific information about Agentic AI, open-source projects, or scientific publications in the CV bullet point detracts from its relevance.",
+          "posting_evidence": "{ 'machine learning': True, 'agentic_ai': False, 'open_source_projects': False, 'scientific_publications': False}",
+          "kept": true
+        },
+        {
+          "text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "original_text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "relevance_score": 4.0,
+          "explanation": "The CV experience bullet point about implementing CI/CD pipelines and configuring IaC templates is somewhat relevant to the job posting for an AI/ML Engineer in Biotechnology and Pharmaceutical industry. While the skills such as Terraform, Ansible, and Containerization are not directly mentioned in the job posting, they can still be considered relevant given the nature of the work (engineering) and the industry. However, there is no mention of Machine Learning or any other AI/ML related technologies in this bullet point, which might make it less relevant than other experience bullet points that specifically showcase expertise in these areas.",
+          "posting_evidence": "None",
+          "kept": true
+        },
+        {
+          "text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "original_text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point highlights skills in building a token-exchange service, which is relevant to the job posting's requirement for 'Machine Learning' skills. However, it doesn't directly address the job posting's emphasis on AI/ML Engineer qualifications and specific preferred qualifications such as Experience with Large Language Models, Agentic AI, open-source projects, relevant scientific publications, knowledge of disease biology, molecular biology and medicine. The CV experience bullet does demonstrate hands-on technical skills but lacks alignment with industry-specific requirements like disease biology and medicine.",
+          "posting_evidence": "The job posting mentions 'Machine Learning' as a required skill, which aligns with the token-exchange service development mentioned in the CV experience bullet point.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Modulai, Basel",
+      "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+      "duration": "Feb 2025 -- Jun 2025",
+      "section_score": 3.4,
+      "section_explanation": "The overall score is calculated as a weighted average of the two bullet points. Bullet point one has a higher relevance score (4.2) but does not directly address the preferred qualifications listed in the job posting. The second bullet point shows some relevance to the job posting due to its mention of Machine Learning, but lacks strong evidence of work ethic or excellence in the field. Since both experience bullets do not directly align with the preferred qualifications, we assign a relatively lower score overall. ",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "original_text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "relevance_score": 4.2,
+          "explanation": "While this experience bullet shows technical skills relevant to Machine Learning and AI/ML Engineer qualifications, it is not directly applicable to the job posting requirements. There is no mention of Large Language Models or Agentic AI, which are preferred qualifications.",
+          "posting_evidence": "Basic Analysis: Industry and Position Analysis: Preferred Qualifications: No evidence in CV Experience Bullet.",
+          "kept": true
+        },
+        {
+          "text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "original_text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point shows some relevance to the job posting as it mentions Machine Learning, which is one of the required skills. However, it does not directly relate to any of the preferred qualifications such as Large Language Models or Agentic AI. The mention of a specific algorithm (Boosted Decision Tree) and computation of graph-derived features might be relevant but lacks evidence of strong work ethic or excellence in the field.",
+          "posting_evidence": "There is some, but limited, evidence that this experience bullet point is related to the job posting. The mention of Machine Learning shows a possible connection between the CV and the job description. However, there is no direct evidence of strong work ethic or excellence in the field.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Deloitte, Zurich",
+      "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+      "duration": "Feb 2022 -- Jan 2025",
+      "section_score": 8.1,
+      "section_explanation": "The overall experience relevance of this CV section is high, with an average score of 7.5 among the six bullet points. Bullet point 1 stands out as highly relevant (score: 8.5), while bullet point 6 is relatively low in relevance (score: 3.2). However, five other bullet points have high or very high scores (8.0-8.5), indicating that the candidate has strong and relevant experience for the job posting.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "original_text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "relevance_score": 8.5,
+          "explanation": " This experience bullet is highly relevant to the job posting for several reasons: \n",
+          "posting_evidence": "\n1. The mention of Large Language Models (LLMs) aligns with the preferred qualifications listed in the job posting.\n2. The role of Co-leading initiatives at GenAI Incubator demonstrates leadership and initiative, which are desirable qualities for an AI/ML Engineer position in biotechnology and pharmaceutical industry.\n3. The design of proof-of-concept RAG-based LLM prototypes shows technical expertise in NLP, graph machine learning, and compliance analytics, all of which are relevant to the job posting's preferred qualifications\n4. The experience demonstrates ability to contribute to multiple use cases, indicating versatility and adaptability in a fast-paced industry like biotechnology.\n5. However, there is no direct mention of agentic AI or open-source projects, which are also preferred qualifications for the position.",
+          "kept": true
+        },
+        {
+          "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "original_text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "relevance_score": 8.0,
+          "explanation": "The CV experience bullet point shows strong relevance to the job posting. The mention of AI and machine learning is directly aligned with the 'skills' requirement in the job posting. However, there's a mismatch between the industry (banking, energy-market) and the preferred qualifications (biotechnology and pharmaceutical). There's also no explicit mention of experience with large language models or agentic AI.",
+          "posting_evidence": "The skills demonstrated: Machine Learning. The job posting requested 'Machine Learning'. The CV does not explicitly state any work experience in the biotech/pharmaceutical industry, which is a preferred qualification. However, machine learning engineering and stakeholder management are relevant skills.",
+          "kept": true
+        },
+        {
+          "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "original_text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "relevance_score": 8.0,
+          "explanation": "This bullet point is highly relevant to the job posting as it showcases experience with Machine Learning (hands-on skill mentioned in the job posting) and its application in a Biotechnology and Pharmaceutical context. Additionally, the mention of a reproducible benchmarking framework demonstrates technical expertise in AI/ML engineering, aligning with the preferred qualifications. However, there is no direct mention of experience with Large Language Models or Agentic AI, which are also preferred qualifications.",
+          "posting_evidence": "Machine Learning - mentioned as hands-on skill\nAI/ML Engineer - matches job title\nReproducible benchmarking framework - aligns with the use of open-source projects in the industry (not explicitly mentioned but inferred)\nBiotechnology and Pharmaceutical - aligns with the industry and position analysis",
+          "kept": true
+        },
+        {
+          "text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "original_text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "relevance_score": 8.0,
+          "explanation": "The experience bullet point demonstrates relevant technical skills in machine learning, programming (Python), and data analysis. However, it does not explicitly show expertise in AI/ML Engineer-specific areas such as Agentic AI or Large Language Models. It also lacks explicit connections to disease biology, molecular biology, or medicine. Nonetheless, the ability to modernize legacy systems, develop interfaces for macro-sensitivity analysis, and contribute to a global portfolio indicates strong hands-on skills and a good work ethic.",
+          "posting_evidence": "Evidence of Machine Learning, Python programming. Also shows some business skills in updating legacy analytics.",
+          "kept": true
+        },
+        {
+          "text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "original_text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is relevant to the job posting as it demonstrates expertise in AI/ML, particularly in NLP and graph machine learning. The fact that it was an internal enablement effort suggests a strong understanding of how to implement these technologies within an organization. However, there is no direct evidence of work with Large Language Models or Agentic AI, which are preferred qualifications for the job posting.",
+          "posting_evidence": "The experience bullet point does not mention specific company names, industries, skills, or knowledge that matches the 'preferred_qualifications' category of the job posting. The only related information is that it was in a biotechnology industry (as mentioned in the industry_and_position_analysis), and the candidate has experience with graph machine learning, which is a relevant skill.",
+          "kept": true
+        },
+        {
+          "text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "original_text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "relevance_score": 3.2,
+          "explanation": "While this bullet point demonstrates some relevant skills such as communicating with stakeholders and working on complex projects, it does not explicitly mention any direct relevance to Machine Learning or AI/ML Engineer role in the biotechnology/pharmaceutical industry. However, the ability to communicate effectively with varied seniority stakeholders is an important skill for an AI/ML Engineer, especially in a collaborative environment.",
+          "posting_evidence": "The CV experience bullet does not directly match any of the skills mentioned in the job posting such as Large Language Models, Agentic AI, scientific publications or disease biology. However, it does demonstrate some level of communication and project management skills that could be useful for an AI/ML Engineer role.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Ph.D. Candidate/Research Assistant",
+      "duration": "Sep 2016--Nov 2021",
+      "section_score": 6.75,
+      "section_explanation": "The overall relevance of this work experience section is moderate, due to a mix of highly relevant and less relevant bullet points. Bullet point 1 demonstrates strong expertise in machine learning, aligning with the job posting's requirements. Bullet points 3 and 4 show some relevance, but lack direct connection to the biotechnology and pharmaceutical industry or key skills such as large language models and agentic AI. The remaining two bullet points are less relevant, as they focus on research-oriented tasks rather than applied AI/ML engineering. Therefore, a score of 6.75 is assigned, reflecting a balance between strong and weaker aspects of the candidate's experience.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "original_text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "relevance_score": 8.5,
+          "explanation": "This experience bullet point is highly relevant to the job posting due to several reasons: \n* The use of Machine Learning skills like Python and TensorFlow aligns with the required skills in the job posting.\n* Although not explicitly mentioned in the preferred qualifications, the experience with Graph Machine Learning shows an advanced understanding of ML concepts, which could be beneficial for Agentic AI.\n* Conditional VAEs (Variational Autoencoders) is a specific ML technique that demonstrates expertise in the field. However, disease biology and molecular biology are not explicitly mentioned, but it's possible to infer a connection between structural health monitoring and predictive maintenance with medicine.",
+          "posting_evidence": "Industry: Biotechnology and Pharmaceutical\nJob Title: AI/ML Engineer\nRequired Skills: Machine Learning\nPreferred Qualifications: Experience with Large Language Models, Agentic AI, open-source projects, relevant scientific publications, knowledge of disease biology, molecular biology, and medicine",
+          "kept": true
+        },
+        {
+          "text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "original_text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "relevance_score": 4.5,
+          "explanation": "This experience bullet point is somewhat relevant to the job posting as it demonstrates academic achievement in a related field (AI/ML). However, there is no direct evidence of machine learning expertise or experience with large language models, agentic AI, open-source projects, or disease biology, which are key requirements for the position. Nevertheless, this experience does demonstrate strong work ethic and excellence, earning a Ph.D. with no corrections and being unanimously nominated for an award.",
+          "posting_evidence": "PhD in a related field (AI/ML), Excellence in academic achievement",
+          "kept": true
+        },
+        {
+          "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "original_text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "relevance_score": 3.5,
+          "explanation": "The candidate's experience in industrial collaborations is relevant to the job posting, particularly in relation to AI/ML Engineer qualifications and preferred skills such as Large Language Models and Machine Learning. The mention of deep learning and remaining useful life prediction also aligns with machine learning concepts. However, there is no specific indication that the collaboration was related to biotechnology or pharmaceutical industry, which may limit its relevance to the job title.",
+          "posting_evidence": "Machine Learning skills are mentioned in the basic analysis section as a required skill. AI/ML Engineer qualifications in the basic analysis section also align with the candidate's experience. The use of deep learning in wind farm data processing is an application of machine learning concepts, but it does not necessarily indicate expertise in disease biology or molecular biology.",
+          "kept": true
+        },
+        {
+          "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "original_text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "relevance_score": 3.0,
+          "explanation": "While the candidate has some experience with machine learning and has implemented a neural network architecture, this specific bullet point does not directly relate to the job requirements. The job posting emphasizes large language models and agentic AI, which are not mentioned in this experience. However, it does show that the candidate has hands-on skills with open-source projects.",
+          "posting_evidence": "Job Posting: Experience with Large Language Models, Agentic AI; CV Evidence: Implemented a message-passing GNN library (neural network architecture)",
+          "kept": true
+        },
+        {
+          "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "original_text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "relevance_score": 3.0,
+          "explanation": "The candidate has some relevant technical skills for the job such as experience with large-scale data processing and cluster computing. However, there is no clear indication of proficiency in Machine Learning or AI/ML engineering. The focus on simulations is more aligned with a research-oriented role rather than an applied AI/ML engineer position.",
+          "posting_evidence": "Skills: cluster computing; preferred_qualifications: Experience with Large Language Models",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Research Assistant",
+      "duration": "Dec 2015--Sep 2016",
+      "section_score": 4.5,
+      "section_explanation": "The overall relevance of this CV experience section is 4.5 out of 10. Based on the two bullet points, both scoring a 3.0, there are some relevant skills demonstrated by the candidate in machine learning and programming languages like PHP, JavaScript, and Matlab. However, neither bullet point directly addresses the job posting requirements for Large Language Models or Agentic AI, which are preferred qualifications for this position.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "original_text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "relevance_score": 3.0,
+          "explanation": "Although the CV experience bullet point highlights the candidate's skills in machine learning, it is not directly related to the job posting. The candidate's experience with uncertainty quantification and sensitivity analysis algorithms may be relevant to the role as an AI/ML Engineer in the Biotechnology and Pharmaceutical industry, but it does not demonstrate expertise in Large Language Models or Agentic AI. Additionally, there is no mention of open-source projects, scientific publications, disease biology, molecular biology, or medicine, which are preferred qualifications for this position.",
+          "posting_evidence": "Machine Learning, Computational Statistics, Software Development",
+          "kept": true
+        },
+        {
+          "text": "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab).",
+          "original_text": "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab).",
+          "relevance_score": 3.0,
+          "explanation": "The CV bullet point is somewhat relevant to the job posting as it shows hands-on experience with programming languages such as PHP, JavaScript, and MATLAB. However, there are a few issues that lower its relevance: (1) The primary industry and position requirements are in Biotechnology and Pharmaceutical, which might be outside this candidate's expertise given their background in sensitivity and regression analysis. (2) While the candidate has demonstrated experience with ML-related tasks using Matlab, they lack clear evidence of proficiency in Large Language Models or Agentic AI, which are preferred qualifications.",
+          "posting_evidence": "The CV does not include any information about working on open-source projects, scientific publications, or knowledge of disease biology, molecular biology, and medicine, all of which are mentioned as preferred qualifications. Thus, it is unclear how the candidate's experience in sensitivity analysis contributes to these areas.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Credit Suisse, Zurich",
+      "position": "Full-Stack Trading Tool Developer (internship)",
+      "duration": "Jul 2014--Dec 2014",
+      "section_score": 5.5,
+      "section_explanation": "This experience section has some relevance to the job posting requirements, but it falls short in several areas. Although the candidate demonstrates proficiency in programming languages like C++ and R, which are relevant for AI/ML tasks, they lack explicit mention of key skills and qualifications such as Machine Learning or Large Language Models. The context of option pricing is unrelated to disease biology, molecular biology, and medicine. However, the use of Python, a commonly used language in AI/ML work, and knowledge of MySQL, a useful database management system for biotechnology applications, show some potential relevance.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "original_text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "relevance_score": 3.0,
+          "explanation": "This experience bullet point demonstrates technical skills, such as programming in C++, and proficiency with languages like R. However, it does not explicitly mention key job posting requirements like Machine Learning or Large Language Models. The CV experience shows potential for adapting and improving existing interfaces, but the specific context (option pricer) is unrelated to the job's focus on disease biology, molecular biology, and medicine.",
+          "posting_evidence": "Basic Analysis: Skills - None; Qualifications - AI/ML Engineer; Preferred Qualifications - Experience with Large Language Models",
+          "kept": true
+        },
+        {
+          "text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "original_text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "relevance_score": 3.0,
+          "explanation": "Apart from the Machine Learning skill mentioned in the job posting, there are other relevant aspects. The candidate has experience with Python, which is a commonly used programming language in AI/ML work. They also have knowledge of MySQL, a relational database management system that can be useful for data storage and analysis in biotechnology and pharmaceutical applications. However, there is no direct connection to Large Language Models or Agentic AI, open-source projects, disease biology, molecular biology, medicine, which are the preferred qualifications mentioned in the job posting.",
+          "posting_evidence": "]} }",
+          "kept": true
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-06-04T15:37:46.844033",
+  "updated_at": "2026-06-04T15:37:46.844033"
+}

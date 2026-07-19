@@ -1,0 +1,460 @@
+{
+  "id": "776d3ced-e14e-4d92-adb5-79b0e8f0f7f5",
+  "job_id": "7a67ec25-617d-47d1-b5b3-a87486cd8af1",
+  "company": "",
+  "job_title": "LLM Engineer",
+  "overall_score": 7.792335766423358,
+  "job_entered_at": "2026-07-11T09:21:44.996914",
+  "submitted_at": "2026-07-11T09:34:12.557766",
+  "result": null,
+  "notes": null,
+  "cv_snapshot": {
+    "candidate": {
+      "candidate_id": "charilaos_mylonas",
+      "full_name": "",
+      "profile": {},
+      "personal_statement": "I am a data science and scientific computing expert, with a strong mathematical and high performance computing background, and more than 7 years of machine learning / deep learning experience. I hold a Ph.D. on Machine Learning for Structural Health Monitoring, with original contributions on the use of deep learning and generative ML in predictive maintenance. I have extensive demonstrable experience in setting up and executing large scale Monte-Carlo simulations, working with industrial monitoring data (Wind turbine SCADA data).",
+      "alternative_statements": [
+        "I am a Senior Applied AI and ML Engineer with deep experience in machine learning, statistical modelling, uncertainty quantification and data-driven decision support across finance, engineering and transaction-risk domains. I have worked with complex real-world datasets, including financial risk data, transaction networks, wind-turbine simulations, condition-monitoring data and credit-risk analytics. My strengths include building reproducible analytical pipelines, benchmarking alternative modelling approaches, extracting insight from large and noisy datasets, and communicating results in a way that supports business and technical decisions. I have applied Python, R, deep learning, graph neural networks, probabilistic modelling and time-series techniques to problems such as fraud detection, expected credit loss analysis, structural health monitoring and compliance analytics. I bring both scientific rigour and practical delivery focus: I can frame an analytical problem, source and transform the right data, build and evaluate models, quantify uncertainty, and explain the implications clearly to stakeholders.",
+        "I am a Senior Machine Learning Engineer with experience designing, implementing and evaluating applied ML systems across fraud detection, financial risk, graph learning and engineering applications. I combine strong software engineering discipline with advanced machine learning expertise, including graph-based feature extraction, time-series modelling, probabilistic deep learning and scalable benchmarking. I have delivered production-relevant ML work on large-scale transaction data, including fraud detection models evaluated on tens of millions of records and tens of millions of users, with measurable improvements in model performance and false-positive reduction. My background also includes developing original graph neural network and uncertainty-modelling approaches during doctoral research, as well as introducing engineering best practices such as testing, versioning, maintainability and reproducible pipelines in client-facing environments. I bring a rare combination of research depth, production focus, and clear technical communication for both technical and non-technical stakeholders.",
+        "I am an applied AI expert with a Ph.D. from ETH Zurich, and consulting experience advising clients on AI/ML use case discovery and solution design. My background combines hands-on AI expertise, including building agentic systems (both RAG and tool calling), deep neural network fine-tuning (including LLM finetuning), and agentic frameworks (LangGraph/Langchain). I have research contributions on applications of geometric deep learning (graph neural networks) and deep generative models. I also bring experience in financial risk management and quantitative finance, through consulting engagements in liquidity risk and credit risk. Across academic and consulting engagements, I have demonstrated impact by translating complex technical concepts into maintainable, modular solutions, fostering robust DevOps and software engineering practices, and supporting collaborative delivery across technical and business stakeholders.\nSenior Machine Learning Engineer & Consultant with a PhD from ETH Zurich and extensive experience delivering high-impact AI solutions in the financial services and risk advisory sectors. Expert in designing and tuning deep learning architectures (e.g., GNNs, Deep Generative Models). Proven track record of translating cutting-edge research into applied AI solutions ranging from predictive maintenance and statistical modeling of industrial-scale assets, fraud detection, and speech processing. Adept at leading cross-functional technical initiatives, mentoring engineering teams, and navigating the rigorous compliance and performance requirements of the financial industry to drive data-centric innovation."
+      ],
+      "experience_sections": [
+        {
+          "company": "EPAM, Zurich",
+          "duration": "Aug 2025 -- current",
+          "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+          "text_items": [
+            "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+            "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+            "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+            "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+            "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service."
+          ]
+        },
+        {
+          "company": "Modulai, Basel",
+          "duration": "Feb 2025 -- Jun 2025",
+          "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+          "text_items": [
+            "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+            "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data."
+          ]
+        },
+        {
+          "company": "Deloitte, Zurich",
+          "duration": "Feb 2022 -- Jan 2025",
+          "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+          "text_items": [
+            "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+            "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+            "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+            "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+            "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+            "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+            "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+            "Contributed to business development for AI in energy trading by shaping technical pitch content and taking part in client pitch sessions."
+          ]
+        },
+        {
+          "company": "ETH Zurich",
+          "duration": "Sep 2016--Nov 2021",
+          "position": "Ph.D. Candidate/Research Assistant",
+          "text_items": [
+            "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+            "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+            "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+            "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+            "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal."
+          ]
+        },
+        {
+          "company": "ETH Zurich",
+          "duration": "Dec 2015--Sep 2016",
+          "position": "Research Assistant",
+          "text_items": [
+            "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+            "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab)."
+          ]
+        },
+        {
+          "company": "Credit Suisse, Zurich",
+          "duration": "Jul 2014--Dec 2014",
+          "position": "Full-Stack Trading Tool Developer (internship)",
+          "text_items": [
+            "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+            "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL)."
+          ]
+        }
+      ]
+    },
+    "cv_template": {
+      "template_id": "default_cv",
+      "template_path": "assets/latex_cv_template_v0.tex",
+      "experience_section_title": "Work Experience"
+    },
+    "motivation_letter_template": {
+      "template_id": "default_motivation_letter",
+      "template_path": "assets/cover_letter/CoverLetter_Template.tex"
+    },
+    "personal_statement": "I am a data science and scientific computing expert, with a strong mathematical and high performance computing background, and more than 7 years of machine learning / deep learning experience. I hold a Ph.D. on Machine Learning for Structural Health Monitoring, with original contributions on the use of deep learning and generative ML in predictive maintenance. I have extensive demonstrable experience in setting up and executing large scale Monte-Carlo simulations, working with industrial monitoring data (Wind turbine SCADA data).",
+    "alternative_statements": [
+      "I am a Senior Applied AI and ML Engineer with deep experience in machine learning, statistical modelling, uncertainty quantification and data-driven decision support across finance, engineering and transaction-risk domains. I have worked with complex real-world datasets, including financial risk data, transaction networks, wind-turbine simulations, condition-monitoring data and credit-risk analytics. My strengths include building reproducible analytical pipelines, benchmarking alternative modelling approaches, extracting insight from large and noisy datasets, and communicating results in a way that supports business and technical decisions. I have applied Python, R, deep learning, graph neural networks, probabilistic modelling and time-series techniques to problems such as fraud detection, expected credit loss analysis, structural health monitoring and compliance analytics. I bring both scientific rigour and practical delivery focus: I can frame an analytical problem, source and transform the right data, build and evaluate models, quantify uncertainty, and explain the implications clearly to stakeholders.",
+      "I am a Senior Machine Learning Engineer with experience designing, implementing and evaluating applied ML systems across fraud detection, financial risk, graph learning and engineering applications. I combine strong software engineering discipline with advanced machine learning expertise, including graph-based feature extraction, time-series modelling, probabilistic deep learning and scalable benchmarking. I have delivered production-relevant ML work on large-scale transaction data, including fraud detection models evaluated on tens of millions of records and tens of millions of users, with measurable improvements in model performance and false-positive reduction. My background also includes developing original graph neural network and uncertainty-modelling approaches during doctoral research, as well as introducing engineering best practices such as testing, versioning, maintainability and reproducible pipelines in client-facing environments. I bring a rare combination of research depth, production focus, and clear technical communication for both technical and non-technical stakeholders.",
+      "I am an applied AI expert with a Ph.D. from ETH Zurich, and consulting experience advising clients on AI/ML use case discovery and solution design. My background combines hands-on AI expertise, including building agentic systems (both RAG and tool calling), deep neural network fine-tuning (including LLM finetuning), and agentic frameworks (LangGraph/Langchain). I have research contributions on applications of geometric deep learning (graph neural networks) and deep generative models. I also bring experience in financial risk management and quantitative finance, through consulting engagements in liquidity risk and credit risk. Across academic and consulting engagements, I have demonstrated impact by translating complex technical concepts into maintainable, modular solutions, fostering robust DevOps and software engineering practices, and supporting collaborative delivery across technical and business stakeholders.\nSenior Machine Learning Engineer & Consultant with a PhD from ETH Zurich and extensive experience delivering high-impact AI solutions in the financial services and risk advisory sectors. Expert in designing and tuning deep learning architectures (e.g., GNNs, Deep Generative Models). Proven track record of translating cutting-edge research into applied AI solutions ranging from predictive maintenance and statistical modeling of industrial-scale assets, fraud detection, and speech processing. Adept at leading cross-functional technical initiatives, mentoring engineering teams, and navigating the rigorous compliance and performance requirements of the financial industry to drive data-centric innovation."
+    ],
+    "experience_sections": [
+      {
+        "company": "EPAM, Zurich",
+        "duration": "Aug 2025 -- current",
+        "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+        "text_items": [
+          "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service."
+        ]
+      },
+      {
+        "company": "Modulai, Basel",
+        "duration": "Feb 2025 -- Jun 2025",
+        "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+        "text_items": [
+          "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data."
+        ]
+      },
+      {
+        "company": "Deloitte, Zurich",
+        "duration": "Feb 2022 -- Jan 2025",
+        "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+        "text_items": [
+          "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "Contributed to business development for AI in energy trading by shaping technical pitch content and taking part in client pitch sessions."
+        ]
+      },
+      {
+        "company": "ETH Zurich",
+        "duration": "Sep 2016--Nov 2021",
+        "position": "Ph.D. Candidate/Research Assistant",
+        "text_items": [
+          "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal."
+        ]
+      },
+      {
+        "company": "ETH Zurich",
+        "duration": "Dec 2015--Sep 2016",
+        "position": "Research Assistant",
+        "text_items": [
+          "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab)."
+        ]
+      },
+      {
+        "company": "Credit Suisse, Zurich",
+        "duration": "Jul 2014--Dec 2014",
+        "position": "Full-Stack Trading Tool Developer (internship)",
+        "text_items": [
+          "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL)."
+        ]
+      }
+    ]
+  },
+  "scoring_snapshot": {
+    "personal_statement": "I am a data science and scientific computing expert, with a strong mathematical and high performance computing background, and more than 7 years of machine learning / deep learning experience. I hold a Ph.D. on Machine Learning for Structural Health Monitoring, with original contributions on the use of deep learning and generative ML in predictive maintenance. I have extensive demonstrable experience in setting up and executing large scale Monte-Carlo simulations, working with industrial monitoring data (Wind turbine SCADA data).",
+    "sections": [
+      {
+        "title": "Work Experience",
+        "company": "EPAM, Zurich",
+        "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+        "duration": "Aug 2025 -- current",
+        "section_score": 7.8,
+        "explanation": "The overall score for this role is a good balance between technical and business skills, with some exceptional highlights such as building an internal LangGraph evaluation and benchmarking library (reducing token consumption by 35\"). However, there's room for improvement in explicitly stating LLM-related tasks. The scores of individual bullet points range from 4 to 8 out of 10.",
+        "items": [
+          {
+            "text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+            "relevance_score": 8.0,
+            "explanation": "This bullet point is highly relevant to the job posting as it shows experience with LLM (Large Language Model) skills, specifically in building a token-exchange service. The fact that it's for hybrid-cloud API integrations also aligns with the preferred qualifications of working on multiple cloud platforms.",
+            "posting_evidence": "LLM, Token-Exchange Service",
+            "kept": true
+          },
+          {
+            "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+            "relevance_score": 5.0,
+            "explanation": "The candidate has experience working with LLMs (Large Language Models) which is directly mentioned in the job posting. The bullet point also showcases hands-on skills and business acumen, aligning well with the required skills and qualifications.",
+            "posting_evidence": "Skills: llm, Qualifications: requirements",
+            "kept": true
+          },
+          {
+            "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+            "relevance_score": 5.0,
+            "explanation": "This experience bullet point is highly relevant to the job posting as it shows expertise in LLMs (a key skill mentioned in the job posting), specifically through a real-world application of building an internal evaluation and benchmarking library. The achievement of reducing token consumption by 35% demonstrates strong technical skills, which align with the hands-on skills required for the position.",
+            "posting_evidence": "LLM Engineer, Hands-on Skills: 0.6",
+            "kept": true
+          },
+          {
+            "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+            "relevance_score": 4.0,
+            "explanation": "The experience bullet is very relevant to the job posting as it involves working with LLM technology which aligns with the 'llm' skill mentioned in the basic analysis. The use of Python and FastAPI further supports this relevance, especially considering the hands-on skills required for the position are around 60%.",
+            "posting_evidence": "LLM Engineers often work on backend frameworks to integrate AI agents with other systems, so the bullet point shows practical experience that is in line with expectations. However, it does not explicitly state any business-related tasks which could have increased the score further.",
+            "kept": true
+          },
+          {
+            "text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+            "relevance_score": 4.0,
+            "explanation": "The CV experience bullet point shows some relevance to the job posting as it involves technical skills that are required for the LLM Engineer position. However, there is no direct mention of LLM (Large Language Model) or any specific requirements mentioned in the job posting. The presence of CI/CD pipelines and IaC templates aligns with the hands-on skills of business skills at a score of 0.6.",
+            "posting_evidence": "hands_on_skills",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      },
+      {
+        "title": "Work Experience",
+        "company": "Modulai, Basel",
+        "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+        "duration": "Feb 2025 -- Jun 2025",
+        "section_score": 6.8,
+        "explanation": "The overall relevance of this experience is moderate, with a score that falls between the two individual bullet points. Bullet point 1 is highly relevant (Score: 8.0) as it demonstrates extensive experience with LLM technology and complex project management, directly aligning with job requirements. However, bullet point 2 has lower relevance (Score: 4.0) due to a lack of explicit connection to senior role expectations beyond technical skills. The overall score reflects the balance between these two experiences.",
+        "items": [
+          {
+            "text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+            "relevance_score": 8.0,
+            "explanation": "The candidate has extensive experience with LLM technology, as demonstrated by implementing algorithms for large-scale community detection. The scale of the transaction graphs and client's full user base is substantial, indicating that the candidate has worked on complex projects. This experience directly aligns with the job posting requirements.",
+            "posting_evidence": "basic_analysis.skills: 'llm', industry_and_position_analysis.job_title: 'LLM Engineer'",
+            "kept": true
+          },
+          {
+            "text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+            "relevance_score": 4.0,
+            "explanation": "This CV experience bullet point is relevant to the job posting as it showcases expertise in building and extending machine learning models (LLM) which is a key skill for an LLM Engineer. The mention of improving performance metrics, such as reducing false positive rates, also aligns with the 'hands_on_skills' of 0.6 assigned by the job posting. However, there's no explicit connection to any business-related skills or industry-specific experience that might be expected in a more senior role like an LLM Engineer. Nevertheless, this bullet point demonstrates strong technical capabilities and problem-solving abilities which are likely valuable for the position.",
+            "posting_evidence": "Skills: 'llm' is present, Qualifications: some aspects of requirements (e.g., working with machine learning models) are implied, preferred qualifications are not explicitly stated",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      },
+      {
+        "title": "Work Experience",
+        "company": "Deloitte, Zurich",
+        "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+        "duration": "Feb 2022 -- Jan 2025",
+        "section_score": 8.5,
+        "explanation": "This experience is highly relevant to the job posting with a strong emphasis on LLM-related skills and industry expertise demonstrated across multiple bullet points.",
+        "items": [
+          {
+            "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+            "relevance_score": 9.5,
+            "explanation": "The CV experience bullet point is highly relevant to the job posting for several reasons: ",
+            "posting_evidence": "1. The use of specific skills such as Machine Learning (ML) aligns with the skills required in the job posting under 'basic_analysis' section.",
+            "kept": true
+          },
+          {
+            "text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+            "relevance_score": 8.0,
+            "explanation": "The experience bullet point is highly relevant to the job posting as it demonstrates hands-on skills in LLM (Large Language Model) design and technical expertise across NLP, graph machine learning, and compliance analytics use cases. The fact that the candidate co-led initiatives at a company indicates leadership potential and ability to drive projects forward.",
+            "posting_evidence": "LLM Engineer job posting has 0.6 hands-on skills which match this experience",
+            "kept": true
+          },
+          {
+            "text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+            "relevance_score": 8.0,
+            "explanation": "The candidate's experience in modernizing legacy R-based credit risk analytics by developing Python interfaces is highly relevant to the job posting. The use of LLM (Large Language Model) skills is not explicitly mentioned in this bullet point, but it can be inferred that the candidate has experience working with complex models and developing interfaces for them. The hands-on skill level is high due to the development work involved.",
+            "posting_evidence": "The posting specifies 'LLM Engineer' which aligns with the candidate's work on modernizing legacy analytics using LLM. The industry score is 0.6, indicating a moderate level of relevance to this job title. However, the business skills and hands-on skills are scored high (0.7 & 0.6) suggesting that the job posting places significant value on these aspects.",
+            "kept": true
+          },
+          {
+            "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+            "relevance_score": 4.0,
+            "explanation": "The CV experience bullet point shows evidence of strong work ethic and technical expertise in LLM (Large Language Model) development. However, there is no direct mention of the industry or company name which might reduce the score if compared to other candidates.",
+            "posting_evidence": "Job posting mentions 'LLM' as a required skill, and the bullet point showcases hands-on experience with it. The job also requires a high level of business skills, which is shown in the bullet point through building a reproducible framework for a Swiss bank's compliance department.",
+            "kept": true
+          },
+          {
+            "text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+            "relevance_score": 4.0,
+            "explanation": "The experience bullet point shows the candidate's understanding of software engineering best practices. However, there is no direct mention of LLM (Large Language Model) skills or industry expertise that a typical LLM Engineer would require in this position. Nonetheless, it highlights their ability to improve project management and maintainability - which can be beneficial for an LLM Engineer role.",
+            "posting_evidence": "None",
+            "kept": true
+          },
+          {
+            "text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+            "relevance_score": 4.0,
+            "explanation": "- **Hands-on skills relevance:** 2/5 (The experience is relevant to hands-on skills, but it's not directly stated as an LLM Engineer role. The job requires 0.6 in hands-on skills, and this bullet point indirectly shows practical application of skills, so I've scored it a 2 out of 5.)",
+            "posting_evidence": "- **LLM (Large Language Model) relevance:** This experience does not directly showcase the use of LLM models, although communication with stakeholders can imply complex technical discussions which may involve some LLM-related concepts. However, this is not explicitly mentioned in the job posting as a required skill or qualification. Hence, it's difficult to score high on this aspect without direct evidence.",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      },
+      {
+        "title": "Work Experience",
+        "company": "ETH Zurich",
+        "position": "Ph.D. Candidate/Research Assistant",
+        "duration": "Sep 2016--Nov 2021",
+        "section_score": 7.8,
+        "explanation": "The overall relevance score of 7.8 is based on the average score of the bullet points. The top three bullet points (1, 2, and 3) demonstrate strong relevance to the job posting with scores of 9.0, 8.0, and 8.0 respectively. However, the last two bullet points (4 and 5) have lower scores of 4.0 each, which brings down the overall average. Considering the significance of the relevant experiences in bullets 1-3, I've slightly weighted their contribution to the overall score.",
+        "items": [
+          {
+            "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+            "relevance_score": 9.0,
+            "explanation": "I assigned a high score to this bullet point because it directly relates to the job posting. The skills mentioned such as Python, TensorFlow and Graph Machine Learning are relevant to LLM Engineer position, especially considering the preferred qualifications mentioned in the job posting which include skills related to LLM. Additionally, the mention of conditional VAEs demonstrates an in-depth understanding of the field and a strong work ethic.",
+            "posting_evidence": "basic_analysis.skills",
+            "kept": true
+          },
+          {
+            "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+            "relevance_score": 8.0,
+            "explanation": "This bullet point is highly relevant to the job posting as it demonstrates experience with LLm skills, specifically using deep learning for predictive analytics which aligns with the 'hands_on_skills' mentioned in the job posting. The mention of raw data curation and wind farm data processing suggests hands-on experience with handling large datasets.",
+            "posting_evidence": "basic_analysis['skills'] = llm (strong evidence) , basic_analysis['qualifications'] = requirements (moderate evidence)",
+            "kept": true
+          },
+          {
+            "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+            "relevance_score": 8.0,
+            "explanation": "This experience bullet point is extremely relevant to the LLM Engineer position. The skills and tasks mentioned align closely with the job requirements, especially in relation to handling large-scale data processing using Bash and cluster computing.",
+            "posting_evidence": "skills: llm (matches), qualifications: 'requirements' (implied skill for handling large volumes of data)",
+            "kept": true
+          },
+          {
+            "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+            "relevance_score": 4.0,
+            "explanation": "The experience bullet point demonstrates expertise in implementing a message-passing Graph Neural Network (GNN) library. The mention of LLM is not directly relevant to the job posting, as it is mentioned in the 'skills' section but not explicitly required for the position. However, since GNNs are related to LLM and can be used in combination with them, I've assigned a relevance score of 4 out of 5.",
+            "posting_evidence": "message-passing GNN library (related to LLM)",
+            "kept": true
+          },
+          {
+            "text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+            "relevance_score": 4.0,
+            "explanation": "This experience bullet is relevant to the job posting because it shows academic achievement in a field related to LLM (Large Language Model). The fact that the candidate was awarded a Ph.D. with no corrections and was unanimously nominated for an award indicates excellence in their work and strong work ethic. However, since there is no direct mention of specific skills or qualifications required for the job posting, I've deducted one point from the maximum score.",
+            "posting_evidence": "Job Posting Information:\n- Job Title: LLM Engineer\n- Industry and Position Analysis: No evidence of academic achievement mentioned in industry and position analysis",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      },
+      {
+        "title": "Work Experience",
+        "company": "ETH Zurich",
+        "position": "Research Assistant",
+        "duration": "Dec 2015--Sep 2016",
+        "section_score": 7.5,
+        "explanation": "The overall experience is relevant to the job posting as it demonstrates hands-on skills with LLM and involvement in industry-specific context (computational statistics). Although there was no explicit mention of business skills, which are considered more important by the job posting, the candidate has demonstrated some level of relevance. The scores from each bullet point were 4.0 and were derived based on their alignment to specific requirements such as relevant skills (hands-on) and industry context (computational statistics). No company or industry was explicitly mentioned in either experience.",
+        "items": [
+          {
+            "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+            "relevance_score": 4.0,
+            "explanation": "The experience is relevant because it involves hands-on work with LLM (Large Language Model) in a computational statistics context. However, the job posting emphasizes business skills as more important, which may not be directly related to this CV experience.",
+            "posting_evidence": "LLM Engineer",
+            "kept": true
+          },
+          {
+            "text": "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab).",
+            "relevance_score": 4.0,
+            "explanation": "The candidate has relevant skills in LLM (as per the job posting), specifically hands-on skills. However, the experience description does not explicitly mention work with 'LLM' or any industry-specific context that matches the job requirements.",
+            "posting_evidence": "skills (LLM) & no company_name and industry",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      },
+      {
+        "title": "Work Experience",
+        "company": "Credit Suisse, Zurich",
+        "position": "Full-Stack Trading Tool Developer (internship)",
+        "duration": "Jul 2014--Dec 2014",
+        "section_score": 6.8,
+        "explanation": "The overall relevance of this experience is moderate to high. Bullet point 1 has a high score (8.0) due to its relevance to business and hands-on skills required for the job posting. However, bullet point 2 has a lower score (4.0), which brings down the overall score. Additionally, neither bullet points explicitly mention LLM skills, further decreasing the overall score.",
+        "items": [
+          {
+            "text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+            "relevance_score": 8.0,
+            "explanation": "Relevant experience bullet for the LLM Engineer position. This is because it showcases hands-on skills in programming languages such as Python, which is relevant to the job posting's hands-on skills of 0.6. The CV also mentions JavaScript, which aligns with business skills in the job posting. However, this bullet point does not specifically mention anything related to LLM (Large Language Models), so it may not score higher.",
+            "posting_evidence": "job_title: LLM Engineer, hands_on_skills: Python; business_skills: JavaScript",
+            "kept": true
+          },
+          {
+            "text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+            "relevance_score": 4.0,
+            "explanation": "The experience bullet point is highly relevant to the job posting as it demonstrates expertise in LLM skills. The candidate has hands-on experience implementing and validating high-level interfaces, which aligns with the business skills required for an LLM Engineer. Although it's not directly related to the industry (finance), the technical skillset is transferable.",
+            "posting_evidence": "Hands-on Skills: 0.6 (moderate relevance)",
+            "kept": true
+          }
+        ],
+        "aggregate_score": null
+      }
+    ],
+    "overall_score": 7.792335766423358,
+    "summary_metrics": {
+      "conciseness_relevance_metric": 0.259002433090024,
+      "mean_section_relevance": 7.533333333333334,
+      "weighted_mean_section_relevance": 7.792335766423358
+    },
+    "artifacts": [
+      {
+        "id": "pdf_7a67ec25-617d-47d1-b5b3-a87486cd8af1",
+        "kind": "pdf",
+        "filename": "generated_cv.pdf",
+        "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1.pdf"
+      },
+      {
+        "id": "latex_7a67ec25-617d-47d1-b5b3-a87486cd8af1",
+        "kind": "latex",
+        "filename": "generated_cv.tex",
+        "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1.tex"
+      },
+      {
+        "id": "pdf_7a67ec25-617d-47d1-b5b3-a87486cd8af1_20260711093404",
+        "kind": "pdf",
+        "filename": "cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.pdf",
+        "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.pdf"
+      },
+      {
+        "id": "latex_7a67ec25-617d-47d1-b5b3-a87486cd8af1_20260711093404",
+        "kind": "latex",
+        "filename": "cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.tex",
+        "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.tex"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "id": "pdf_7a67ec25-617d-47d1-b5b3-a87486cd8af1",
+      "kind": "pdf",
+      "filename": "generated_cv.pdf",
+      "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1.pdf"
+    },
+    {
+      "id": "latex_7a67ec25-617d-47d1-b5b3-a87486cd8af1",
+      "kind": "latex",
+      "filename": "generated_cv.tex",
+      "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1.tex"
+    },
+    {
+      "id": "pdf_7a67ec25-617d-47d1-b5b3-a87486cd8af1_20260711093404",
+      "kind": "pdf",
+      "filename": "cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.pdf",
+      "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.pdf"
+    },
+    {
+      "id": "latex_7a67ec25-617d-47d1-b5b3-a87486cd8af1_20260711093404",
+      "kind": "latex",
+      "filename": "cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.tex",
+      "path": "/app/data/artifacts/cv_output_7a67ec25-617d-47d1-b5b3-a87486cd8af1_template2_20260711093404.tex"
+    }
+  ],
+  "created_at": "2026-07-11T09:34:12.557766",
+  "updated_at": "2026-07-11T09:34:12.557766"
+}

@@ -1,0 +1,250 @@
+{
+  "job_id": "354741bd-b913-4a88-bc30-396ec4c9f080",
+  "personal_statement": "As a seasoned Senior Machine Learning Engineer with 8+ years of experience in machine learning, deep learning, and statistical modeling, I bring expertise in leading complex projects from research to production. My background spans finance, engineering, and MedTech domains, where I have worked on applications such as fraud detection, predictive maintenance, and health monitoring using techniques like graph neural networks, time-series analysis, and probabilistic modeling.",
+  "sections": [
+    {
+      "company": "EPAM, Zurich",
+      "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+      "duration": "Aug 2025 -- current",
+      "section_score": 7.25,
+      "section_explanation": "The overall experience section has a high level of relevance to the job posting requirements, with four bullet points showcasing technical skills relevant to machine learning and software engineering best practices. However, the lack of direct mention of industry-specific qualifications like neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows is a concern.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "original_text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "relevance_score": 7.0,
+          "explanation": "The experience bullet point demonstrates technical expertise in machine learning and software engineering best practices. It also shows hands-on experience with Python and the use of a framework such as FastAPI, which is relevant to the job posting. However, there is no direct mention of industry experience or deep learning skills. The bullet point does not explicitly address neural network architectures for sequential or time-series data, radar-based sensing, or regulatory considerations in MedTech.",
+          "posting_evidence": "The job posting requires a strong background in machine learning and software engineering best practices. While the CV experience bullet point meets some of these requirements, it does not fully match all the skills listed in the preferred qualifications. However, the use of Python and FastAPI suggests that the candidate has hands-on experience with relevant tools.",
+          "kept": true
+        },
+        {
+          "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "original_text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "relevance_score": 7.0,
+          "explanation": "This bullet point showcases technical skills relevant to the job posting, such as integration and software engineering best practices. However, it doesn't directly mention industry-specific qualifications like neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows.",
+          "posting_evidence": "Industry: MedTech (match), Technical skills: Software engineering, Integration, Not evident on CV, but relevant to the role",
+          "kept": true
+        },
+        {
+          "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "original_text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "relevance_score": 7.0,
+          "explanation": "The experience bullet point demonstrates skills relevant to the job posting in machine learning and software engineering best practices. However, it does not explicitly mention industry experience or deep learning as preferred qualifications. The candidate's hands-on skills are high (9.0), but their business skills are lower (8.0) which may be a concern for a Senior Machine Learning Engineer role.",
+          "posting_evidence": "machine learning, software engineering best practices",
+          "kept": true
+        },
+        {
+          "text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "original_text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "relevance_score": 6.5,
+          "explanation": "The experience bullet point mentions technical skills such as building a backend service, which aligns with software engineering best practices mentioned in the job posting. However, it does not explicitly mention machine learning skills or industry-specific qualifications like neural network architectures for sequential or time-series data, regulatory considerations in MedTech, or MLOps tools and workflows. It is related to the business skills of 'hands-on skills' as per the job posting.",
+          "posting_evidence": "The CV experience bullet point does not mention any keywords from the preferred qualifications list. However, it does touch on some software engineering best practices which are relevant to machine learning engineers. The lack of specific industry-related experience or technical skills makes this experience somewhat less relevant for the job posting.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Modulai, Basel",
+      "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+      "duration": "Feb 2025 -- Jun 2025",
+      "section_score": 6.5,
+      "section_explanation": "The overall relevance of this CV section is moderate to high. Based on the individual bullet points and their respective scores (Bullet 1: 5.0, Bullet 2: 4.0), it can be deduced that this role experience has some alignment with industry requirement but lacks explicit mention of certain preferred qualifications.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "original_text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "relevance_score": 5.0,
+          "explanation": "The CV experience bullet point shows some relevance to the job posting. The mention of machine learning skills and fraud detection pipeline aligns with the industry (MedTech) and the specific skills required in the job posting, such as machine learning, deep learning, and statistics. However, there is no explicit mention of 'neural network architectures for sequential or time-series data,' which is a preferred qualification.",
+          "posting_evidence": "Industry: MedTech - Aligns with industry requirement",
+          "kept": true
+        },
+        {
+          "text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "original_text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is relevant to the job posting because it involves machine learning and large-scale computation. However, the specific context (transaction graphs and community detection) does not align with the preferred qualifications mentioned in the job posting (neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech). Therefore, while some transferable skills may be applicable, this bullet point is only moderately relevant.",
+          "posting_evidence": "machine learning",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Deloitte, Zurich",
+      "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+      "duration": "Feb 2022 -- Jan 2025",
+      "section_score": 7.1,
+      "section_explanation": "The overall relevance of the CV experience section to the job posting is high, but not perfect. While some bullet points demonstrate strong alignment with required skills and qualifications, others lack direct evidence of industry-specific knowledge or preferred qualifications. The highest-scoring bullet point (8.0) showcases a relevant project in MedTech, while other bullet points show varying degrees of relevance.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "original_text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "relevance_score": 8.0,
+          "explanation": "The experience bullet point is relevant to the job posting because it mentions industry experience, deep learning, and quantitative analysis. However, it does not specifically mention machine learning, software engineering best practices, neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows.",
+          "posting_evidence": "Industry: MedTech - check\n Skills: Deep learning - check\nQualifications: Industry experience - check\nPreferred qualifications: Quantitative comparison of models - indirect match to the preferred qualification of 'MLOps tools and workflows'.",
+          "kept": true
+        },
+        {
+          "text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "original_text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "relevance_score": 6.5,
+          "explanation": "The CV experience bullet demonstrates a strong foundation in relevant skills such as NLP and machine learning. However, the mention of RAG-based LLM prototypes may not directly align with the job posting's emphasis on neural network architectures for sequential or time-series data. While the candidate has demonstrated technical expertise and initiative in leading incubator initiatives, there is limited evidence of direct experience in MedTech regulations or MLOps tools and workflows.",
+          "posting_evidence": " * Relevant skills: NLP, graph machine learning, compliance analytics (6) * Industry relevance: MedTech (0.5), industry experience (4.5) * Skill alignment: Machine learning (4.5), software engineering best practices (3.5) * Evidence of excellence/strong work ethic: Co-led early GenAI Incubator initiatives (4)",
+          "kept": true
+        },
+        {
+          "text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "original_text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "relevance_score": 6.5,
+          "explanation": "This experience bullet is somewhat relevant to the job posting as it involves machine learning skills, specifically in a financial industry setting which is similar to MedTech in terms of using complex algorithms and data analysis to inform business decisions. However, there are some discrepancies: (1) no direct mention of deep learning or software engineering best practices; (2) lack of neural network architectures for sequential or time-series data, although Python interface development implies a level of expertise that could be applicable; and (3) the focus is on credit risk analytics rather than radar-based sensing or regulatory considerations in MedTech. Nevertheless, this experience demonstrates hands-on skills with machine learning and software engineering best practices.",
+          "posting_evidence": "Industry: Financial vs Industry: MedTech - partial match; Job Title: Data Scientist/Machine Learning Engineer (not explicitly mentioned, but implied); Skills used: Machine learning, Python; No direct evidence of deep learning or neural network architectures for sequential/time-series data. However, Python interface development and software engineering best practices are relevant.",
+          "kept": true
+        },
+        {
+          "text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "original_text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "relevance_score": 5.0,
+          "explanation": "The bullet point demonstrates a strong understanding of software engineering best practices and the ability to apply them in real-world scenarios. This is a highly relevant skill for a Senior Machine Learning Engineer role in MedTech, especially considering the job posting's emphasis on industry experience, deep learning, statistics, and software engineering best practices.",
+          "posting_evidence": "machine_learning",
+          "kept": true
+        },
+        {
+          "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "original_text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "relevance_score": 4.5,
+          "explanation": "This experience bullet point is relevant to the job posting because it involves hands-on machine learning engineering, which aligns with the skills required for the position (machine learning). The mention of combining technical expertise with client-facing advisory work and stakeholder management also shows that the candidate has strong business skills (8.0) as per the job posting. However, there is no direct evidence of experience in MedTech or neural network architectures for sequential or time-series data, which are preferred qualifications. Additionally, the lack of industry name makes it harder to assess relevance to the industry.",
+          "posting_evidence": "Machine learning (aligned with skills), Industry: Financial/energy sectors mentioned; client-facing work aligns with business skills",
+          "kept": true
+        },
+        {
+          "text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "original_text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "relevance_score": 3.5,
+          "explanation": "The CV bullet point shows evidence of leadership, knowledge sharing, and team mentorship in the field of AI/ML. However, it does not directly mention industry experience, deep learning, statistics, software engineering best practices, or any specific skills required for the job posting. It also does not show direct application to MedTech context which is a key preferred qualification.",
+          "posting_evidence": ":{",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Ph.D. Candidate/Research Assistant",
+      "duration": "Sep 2016--Nov 2021",
+      "section_score": 6.5,
+      "section_explanation": "The overall relevance of this work experience section is somewhat relevant to the job posting. Out of four bullet points, two (Bullets 1 and 2) have a score of 7.0, which indicates they are somewhat relevant but could be more directly related to the preferred qualifications. The other two bullet points (3 and 4) have lower scores (4.0), indicating less direct relevance. While there is some evidence of machine learning skills, industry experience, and deep learning concepts in this section, it falls short of directly addressing all the required and preferred qualifications for the job posting.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "original_text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "relevance_score": 7.0,
+          "explanation": "The experience bullet point is somewhat relevant to the job posting. The candidate has experience with machine learning (TensorFlow) and deep learning concepts (conditional VAEs), which aligns with the job posting's qualifications. However, the specific industry application (wind energy infrastructure) is not directly related to MedTech. There are no clear connections to the preferred qualifications in neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows.",
+          "posting_evidence": "Industry experience, deep learning, statistics, software engineering best practices. Probabilistic ML, structural health monitoring, predictive maintenance are somewhat relevant to machine learning and statistics qualifications. However, no direct connection to radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows.",
+          "kept": true
+        },
+        {
+          "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "original_text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "relevance_score": 7.0,
+          "explanation": "This experience bullet point demonstrates some relevance to the job posting. The candidate has worked on projects involving machine learning (deep learning for remaining useful life prediction) and handling raw data, which aligns with the skills required in the basic_analysis section of the job posting. However, there is no specific mention of neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows, which are preferred qualifications. The experience does not directly relate to the industry (MedTech) or the job title (Senior Machine Learning Engineer). While it shows hands-on skills, it doesn't particularly stand out as exceptional compared to other relevant experiences.",
+          "posting_evidence": "machine learning, deep learning, raw data curation. industry: MedTech",
+          "kept": true
+        },
+        {
+          "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "original_text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "relevance_score": 4.0,
+          "explanation": "The bullet point shows evidence of hands-on skills with machine learning, specifically graph neural networks. However, there is no mention of industry experience or deep learning expertise which are qualifications preferred by the employer. Additionally, the bullet point does not highlight any direct relevance to MedTech, MLOps tools and workflows, or regulatory considerations in MedTech.",
+          "posting_evidence": "Job posting mentions 'machine learning', 'industry experience', 'deep learning', but the CV experience does not directly address these qualifications. The job posting also highlights preferred qualifications which are not evident in this bullet point.",
+          "kept": true
+        },
+        {
+          "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "original_text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "relevance_score": 4.0,
+          "explanation": "The experience bullet point shows technical skills in using Bash and cluster computing for large-scale simulations. While not directly mentioned in the job posting, it demonstrates some relevant expertise with handling big data (up to 2TB) and could be relevant to working on sequential or time-series data, as preferred qualifications suggest. However, the lack of direct mention of 'machine learning', 'industry experience', and 'deep learning' makes this bullet point less directly relevant than others.",
+          "posting_evidence": "Although not an explicit match, skills in handling large volumes of data may be transferable to tasks related to 'neural network architectures for sequential or time-series data'. However, direct evidence is missing. This bullet point does not mention any industry experience in MedTech which could have made it more relevant.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Research Assistant",
+      "duration": "Dec 2015--Sep 2016",
+      "section_score": 5.3,
+      "section_explanation": "While the experience section demonstrates technical skills relevant to machine learning, statistics, and software engineering, it only partially aligns with the job requirements mentioned in the posting.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "original_text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "relevance_score": 4.0,
+          "explanation": "While this experience bullet point shows expertise in machine learning (specifically uncertainty quantification) and software engineering best practices (through contributions to a popular computational statistics software), it doesn't directly align with the job requirements mentioned in the posting. There's no mention of neural network architectures for sequential or time-series data, radar-based sensing, regulatory considerations in MedTech, or MLOps tools and workflows, which are preferred qualifications. Nonetheless, the experience demonstrates technical skills relevant to machine learning, statistics, and software engineering, making it somewhat relevant. Therefore, I assign a score of 4.",
+          "posting_evidence": "The job posting requires industry experience in MedTech, expertise in deep learning, statistics, and software engineering best practices. It also mentions preferred qualifications that are not directly addressed by this experience bullet point. However, the skills demonstrated align somewhat with machine learning and software engineering requirements listed in the basic analysis section of the posting.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Credit Suisse, Zurich",
+      "position": "Full-Stack Trading Tool Developer (internship)",
+      "duration": "Jul 2014--Dec 2014",
+      "section_score": 6.75,
+      "section_explanation": "Overall, this experience section shows some relevance to the job posting requirements. However, it falls short of expectations in several areas, particularly in terms of machine learning expertise and specific industry-related skills such as deep learning, statistics, and regulatory considerations in MedTech. The candidate's strong software engineering best practices are evident, but these skills do not directly align with the required qualifications for the role. Industry experience is also demonstrated, but it does not appear to be specifically relevant to the MedTech field. The individual bullet point scores average out to a score of 7.25, which I am reducing by 0.5 points to reflect that both bullet points lack direct evidence of skills related to neural network architectures for sequential or time-series data and MLOps tools and workflows. This reduction is also justified as neither bullet point mentions the preferred qualifications of regulatory considerations in MedTech.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "original_text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "relevance_score": 7.5,
+          "explanation": "This experience bullet point shows some relevance to the job posting as it involves machine learning skills, specifically in time series data which is a preferred qualification for the job. However, there is no evidence of deep learning expertise or software engineering best practices, which are basic analysis qualifications for the role. The use of Python and JavaScript for implementation is also relevant but not specific to neural network architectures or radar-based sensing. Additionally, regulatory considerations in MedTech and MLOps tools and workflows are not mentioned.",
+          "posting_evidence": "There is some evidence of a strong work ethic as the candidate implemented both a time series server and a front-end visualization tool, which indicates ability to handle multiple tasks. However, there is no mention of excellence in any specific area such as implementing complex neural network architectures or managing large-scale machine learning systems.",
+          "kept": true
+        },
+        {
+          "text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "original_text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "relevance_score": 7.0,
+          "explanation": "Although the experience bullet point does not directly mention machine learning, industry experience, or deep learning, it shows a strong skill in software engineering best practices (C++ to R). The fact that an improvement of more than 10-fold was achieved suggests a good work ethic and ability to analyze and solve complex problems. However, there is no direct connection between the task performed (option pricer) and any qualification or preferred qualification mentioned in the job posting.",
+          "posting_evidence": "industry experience, software engineering best practices",
+          "kept": true
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-06-18T20:47:56.439746",
+  "updated_at": "2026-06-18T20:47:56.439746"
+}

@@ -1,0 +1,238 @@
+{
+  "job_id": "92a20cfe-6343-4b49-88dc-b1b179fc6aaf",
+  "personal_statement": "I am a Senior ML Engineer and applied AI expert with a Ph.D. from ETH Zurich. I combine software engineering and DevOps with machine learning expertise. I have developed original graph neural network (GNN) and deep generative model applications during my doctoral research. My professional background includes translating cutting-edge research into applied AI solutions. I have deep expertise in benchmarking, building agentic systems, fine-tuning and hyper-parameter optimization for deep learning, and scalable graph feature extraction. Furthermore, I bring consulting experience advising clients on AI/ML solution design, establishing software engineering best practices and processes, and fostering collaborative delivery across technical and business stakeholders.",
+  "sections": [
+    {
+      "company": "EPAM, Zurich",
+      "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+      "duration": "Aug 2025 -- current",
+      "section_score": 8.5,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "original_text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "relevance_score": 5.0,
+          "explanation": "This bullet point is highly relevant to the job posting as it shows hands-on experience with building or evaluating agentic systems, which aligns perfectly with one of the preferred qualifications. Additionally, the use of 'agentic AI platform' and 'orchestrator agent template' indicates a good understanding of the technical skills required for the position. Furthermore, the fact that the individual successfully integrated the system with two legacy systems demonstrates strong problem-solving skills and ability to work with complex systems.",
+          "posting_evidence": "Machine Learning; Agentic Systems; Orchestration Frameworks (e.g., LangChain, AutoGen, CrewAI, Semantic Kernel)",
+          "kept": true
+        },
+        {
+          "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "original_text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "relevance_score": 5.0,
+          "explanation": "This bullet point is highly relevant to the job posting as it demonstrates experience with LangChain and other Orchestration Frameworks, which are listed in the 'skills' section. The candidate has built an internal library for evaluating agent reliability, which aligns with the required experience in building or evaluating agentic systems. Additionally, the mention of model evaluation frameworks is also relevant to the job posting.",
+          "posting_evidence": "• LangChain: Mentioned as part of Orchestration Frameworks\n• Agentic Systems: Experience demonstrated through built internal library for agent reliability.\n• Model Evaluation Frameworks: Built a library for evaluating agent reliability, which aligns with this required skill.",
+          "kept": true
+        },
+        {
+          "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "original_text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "relevance_score": 4.5,
+          "explanation": "This experience bullet point is highly relevant to the job posting as it involves building agentic systems using Orchestration Frameworks like LangChain, which matches one of the required skills in the posting.",
+          "posting_evidence": "Here's why I assigned a score of 4.5: \n- The experience demonstrates expertise in Python, which is one of the required programming languages.\n- It shows experience with agentic systems, which aligns with the job posting's qualifications.\n- The use of FastAPI is not mentioned in the posting, but it's still a relevant tool for building backend frameworks. However, I didn't assign the full 5 points because the CV doesn't explicitly mention experience with Model Evaluation Frameworks or Data Analysis Tools.",
+          "kept": true
+        },
+        {
+          "text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "original_text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "relevance_score": 4.0,
+          "explanation": "The CV experience bullet point demonstrates relevant skills in building and leading technical architectures, as well as hands-on experience with cloud-based integrations. However, it doesn't explicitly mention the use of specific machine learning or agentic systems technologies mentioned in the job posting. This is likely due to a focus on backend token-exchange service development rather than ML pipeline evaluation.",
+          "posting_evidence": "Skills: Python; Machine Learning; Orchestration Frameworks; Large Language Models (LLMs) Not directly relevant",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Modulai, Basel",
+      "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+      "duration": "Feb 2025 -- Jun 2025",
+      "section_score": 7.5,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "original_text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "relevance_score": 4.0,
+          "explanation": "The bullet point shows a relevant technical skill (algorithm implementation) and experience with large-scale data analysis. The mention of graph embeddings, transaction graphs, and 35M+ user base suggests expertise in working with big data. However, there is no explicit mention of the programming languages used for this project, which may not fully align with the job's required skills.",
+          "posting_evidence": "The bullet point does not explicitly mention any relevant keywords from the preferred qualifications section (e.g., model evaluation frameworks, data analysis tools), but it does imply some proficiency in working with large datasets and implementing algorithms.",
+          "kept": true
+        },
+        {
+          "text": "Extended the client's boosted decision tree-based fraud detection pipeline with graph-derived features, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "original_text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "relevance_score": 3.0,
+          "explanation": "The CV experience bullet point demonstrates a strong understanding of machine learning and software engineering principles. The candidate has successfully extended an existing pipeline, implemented graph-derived features, and achieved significant performance improvements. However, there is no direct mention of agentic systems or large language models, which are key areas mentioned in the job posting.",
+          "posting_evidence": "The bullet point meets some qualifications listed in the job posting: ",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Deloitte, Zurich",
+      "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+      "duration": "Feb 2022 -- Jan 2025",
+      "section_score": 8.1,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "original_text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "relevance_score": 9.0,
+          "explanation": "The experience bullet point demonstrates strong relevance to the job posting. Here's why: \n\n- **Machine Learning**: The bullet point mentions 'deep learning-based diarization and speech enhancement', which aligns with the required skills in machine learning.\n- **Agentic Systems**: Although not explicitly mentioned, agentic systems are related to machine learning and AI, making this experience relevant. The mention of orchestration frameworks like LangChain or AutoGen implies involvement with agentic systems indirectly.\n- **Model Evaluation Frameworks**: The creation of a reproducible benchmarking framework aligns well with the need for model evaluation frameworks mentioned in the job posting.\n- **Problem-Solving Skills**: Building a such an application indicates excellent problem-solving skills, which is one of the preferred qualifications. \n\nHowever, there's no direct mention of working with Large Language Models (LLMs) or Python as a primary language, which are highlighted in the job posting. Nonetheless, given the context and specificity of the experience described, it leans strongly towards being relevant.",
+          "posting_evidence": "Python; Machine Learning; Agentic Systems; Model Evaluation Frameworks",
+          "kept": true
+        },
+        {
+          "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "original_text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "relevance_score": 8.0,
+          "explanation": "The candidate's experience in delivering AI, analytics, and financial-risk engagements across various industries demonstrates strong relevance to the job posting. Although the specific industry (Artificial Intelligence) is the same, the role of a Research-Focused Software Engineer requires a deeper focus on technical expertise rather than client-facing advisory work. However, the machine learning engineering skills mentioned in the CV are highly relevant to the job requirements and match some of the preferred qualifications.",
+          "posting_evidence": "The candidate's experience in machine learning engineering (hands-on) is supported by: - Experience building or evaluating agentic systems (Machine Learning skill from 'basic_analysis' section).",
+          "kept": true
+        },
+        {
+          "text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "original_text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "relevance_score": 5.0,
+          "explanation": "This experience bullet point is highly relevant to the job posting. The candidate has directly contributed to agentic systems development through their work on RAG-based LLM prototypes, which aligns with one of the required qualifications and a preferred qualification. Their technical expertise in NLP, graph machine learning, and compliance analytics also matches several skills mentioned in the skills section.",
+          "posting_evidence": "Job posting mentions experience building or evaluating agentic systems; Experience developing machine learning pipelines. Also, RAG-based LLM prototypes, which aligns with Orchestration Frameworks (e.g., LangChain) and Large Language Models (LLMs). Additionally, the skills of NLP and graph machine learning are mentioned in the job posting as required for this position.",
+          "kept": true
+        },
+        {
+          "text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "original_text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "relevance_score": 4.0,
+          "explanation": "The CV experience bullet point is relevant to the job posting as it demonstrates proficiency in Python programming and development of machine learning pipelines. However, there's no clear evidence that the work involved agentic systems or LLMs, which are highlighted as key skills in the job posting. Additionally, the context (credit risk analytics) seems unrelated to AI-related tasks typically associated with a Research-Focused Software Engineer position.",
+          "posting_evidence": "Python development experience is mentioned in the job posting as required for this position. The development of machine learning pipelines also aligns with the skills and qualifications section of the job posting. However, there's no specific mention of working with agentic systems or LLMs, which are highlighted as preferred qualifications.",
+          "kept": false
+        },
+        {
+          "text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "original_text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "relevance_score": 4.0,
+          "explanation": "The candidate has demonstrated experience with AI enablement and knowledge in specific areas such as NLP and graph machine learning. While the skills listed are somewhat related to those mentioned in the job posting, there is no mention of orchestration frameworks or LLMs. The experience demonstrates strong hands-on skills, which is a match for the job listing's emphasis on technical proficiency.",
+          "posting_evidence": "- Experience with NLP: Mentioned in the bullet point that the candidate has worked with NLP.\n- Machine Learning expertise: Although only graph machine learning was specified, it is still relevant as it falls under machine learning. \n- Hands-on skills: The experience demonstrates hands-on skills through AI enablement and mentoring junior team members.",
+          "kept": false
+        },
+        {
+          "text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "original_text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "relevance_score": 3.0,
+          "explanation": "The CV experience bullet point is somewhat relevant to the job posting. The skills mentioned in the bullet point (version control, testing, project tracking) are related to software engineering, which is a key requirement for the Research-Focused Software Engineer position. However, the focus on improving client and internal engagements suggests that the experience may be more geared towards organizational development rather than technical expertise.",
+          "posting_evidence": "Python (basic analysis skills), Machine Learning (experience building or evaluating agentic systems) are mentioned in job posting details.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Ph.D. Candidate/Research Assistant",
+      "duration": "Sep 2016--Nov 2021",
+      "section_score": 8.4,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "original_text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is highly relevant to the job posting. The candidate has used Python, which matches one of the required programming languages in the job posting. Additionally, they have worked with machine learning (probabilistic ML), conditional VAEs (which are a type of model evaluation framework) and Graph Machine Learning. These skills align closely with the requirements listed in the 'basic_analysis' section.",
+          "posting_evidence": "Skills used: Python, TensorFlow, Machine Learning, Model Evaluation Frameworks, Data Analysis Tools; Relevant experience: Research on structural health monitoring and predictive maintenance of wind energy infrastructure",
+          "kept": true
+        },
+        {
+          "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "original_text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is highly relevant to the job posting. The candidate has demonstrated expertise in implementing graph neural networks (GNNS), which aligns with the agentic systems and machine learning skills required for the position. However, there is no mention of using Python as one of the programming languages, nor is there evidence of publishing at conferences on agentic AI or multimodal LLMs, which are preferred qualifications. Nonetheless, the hands-on experience in implementing a complex GNN library showcases strong problem-solving skills and technical expertise.",
+          "posting_evidence": "Python is not explicitly mentioned, though it's listed as one of the required programming languages. The candidate has demonstrated a high level of technical expertise by implementing a message-passing GNN library, but lacks evidence of experience with Model Evaluation Frameworks or Data Analysis Tools.",
+          "kept": true
+        },
+        {
+          "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "original_text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is relevant to the job posting because it demonstrates industry collaboration, which could be beneficial for developing agentic systems and evaluating machine learning pipelines. The mention of deep learning for remaining useful life prediction shows some level of expertise in machine learning. However, there is no specific mention of using Python or other programming languages required by the job, nor any experience with orchestration frameworks or large language models.",
+          "posting_evidence": "The bullet point mentions engagement in industrial collaborations which aligns with industry and position analysis. Industry: 'Artificial Intelligence (AI)', Job title: 'Research-Focused Software Engineer'. However, there is no explicit mention of the required programming languages like Python or other general-purpose programming languages.",
+          "kept": false
+        },
+        {
+          "text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "original_text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "relevance_score": 4.0,
+          "explanation": "This bullet point is relevant to the job posting because it indicates academic achievement, specifically a Ph.D., which aligns with the preferred qualifications. However, there's no direct mention of skills or experience related to machine learning pipelines, agentic systems, or programming languages listed in the job description.",
+          "posting_evidence": "There is evidence that this individual has demonstrated strong work ethic and academic excellence through their Ph.D. achievement and nomination for the ETH Medal.",
+          "kept": true
+        },
+        {
+          "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "original_text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "relevance_score": 3.0,
+          "explanation": "This bullet point is somewhat relevant to the job posting as it shows hands-on experience with a programming language (Bash), and knowledge of cluster computing. However, there are no direct connections to machine learning pipelines, agentic systems, or model evaluation frameworks. Also, the context of Monte-Carlo simulations is not explicitly mentioned in the job description.",
+          "posting_evidence": "Hands-on skills: Cluster computing, Python (inferred), Bash. No evidence of machine learning pipelines, agentic systems, model evaluation frameworks, or data analysis tools. Business skills: No specific evidence relevant to this bullet point.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Research Assistant",
+      "duration": "Dec 2015--Sep 2016",
+      "section_score": 6.2,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "original_text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point is relevant to the job posting because it demonstrates experience with machine learning and programming skills. However, there is no mention of specific technologies such as Orchestration Frameworks or Large Language Models that are required for this position.",
+          "posting_evidence": "Experience building or evaluating agentic systems; Experience developing machine learning pipelines",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Credit Suisse, Zurich",
+      "position": "Full-Stack Trading Tool Developer (internship)",
+      "duration": "Jul 2014--Dec 2014",
+      "section_score": 2.5,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "original_text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "relevance_score": 3.0,
+          "explanation": "This bullet point is somewhat relevant to the job posting because it demonstrates hands-on experience with Python, which is listed as a required skill. However, it does not specifically mention machine learning, agentic systems, or model evaluation frameworks, which are highly emphasized in the job posting. The use of RESTful APIs and scriptable front-end visualization suggests some connection to data analysis tools, but this is an indirect match.",
+          "posting_evidence": "}",
+          "kept": true
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-05-07T21:20:57.965977",
+  "updated_at": "2026-05-07T21:32:06.677452"
+}

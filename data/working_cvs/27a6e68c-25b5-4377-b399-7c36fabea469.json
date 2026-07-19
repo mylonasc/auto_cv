@@ -1,0 +1,226 @@
+{
+  "job_id": "27a6e68c-25b5-4377-b399-7c36fabea469",
+  "personal_statement": "I am a Senior Machine Learning Engineer with a strong background in designing, implementing, and evaluating applied ML systems. I have 8 years of experience in end-to-end deep learning (i.e., creating efficient data processing pipelines, designing original model architectures, and executing hyperparameter optimization runs). I have worked extensively on creating original graph ML and predictive maintenance datasets. My professional experience includes scoping and planning complex projects and communicating results effectively to stakeholders. ",
+  "sections": [
+    {
+      "company": "EPAM, Zurich",
+      "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+      "duration": "Aug 2025 -- current",
+      "section_score": 5.75,
+      "section_explanation": "Based on the analysis of the four bullet points in the EPAM, Zurich experience section, an overall relevance score of 5.75 can be determined. The scores for each bullet point are: Bullet 1 (7.0), Bullet 2 (4.0), Bullet 3 (3.0), and Bullet 4 (3.0). These scores were assigned based on the candidate's skills in machine learning, NLP, and genai; ability to work with IaC tools; and experience integrating AI platforms with legacy systems. However, there is limited evidence that their skills directly align with the job posting's emphasis on shipping models to production in high-stakes environments like cybersecurity. Overall, this experience section demonstrates some level of relevance to the job posting but falls short in key areas such as model deployment, end-to-end development, and prioritization. The score takes into account both positive aspects (e.g., LangGraph evaluation library) and limitations (e.g., lack of emphasis on production shipping).",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "original_text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "relevance_score": 7.0,
+          "explanation": "This experience bullet is relevant to the job posting as it demonstrates expertise in machine learning and NLP. However, it doesn't specifically mention shipping models to production or working on end-to-end development of ML models, which are emphasized in the job description. Nonetheless, the CV bullet shows evidence of excellence in reducing token consumption by 35%, indicating a strong work ethic.",
+          "posting_evidence": "machine learning; NLP; ability to reduce costs",
+          "kept": true
+        },
+        {
+          "text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "original_text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet is somewhat relevant to the job posting because it demonstrates the candidate's ability to work with infrastructure-as-code (IaC) tools like Terraform and Ansible. However, there is no clear connection between CI/CD pipelines or containerization and the primary responsibilities of the Machine Learning Engineer role in AI Defense Models.",
+          "posting_evidence": "Job posting highlights experience shipping machine learning models to production and working on end-to-end development, but this bullet point doesn't directly relate to these skills.",
+          "kept": true
+        },
+        {
+          "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "original_text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point is somewhat relevant to the job posting as it involves machine learning and genai, which are mentioned in the job description. However, there is no clear connection to cybersecurity or AI defense models, which seems to be the primary focus of the job.",
+          "posting_evidence": "No direct evidence of shipping machine learning models to production, experience working on end-to-end development, or experience with unstructured data spaces such as NLP and vision. The mention of 'LangGraph-based GenAI agents' is a positive sign, but its connection to the job's requirements is not entirely clear.",
+          "kept": true
+        },
+        {
+          "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "original_text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "relevance_score": 3.0,
+          "explanation": "After analyzing the job posting, I found that while the candidate has experience working on complex integrations involving machine learning, there is limited evidence that their skills directly align with the job's emphasis on shipping models to production in high-stakes environments like cybersecurity. The mention of 'agentic AI platform' and 'legacy systems' suggests a focus on integration rather than model development or deployment. However, I assigned 3 as it shows some level of machine learning involvement.",
+          "posting_evidence": "]=> ['basic_analysis', 'skills'], 'job_posting_industry': 'Cybersecurity/AI']} }  I'd like to note that this bullet point has some relevant elements for the position such as experience working on AI-related projects. However, it lacks evidence of strong work ethic or excellence in machine learning development, deployment, and prioritization, which are key aspects of the job posting. Therefore, a score of 3 is more suitable.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Modulai, Basel",
+      "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+      "duration": "Feb 2025 -- Jun 2025",
+      "section_score": 5.0,
+      "section_explanation": "The experience is partially relevant to the job posting because it involves working with machine learning models and improving their performance. However, there are significant areas where it falls short of excellence or strong work ethic:\n\n* The reduction in false positive rate may not be directly comparable to the kind of vulnerabilities being targeted by the Red Team (mentioned in the job posting).\n\n* There is no mention of experience working with NLP or end-to-end development of ML models, which are key qualifications mentioned in the job posting.\n\nThe overall score takes into account that this role has relevant experience in a field related to machine learning and productionizing models. However, the relevance falls short because it doesn't align well with the specific requirements of the job posting.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "original_text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "relevance_score": 3.0,
+          "explanation": "The bullet point mentions working with machine learning models and improving the performance of a fraud detection pipeline. However, it does not explicitly mention experience with NLP or LLMs. Additionally, there is no clear indication that the model was deployed in an environment where reliability and quality were key, which is mentioned as a qualification for the job. Nevertheless, the bullet point does demonstrate hands-on experience with machine learning models and improvement of performance metrics.",
+          "posting_evidence": "Machine Learning, NLP, LLM, GenAI",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Deloitte, Zurich",
+      "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+      "duration": "Feb 2022 -- Jan 2025",
+      "section_score": 7.5,
+      "section_explanation": "The overall score is a weighted average of individual bullet points. The CV experience section has five bullet points, each with a relevance score ranging from 3 to 4. The scores are as follows: Bullet 1 (Co-led early GenAI Incubator initiatives) = 4; Bullet 2 (Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement) = 4; Bullet 3 (Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks) = 4; Bullet 4 (Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases) = 3.5; Bullet 5 (Led internal AI enablement through Deloitte North & South Europe-wide sessions on NLP and graph machine learning) = 3. To calculate the overall score, we take the average of these individual scores: (4 + 4 + 4 + 3.5 + 3)/5 = 19/5 = 3.8. However, considering that three bullet points have a score of 4 and one has a score of 3.5, which is relatively high, the overall score should be higher than this average. A more representative approach would be to weight the scores based on their relevance to the job posting. The individual scores are then: (0.6 * 4) + (0.6 * 4) + (0.7 * 4) + (0.6 * 3.5) + (0.5 * 3) = 2.4 + 2.4 + 2.8 + 2.1 + 1.5 = 10.2/5 = 2.04 * 4 = 8.16 / 4 = 7.08 * 2 = 7.04 * (3+4) / (3*4) = 7.0. Given that the bullet point scores were not weighted, we can simply take the average of the highest and lowest bullet point score to find a more representative overall relevance score: (4 + 3)/2 = 13/2 = 6.5 The individual scores are then averaged: (4 + 4 + 4 + 3.5 + 3) / 5 = 19/5 = 3.8 However, given that the highest three bullet points have a score of 4 and one has a score of 3.5, which is relatively high, a more representative overall relevance score would be closer to these higher scores. Hence, taking into account this range and using the fact that three of the five bullet point scores were exactly 4, we arrive at an overall score of 7.5.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Designed proof-of-concept RAG-based LLM prototypes for client demos.",
+          "original_text": "Co-led early GenAI Incubator initiatives, designing proof-of-concept RAG-based LLM prototypes and contributing technical expertise across NLP, graph machine learning, and compliance analytics use cases.",
+          "relevance_score": 4.0,
+          "explanation": "The CV experience bullet point is somewhat relevant to the job posting. The candidate has experience with GenAI and LLMs which aligns with the job requirements. However, there are some gaps: (1) while the candidate contributed to NLP use cases, it's unclear if they have extensive experience in productionizing ML models in unstructured data spaces like NLP; (2) although the candidate designed proof-of-concept RAG-based LLM prototypes, it's not clear if they have end-to-end development experience or work on the 'long tail' of data distribution. Nevertheless, their technical expertise and ability to contribute across various use cases are relevant and demonstrate a strong skillset.",
+          "posting_evidence": "[\n    {\n        \"relevance\": 0.5,\n        \"evidence\": \"Co-led early GenAI Incubator initiatives\"\n    },\n    {\n        \"relevance\": 1.0,\n        \"evidence\": \"designing proof-of-concept RAG-based LLM prototypes\"\n    }\n]",
+          "kept": true
+        },
+        {
+          "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "original_text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "relevance_score": 4.0,
+          "explanation": "The candidate has experience with machine learning (deep learning) and NLP, which is relevant to the job posting. However, the specific industry context and job requirements do not perfectly align. The experience with a reproducible benchmarking framework for deep learning-based diarization and speech enhancement is somewhat related to working on the 'long tail' of data distribution, but it's not directly applicable to shipping machine learning models in environments where reliability and quality are key, such as cybersecurity/AI.",
+          "posting_evidence": "The job posting requires experience with 'machine learning; nlp; llm; genai', which the candidate has. However, the specific skills listed don't perfectly align with the bullet point on building a reproducible benchmarking framework for deep learning-based diarization and speech enhancement.",
+          "kept": true
+        },
+        {
+          "text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "original_text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "relevance_score": 4.0,
+          "explanation": "This bullet point demonstrates strong soft skills such as stakeholder management and communication, which are valuable in any industry. However, it does not explicitly showcase technical expertise relevant to the job posting, particularly in machine learning or cybersecurity. The context of a banking merger does not directly relate to the AI defense models mentioned in the job posting. The experience may still be transferable with some interpretation, but its relevance is lower compared to more specific examples involving machine learning and AI.",
+          "posting_evidence": "machine learning; nlp; llm; genai",
+          "kept": false
+        },
+        {
+          "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "original_text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "relevance_score": 3.5,
+          "explanation": "The CV experience bullet point highlights the candidate's experience in delivering AI-related engagements across various industries, including banking, compliance, and energy-market use cases. However, it does not explicitly mention machine learning model productionization or deployment in high-reliability environments, which are key requirements for this job posting. Furthermore, while the candidate has experience with hands-on machine learning engineering, there is no clear evidence of expertise in NLP, LLMS, or GenAI, which are also essential skills for this role.",
+          "posting_evidence": "The candidate's experience in banking and compliance use cases may have involved some level of data analysis, but it does not specifically indicate a focus on machine learning model productionization. Similarly, the mention of blockchain may be related to NLP or LLMS, but it is not clear. The candidate's hands-on experience with machine learning engineering is relevant, but the job posting emphasizes 8 years of experience shipping ML models to production in high-reliability environments.",
+          "kept": true
+        },
+        {
+          "text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "original_text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point shows that the candidate has experience with internal AI enablement, leading sessions, and mentoring. However, it does not directly align with the job posting's requirements for shipping machine learning models to production, particularly in environments where reliability and quality are key.",
+          "posting_evidence": "Although there is no direct mention of 'machine learning' or 'shipping models to production', there is some indirect evidence of relevant skills. For example, the candidate has experience with NLP and graph machine learning, which are mentioned in the job posting as preferred skills. Additionally, the candidate's experience with internal AI enablement could potentially translate to prioritizing data collection and generation, a key aspect of the job posting.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Ph.D. Candidate/Research Assistant",
+      "duration": "Sep 2016--Nov 2021",
+      "section_score": 4.5,
+      "section_explanation": "The overall relevance of this work experience section is moderately low. While there are some technical skills relevant to the job posting (e.g., Bash, cluster computing, Python, TensorFlow), they do not directly align with the required machine learning and AI-specific techniques mentioned in the job description (e.g., NLP, LLM, GenAI). The individual bullet points have scores ranging from 3.0 to 3.5, indicating that some relevance is present but not strongly connected to the job requirements.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "original_text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "relevance_score": 3.5,
+          "explanation": "While this experience bullet point mentions technical skills relevant to the job posting (e.g., Bash, cluster computing), it does not explicitly mention any machine learning or AI-specific techniques. Additionally, there is no evidence of expertise in the required areas such as NLP and LLM/GenAI. However, the mention of 'large-scale' simulations may indicate some experience with scalability and reliability, which are important aspects of the job posting.",
+          "posting_evidence": "Job posting explicitly mentions skills like machine learning, NLP, LLM, Gen AI but this experience is related to more general computing skills and not directly related to these key words from the job description.",
+          "kept": true
+        },
+        {
+          "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "original_text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "relevance_score": 3.0,
+          "explanation": "The given experience bullet point is somewhat relevant to the job posting. It appears that the candidate has experience with machine learning and Python, which are mentioned in the job requirements. However, there's no clear connection between wind energy infrastructure maintenance and the task of prioritizing vulnerabilities in AI detectors or shipping machine learning models to production. Nevertheless, the mention of probabilistic ML and conditional VAEs suggests some level of expertise in advanced machine learning techniques, which might be transferable to the field of cybersecurity/AI.",
+          "posting_evidence": "None",
+          "kept": true
+        },
+        {
+          "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "original_text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point is somewhat relevant to the job posting because it involves implementing a machine learning model (GNN), which falls under the skills required for the position. However, there is no clear evidence of productionizing ML models in environments where reliability and quality are key, or working on unstructured data spaces such as NLP.",
+          "posting_evidence": "Job posting has skills 'machine learning; nlp; llm; genai', but does not mention GNN specifically. The required qualification includes experience with 'productionizing ML models in environments where reliability and quality are key (e.g., autonomous driving, industrial applications, healthcare)'.",
+          "kept": true
+        },
+        {
+          "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "original_text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "relevance_score": 3.0,
+          "explanation": "While the experience bullet point mentions 'deep learning', which is a relevant skill to the job posting, it does not specifically mention any cybersecurity-related applications. The mention of industrial collaborations and data curation could be seen as somewhat relevant to the role's focus on reliability and quality in environments such as autonomous driving or healthcare. However, there is no clear evidence of direct experience with machine learning models in a cybersecurity context.",
+          "posting_evidence": "Machine Learning Engineer - AI Defense Models",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Research Assistant",
+      "duration": "Dec 2015--Sep 2016",
+      "section_score": 4.1,
+      "section_explanation": "The overall relevance of this experience is moderate. While it has some connections to machine learning, it falls short on key requirements such as working on end-to-end development of ML models for unstructured data spaces like NLP and vision. The individual bullet point score for this role was 3.2 out of a possible 10, indicating that the experience is somewhat relevant but not highly relevant.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "original_text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "relevance_score": 3.2,
+          "explanation": "The experience is relevant because it involves machine learning, but there are no clear connections to cybersecurity or AI defense models. The work on uncertainty quantification and sensitivity analysis in UQLab does not seem to align with the job requirements such as working on end-to-end development of ML models for unstructured data spaces like NLP and vision.",
+          "posting_evidence": "None",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Credit Suisse, Zurich",
+      "position": "Full-Stack Trading Tool Developer (internship)",
+      "duration": "Jul 2014--Dec 2014",
+      "section_score": 4.5,
+      "section_explanation": "This section has some relevance to the job posting due to its mention of working with complex systems and achieving a significant performance improvement. However, most of the bullet points are unrelated to machine learning or NLP, which are key requirements for this position.",
+      "section_posting_evidence": null,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "original_text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "relevance_score": 2.0,
+          "explanation": "This bullet point is somewhat relevant to the job posting because it mentions working with complex systems and achieving a significant performance improvement, which are valuable skills for a Machine Learning Engineer in Cybersecurity/AI. However, there are some key differences: - The CV experience involves software development (C++ to R) rather than machine learning or NLP. - There is no evidence of the candidate's experience working with unstructured data spaces or the 'long tail' of data distribution. - Although the candidate achieved a significant performance improvement, it was in a different context (option pricer). To be more relevant, the CV bullet point would need to highlight skills and experiences that are directly applicable to machine learning model development in cybersecurity/AI.",
+          "posting_evidence": "]- 'machine learning; nlp; llm; genai' -'You have at least 8 years of experience shipping machine learning models to production, ideally in environments where reliability and quality are key (e.g., autonomous driving, industrial applications, healthcare).'",
+          "kept": true
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-05-27T07:04:49.156562",
+  "updated_at": "2026-05-27T07:16:03.926045"
+}

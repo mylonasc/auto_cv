@@ -1,0 +1,262 @@
+{
+  "job_id": "a829eab7-3973-4fdc-9b88-69c4df03723a",
+  "personal_statement": "I am a Lead Software Engineer, with strong focus on deep learning and consulting experience. My expertise includes designing and implementing agentic or workflow-based AI systems, Retrieval-Augmented Generation (RAG). I thrive in ambiguous environments where complex problems require practical, production-ready solutions. With a proven track record of turning business needs into system designs with clear outputs,",
+  "sections": [
+    {
+      "company": "EPAM, Zurich",
+      "position": "Lead AI Engineer and Technical Consultant (Agentic AI/Full-Stack/DevOps)",
+      "duration": "Aug 2025 -- current",
+      "section_score": 5.7,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 5
+      },
+      "items": [
+        {
+          "text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "original_text": "Owned authentication and authorization architecture for hybrid-cloud API integrations, led the related governance process, and built the backend token-exchange service.",
+          "relevance_score": 6.0,
+          "explanation": "The experience bullet point demonstrates strong technical skills in authentication and authorization architectures. It also shows leadership qualities through leading the governance process.",
+          "posting_evidence": "* The job posting requires experience with the Palantir ecosystem, which is not explicitly mentioned in the CV experience. However, it does demonstrate expertise in a related area of API integrations and authentication.",
+          "kept": true
+        },
+        {
+          "text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "original_text": "Architected the core backend framework for LangGraph-based GenAI agents for portfolio optimization and insights (Python, FastAPI)",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point shows evidence of expertise in AI/ML, which is a required skill for the job. However, there is no mention of Palantir ecosystem experience, insurance or reinsurance industry exposure, or large-scale document-heavy AI use cases, which are also mentioned as preferred qualifications. Nonetheless, the candidate has demonstrated their ability to architect complex systems using Python and FastAPI, which aligns with the required skills for the position.",
+          "posting_evidence": "The job posting mentions Palantir ecosystem experience as a preferred qualification. While there is no direct mention of Palantir in this bullet point, it does not necessarily detract from the candidate's overall relevance to the role.",
+          "kept": true
+        },
+        {
+          "text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "original_text": "Led integration of the agentic AI platform with two legacy systems and created a modular, reusable orchestrator agent template.",
+          "relevance_score": 4.0,
+          "explanation": "Based on the job posting requirements, this experience bullet point demonstrates relevant skills in AI/ML as it involves integrating an agentic AI platform with legacy systems. However, there is no explicit mention of Palantir ecosystem or insurance/reinsurance industry exposure. While the CV bullet point showcases a strong work ethic through the creation of a reusable orchestrator agent template, the overall score is 4 since it does not fully meet all the job posting requirements.",
+          "posting_evidence": "Led integration of an AI platform with legacy systems (AI/ML skills), created a modular and reusable orchestrator agent template (strong work ethic and problem-solving skills)",
+          "kept": true
+        },
+        {
+          "text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "original_text": "Built an internal LangGraph evaluation and benchmarking library to systematically test agent reliability, reducing token consumption by 35\\% across revised agent factory templates for target use cases.",
+          "relevance_score": 4.0,
+          "explanation": "The experience bullet point is relevant to the job posting because it shows expertise in AI/ML (Advanced degree in computer science, artificial intelligence, machine learning, engineering, or related quantitative field) and hands-on skills with large-scale, document-heavy or workflow-driven AI use cases. However, there is no direct evidence of Palantir ecosystem experience or insurance/reinsurance industry knowledge. The Palantir skill is a strong preference for the job posting.",
+          "posting_evidence": "AI/ML related work",
+          "kept": true
+        },
+        {
+          "text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "original_text": "Implemented CI/CD pipelines and configured internal IaC templates (Terraform, Ansible, Containerization, GitLab).",
+          "relevance_score": 3.0,
+          "explanation": "The CV experience bullet point demonstrates relevant technical skills such as implementation of Continuous Integration/Continuous Deployment (CI/CD) pipelines and configuration of internal Infrastructure-as-Code (IaC) templates. However, there is no direct evidence of expertise in AI/ML, nor any indication that the job seeker has worked in the insurance or reinsurance industry.",
+          "posting_evidence": "The job posting emphasizes experience with the Palantir ecosystem and AI use cases in insurance or reinsurance, which this CV bullet point does not address. The focus on technical skills such as CI/CD pipelines and IaC templates may be seen as relevant to a broader range of positions within the industry.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "Modulai, Basel",
+      "position": "Senior Machine Learning Engineer (ended due to strategic branch closure)",
+      "duration": "Feb 2025 -- Jun 2025",
+      "section_score": 9.5,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 5
+      },
+      "items": [
+        {
+          "text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "original_text": "Implemented algorithms for large-scale community detection in transaction graphs, computed graph embeddings across the client's full user base of 35M+ users.",
+          "relevance_score": 9.0,
+          "explanation": "This experience is highly relevant to the job posting because it demonstrates expertise in implementing AI/ML algorithms for large-scale applications (large-scale community detection), which aligns with the 'skills' listed in the job posting. Additionally, the mention of graph embeddings and a user base of 35M+ users matches the industry (Insurance & Reinsurance) and preferred qualifications (experience with large-scale AI use cases). The CV experience bullet point also implies hands-on experience with complex AI tasks, which aligns with the 'hands_on_skills' score of 9.0 in the job posting.",
+          "posting_evidence": "AI/ML skills, Large-scale application, Graph embeddings, Industry: Insurance & Reinsurance",
+          "kept": true
+        },
+        {
+          "text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "original_text": "Extended the client's boosted decision tree-based fraud detection pipeline to automatically compute graph-derived features in a scalable manner, resulting in up to 7\\% reduction in false positive rate on test data.",
+          "relevance_score": 8.0,
+          "explanation": "This CV experience bullet point is highly relevant to the job posting because it demonstrates expertise in AI/ML, specifically in fraud detection, which aligns with the insurance and reinsurance industry. The use of graph-derived features also shows a good understanding of complex data analysis, a key aspect of the preferred qualifications.",
+          "posting_evidence": "AI/ML skills, experience in insurance/reinsurance, use of advanced techniques (graph-derived features)",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Deloitte, Zurich",
+      "position": "Senior Consultant; promoted to Assistant Manager in Sep 2024",
+      "duration": "Feb 2022 -- Jan 2025",
+      "section_score": 8.2,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 5
+      },
+      "items": [
+        {
+          "text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "original_text": "Built a reproducible benchmarking framework for deep learning-based diarization and speech enhancement, enabling a large Swiss bank's compliance department to quantitatively compare models for monitoring and surveillance use cases.",
+          "relevance_score": 9.0,
+          "explanation": "This bullet point is highly relevant to the job posting. The candidate has experience with AI/ML, which matches one of the required skills. They also have a strong background in computer science, as indicated by their work on deep learning-based diarization and speech enhancement. Additionally, they have worked on a project related to monitoring and surveillance use cases, which is similar to the industry (insurance & reinsurance) and job title (Senior AI Engineer) mentioned in the job posting.",
+          "posting_evidence": "The candidate's experience aligns with the following points from the job posting: * Experience with the Palantir ecosystem (not explicitly mentioned, but the focus on large-scale use cases suggests a familiarity with similar technologies); * Exposure to large-scale, document-heavy or workflow-driven AI use cases; * AI/ML skills",
+          "kept": true
+        },
+        {
+          "text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "original_text": "Delivered AI, analytics, and financial-risk engagements across banking, compliance, blockchain, and energy-market use cases, combining hands-on machine learning engineering with client-facing advisory work, requirements translation, and stakeholder management.",
+          "relevance_score": 8.0,
+          "explanation": "The CV experience bullet point is highly relevant to the job posting. Here's why: \n\n* **Industry relevance**: The experience spans across banking, compliance, blockchain, and energy-market use cases, which all align with the insurance & reinsurance industry mentioned in the job posting.\n* **Skills alignment**: The work involves AI, machine learning engineering, and analytics, which are directly mentioned as required skills in the job posting.\n* **Position-specific relevance**: The experience demonstrates a mix of technical (hands-on ML engineering) and soft skills (client-facing advisory work, requirements translation, stakeholder management), which matches the job posting's emphasis on business and hands-on skills. \n\nOverall, this CV experience bullet point is very relevant to the job opening for a Senior AI Engineer in Insurance & Reinsurance.",
+          "posting_evidence": "Palantir ecosystem, insurance or reinsurance, large-scale document-heavy or workflow-driven AI use cases",
+          "kept": true
+        },
+        {
+          "text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "original_text": "Modernised legacy R-based credit risk analytics by developing Python interfaces that enabled macro-sensitivity analysis of expected credit loss across a global portfolio.",
+          "relevance_score": 7.0,
+          "explanation": "Relevant skills and experience demonstrated in this bullet point include hands-on experience with AI/ML (Python), which is preferred by the employer. The CV holder has also worked on developing interfaces that have enabled macro-sensitivity analysis, similar to what is mentioned as a large-scale, document-heavy or workflow-driven AI use case.",
+          "posting_evidence": "The CV holder's experience with Python and development of interfaces for analytics is relevant to the job posting. However, there is no explicit mention of the Palantir ecosystem or experience in the insurance/reinsurance industry, which are preferred qualifications for this role.",
+          "kept": true
+        },
+        {
+          "text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "original_text": "Facilitated communication with stakeholders of varied seniority during a critical credit risk reporting project in the merger of two global systemically important banks.",
+          "relevance_score": 7.0,
+          "explanation": "This experience bullet is relevant to the job posting as it shows that you have worked with complex projects and communicated with stakeholders of varied seniority. However, it does not explicitly mention AI/ML skills or experience in insurance/reinsurance industry.",
+          "posting_evidence": "Palantir ecosystem",
+          "kept": true
+        },
+        {
+          "text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "original_text": "Introduced software engineering best practices across client and internal engagements, improving version control, testing, project tracking, accountability, and maintainability.",
+          "relevance_score": 6.0,
+          "explanation": "The experience bullet point demonstrates a strong understanding of software engineering principles and the ability to apply them in a practical setting. However, it does not specifically highlight any direct experience with AI/ML or Palantir ecosystem. Nevertheless, the mention of project tracking, accountability, and maintainability suggests some level of organizational skills, which could be transferable to a large-scale document-heavy or workflow-driven AI use case.",
+          "posting_evidence": "The job posting requires 'Experience with the Palantir ecosystem' as a preferred qualification. This experience bullet point does not mention Palantir or similar tools. The job also mentions exposure to large-scale, document-heavy or workflow-driven AI use cases. While this experience does demonstrate some organizational skills, it is unclear whether it applies directly to these types of use cases.",
+          "kept": true
+        },
+        {
+          "text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "original_text": "Led internal AI enablement through Deloitte North \\& South Europe-wide sessions on NLP and graph machine learning, a Zurich machine learning community of practice, and mentoring of junior team members and peers.",
+          "relevance_score": 5.0,
+          "explanation": "This experience bullet point is highly relevant to the job posting because it showcases leadership skills, expertise in AI/ML, and hands-on experience with large-scale use cases. The fact that it's a company-wide initiative also demonstrates ability to work across different locations and teams.",
+          "posting_evidence": "AI/ML related skills: NLP and graph machine learning\n Qualifications:\n Advanced degree or equivalent is not mentioned in the CV, but AI enablement experience suggests high level of expertise\n Preferred qualifications:\n Experience with large-scale use cases is evident as it was a Europe-wide initiative\n Industry and position analysis: Insurance & Reinsurance industry matches the job posting. The position of Senior AI Engineer also aligns with the job title.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Ph.D. Candidate/Research Assistant",
+      "duration": "Sep 2016--Nov 2021",
+      "section_score": 6.5,
+      "filter_config": {
+        "min_relevance_score": 4,
+        "min_items_keep": 1,
+        "max_items_keep": 3
+      },
+      "items": [
+        {
+          "text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "original_text": "Performed research on probabilistic ML for structural health monitoring and predictive maintenance of wind energy infrastructure (Python, TensorFlow, Graph Machine Learning, conditional VAEs).",
+          "relevance_score": 4.0,
+          "explanation": "This experience bullet point demonstrates some relevant skills and knowledge in the field of AI/ML. The use of probabilistic ML techniques, specifically conditional VAEs, shows a level of technical expertise that could be valuable for this position. However, the specific context of wind energy infrastructure is not directly related to the insurance or reinsurance industry. Additionally, there is no clear indication of experience with the Palantir ecosystem, which is a preferred qualification for this job. Overall, while this experience is somewhat relevant, it requires some interpretation and bridging to connect the skills and techniques used to the specific requirements of the position.",
+          "posting_evidence": "AI/ML skills (4), Quantitative field expertise (3)",
+          "kept": true
+        },
+        {
+          "text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "original_text": "Implemented a message-passing GNN library (\\url{https://github.com/mylonasc/tf-gnns/}).",
+          "relevance_score": 4.0,
+          "explanation": "This bullet point is relevant to the job posting because it shows experience with Graph Neural Networks (GNNs), which falls under the category of AI skills required for the position. However, there is no mention of experience with the Palantir ecosystem, insurance or reinsurance domain, or large-scale document-heavy AI use cases. Furthermore, while GNN expertise is valuable in this context, a higher score could be given if the bullet point also demonstrated excellent work ethic or achievements in the field.",
+          "posting_evidence": "The presence of 'AI/ML' in the job posting's required skills and the fact that the CV experience bullet mentions GNNs. However, no evidence is present for industry-specific knowledge such as Palantir ecosystem or insurance/reinsurance domain exposure.",
+          "kept": true
+        },
+        {
+          "text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "original_text": "Engaged in industrial collaborations (raw data curation, deep learning for remaining useful life prediction, wind farm data processing).",
+          "relevance_score": 4.0,
+          "explanation": "The experience bullet point is somewhat relevant to the job posting. While it shows a connection to AI and industry collaboration, it doesn't explicitly mention expertise in Palantir ecosystem or specific experience in insurance or reinsurance, which are preferred qualifications. However, the use of deep learning for remaining useful life prediction suggests some alignment with the skills required for large-scale AI use cases.",
+          "posting_evidence": "Skills: Deep Learning\nQualifications: Advanced degree in computer science,\nPreferred Qualifications: Experience with Palantir ecosystem",
+          "kept": true
+        },
+        {
+          "text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "original_text": "Performed large-scale Monte-Carlo simulations (Bash, cluster computing, typical volumes processed 200GB to 2TB)",
+          "relevance_score": 4.0,
+          "explanation": "The experience bullet point shows skills in performing large-scale data processing tasks using Bash and cluster computing. However, there is no explicit mention of AI/ML or relevant software tools such as Palantir, which are listed as preferred qualifications in the job posting. Additionally, the volume of data processed does not match the scale expected in a Senior AI Engineer role.",
+          "posting_evidence": "AI/ML skills not explicitly mentioned, relevant softwares and industry experience not specified, data processing scale does not meet expectations",
+          "kept": false
+        },
+        {
+          "text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "original_text": "Awarded Ph.D. with no corrections, and unanimously nominated from examination panel for the ETH Medal.",
+          "relevance_score": 3.0,
+          "explanation": "The bullet point showcases academic achievement in a field related to AI/ML (Computer Science), which aligns partially with the job requirements. However, the specific skills or projects mentioned do not directly relate to the Palantir ecosystem, insurance, reinsurance, or large-scale AI use cases required for this role.",
+          "posting_evidence": "There is no direct evidence of work ethic or excellence related to AI/ML development in an industrial setting. The achievement is academic rather than professional. However, the fact that it was a Ph.D. with 'no corrections' and 'unanimously nominated for the ETH Medal' does indicate high quality and recognition within the academic community.",
+          "kept": false
+        }
+      ]
+    },
+    {
+      "company": "ETH Zurich",
+      "position": "Research Assistant",
+      "duration": "Dec 2015--Sep 2016",
+      "section_score": 5.7,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab).",
+          "original_text": "Developed a web-based user interface for sensitivity and regression analysis (PHP, JavaScript, Matlab).",
+          "relevance_score": 7.0,
+          "explanation": "The experience bullet point is relevant to the job posting as it involves AI/ML skills, specifically in a document-heavy workflow-driven context. However, the lack of specific mention of Palantir ecosystem or industry-specific exposure limits its score.",
+          "posting_evidence": "AI/ML skills, Document-heavy workflow-driven use case",
+          "kept": false
+        },
+        {
+          "text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "original_text": "Contributed to the popular computational statistics software UQLab by implementing uncertainty quantification and sensitivity analysis algorithms.",
+          "relevance_score": 3.0,
+          "explanation": "The experience bullet point shows a strong background in computational statistics, which is relevant to AI/ML skills. However, the specific mention of insurance or reinsurance, Palantir ecosystem, or large-scale, document-heavy AI use cases is not present. The absence of these details brings down the score.",
+          "posting_evidence": "The job posting requires experience with the Palantir ecosystem and exposure to large-scale, document-heavy or workflow-driven AI use cases, which this bullet point does not mention.",
+          "kept": true
+        }
+      ]
+    },
+    {
+      "company": "Credit Suisse, Zurich",
+      "position": "Full-Stack Trading Tool Developer (internship)",
+      "duration": "Jul 2014--Dec 2014",
+      "section_score": 6.2,
+      "filter_config": {
+        "min_relevance_score": 3,
+        "min_items_keep": 1,
+        "max_items_keep": 6
+      },
+      "items": [
+        {
+          "text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "original_text": "Implemented a RESTful time series server and a scriptable front-end visualization trading signal identification tool (Python, JavaScript, MySQL).",
+          "relevance_score": 7.5,
+          "explanation": "The experience bullet point is relevant to the job posting because it shows expertise in AI/ML skills required by the job posting. However, it does not specifically mention exposure to large-scale or document-heavy use cases. Also, there is no indication that the candidate has worked with the Palantir ecosystem, a preferred qualification for this role.",
+          "posting_evidence": "AI/ML skills (Python, JavaScript) are present in the experience bullet point which aligns with the job posting's required skills. However, there is no mention of the candidate working on large-scale or document-heavy AI use cases, which could be a major drawback for this role. ",
+          "kept": false
+        },
+        {
+          "text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "original_text": "Implemented and validated a high-level interface for an option pricer (C++ to R), achieving more than 10-fold improvement by replacing pre-existing interface.",
+          "relevance_score": 4.0,
+          "explanation": "The bullet point demonstrates technical skills relevant to the job posting, including experience with AI and programming languages like C++. However, it is unclear how this experience directly applies to insurance or reinsurance industry use cases. There is no mention of large-scale document-heavy or workflow-driven AI applications, which are preferred qualifications for the role.",
+          "posting_evidence": "AI/ML skills in CV: Yes",
+          "kept": false
+        }
+      ]
+    }
+  ],
+  "created_at": "2026-05-07T22:49:12.172377",
+  "updated_at": "2026-05-07T22:58:25.242569"
+}
