@@ -96,13 +96,11 @@ def stream_events(client, job):
 
 
 @pytest.mark.parametrize("event", ["job_update", "job_complete"])
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-03 #8: SSE must preserve HTTP job identity")
 def test_sse_uses_the_http_job_identity(client, completed_job, event):
     http = client.get(f"/v1/cv-jobs/{completed_job.id}").json()
     assert stream_events(client, completed_job)[event].get("id") == http["id"]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-03 #8: SSE completion omits posting analysis")
 def test_sse_completion_preserves_posting_analysis(client, completed_job):
     assert stream_events(client, completed_job)["job_complete"].get("job_analysis") == completed_job.job_analysis
 
@@ -114,7 +112,6 @@ def test_bullet_evidence_survives_http_and_working_copy(client, completed_job):
     assert wc["sections"][0]["items"][0]["posting_evidence"] == "Python experience"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-03 #8: SectionResult drops posting_evidence")
 def test_section_evidence_survives_http_and_working_copy(client, completed_job):
     result = client.get(f"/v1/cv-jobs/{completed_job.id}/result").json()
     wc = client.get(f"/v1/cv-jobs/{completed_job.id}/working-cv").json()

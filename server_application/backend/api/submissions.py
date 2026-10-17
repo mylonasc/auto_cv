@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException
 from models.api_models import (
     Submission, SubmissionCreateRequest, SubmissionUpdateRequest,
 )
+from models.legacy import normalize_persisted_submission
 from jobs.job_manager import job_manager
 from core.paths import SUBMISSIONS_DIR, ensure_data_dirs
 
@@ -33,7 +34,7 @@ def _load_all_submissions() -> List[Submission]:
             try:
                 with open(os.path.join(SUBMISSIONS_DIR, filename), "r") as f:
                     data = json.load(f)
-                    submissions.append(Submission(**data))
+                    submissions.append(Submission.model_validate(normalize_persisted_submission(data)))
             except Exception as e:
                 print(f"Error loading submission {filename}: {e}")
     return submissions
@@ -127,7 +128,7 @@ async def get_submission(submission_id: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Submission not found")
     with open(path, "r") as f:
-        return Submission(**json.load(f))
+        return Submission.model_validate(normalize_persisted_submission(json.load(f)))
 
 
 @router.put("/{submission_id}", response_model=Submission)
@@ -137,7 +138,7 @@ async def update_submission(submission_id: str, request: SubmissionUpdateRequest
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Submission not found")
     with open(path, "r") as f:
-        submission = Submission(**json.load(f))
+        submission = Submission.model_validate(normalize_persisted_submission(json.load(f)))
 
     if request.result is not None:
         submission.result = request.result

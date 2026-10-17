@@ -5,13 +5,12 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from typing import List, Optional
 import asyncio
 import os
-import glob
 import tempfile
 
 from models.api_models import (
     CreateJobRequest, CVJobResponse, JobStatus, CVJobResult, RenderCVRequest, JobAnalysisRequest,
     WorkingCopy, WorkingCopySection, WorkingCopyItem, SectionFilterConfig,
-    RescoreRequest, RescoreResponse, RescoredItemResult, RescoreItem,
+    RescoreRequest, RescoreResponse, RescoredItemResult, RescoreItem, JobAnalysisResponse,
 )
 from jobs.job_manager import job_manager
 from services.cv_processor import CVProcessor
@@ -36,7 +35,7 @@ active_tasks = {}
 def _resolve_artifact_file_path(job_id: str, artifact: dict) -> Optional[str]:
     """Resolve the on-disk artifact path across environments."""
     artifacts_dir = ARTIFACTS_DIR
-    kind = artifact.get("kind") or artifact.get("type") or "pdf"
+    kind = artifact["kind"]
     ext = "tex" if kind == "latex" else kind
 
     candidates = []
@@ -45,25 +44,14 @@ def _resolve_artifact_file_path(job_id: str, artifact: dict) -> Optional[str]:
         candidates.append(stored_path)
         candidates.append(os.path.join(artifacts_dir, os.path.basename(stored_path)))
 
-    filename = artifact.get("filename")
-    if filename:
-        candidates.append(os.path.join(artifacts_dir, filename))
-
-    name = artifact.get("name")
-    if name:
-        candidates.append(os.path.join(artifacts_dir, name))
-
     candidates.append(os.path.join(artifacts_dir, f"cv_output_{job_id}.{ext}"))
-
-    wildcard_matches = glob.glob(os.path.join(artifacts_dir, f"cv_output_{job_id}.*"))
-    candidates.extend(wildcard_matches)
 
     seen = set()
     for candidate in candidates:
         if not candidate or candidate in seen:
             continue
         seen.add(candidate)
-        if os.path.exists(candidate):
+        if candidate.lower().endswith(f".{ext}") and os.path.isfile(candidate):
             return candidate
 
     return None
@@ -224,7 +212,7 @@ async def process_job_background(job_id: str, request: CreateJobRequest):
 
         
         # Process
-        result, job_analysis = await processor.process(
+        output = await processor.process(
             job_description=request.job_description,
             job_id=job_id,
             status_callback=status_callback
@@ -236,8 +224,8 @@ async def process_job_background(job_id: str, request: CreateJobRequest):
             status=JobStatus.PROCESSING,
             progress="Creating working copy...",
             message="Saving analysis and creating editable working copy",
-            result=result,
-            job_analysis=job_analysis
+            result=output.result,
+            job_analysis=output.job_analysis
         )
 
         # Auto-create working copy from the result BEFORE marking succeeded
@@ -295,7 +283,7 @@ async def create_job(request: CreateJobRequest, background_tasks: BackgroundTask
     return job
 
 
-@router.post("/job-analysis")
+@router.post("/job-analysis", response_model=JobAnalysisResponse)
 async def analyze_job_only(request: JobAnalysisRequest):
     """Analyze job posting only and return extracted job analysis."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as tf:
@@ -393,21 +381,10 @@ async def get_artifact(job_id: str, artifact_id: str, inline: bool = Query(defau
         print(f"Job or result not found for {job_id}")
         raise HTTPException(status_code=404, detail="Job or result not found")
 
-    result_obj = job.result
-    if isinstance(result_obj, dict):
-        artifacts = result_obj.get("artifacts") or []
-    else:
-        artifacts = getattr(result_obj, "artifacts", None) or []
-
-    if not isinstance(artifacts, list):
-        artifacts = []
+    artifacts = job.result.artifacts
     
     # Try to find artifact by ID
-    artifact = next((a for a in artifacts if isinstance(a, dict) and a.get("id") == artifact_id), None)
-    
-    if not artifact:
-        # Fallback: maybe artifact_id is actually the kind (pdf/latex)
-        artifact = next((a for a in artifacts if isinstance(a, dict) and (a.get("kind") == artifact_id or a.get("type") == artifact_id)), None)
+    artifact = next((a for a in artifacts if a["id"] == artifact_id), None)
 
     if not artifact:
         print(f"Artifact {artifact_id} not found in job {job_id}. Available IDs: {[a.get('id') for a in artifacts if isinstance(a, dict)]}")
@@ -415,12 +392,12 @@ async def get_artifact(job_id: str, artifact_id: str, inline: bool = Query(defau
     
     file_path = _resolve_artifact_file_path(job_id, artifact)
     if not file_path:
-        expected_filename = artifact.get("filename") or artifact.get("name") or f"cv_output_{job_id}"
+        expected_filename = artifact["filename"]
         print(f"Artifact file not found for job {job_id}, artifact {artifact_id}")
         raise HTTPException(status_code=404, detail=f"Artifact file '{expected_filename}' not found on disk")
 
     from fastapi.responses import FileResponse
-    response_filename = artifact.get("filename") or artifact.get("name") or os.path.basename(file_path)
+    response_filename = artifact["filename"]
     lower = response_filename.lower()
     media_type = 'application/octet-stream'
     if lower.endswith('.pdf'):

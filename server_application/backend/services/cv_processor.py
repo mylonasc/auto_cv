@@ -18,7 +18,7 @@ from src.domain import CVData
 from src.template_registry import resolve_cv_templates
 
 from models.api_models import (
-    CVJobResult, BackendConfig, JobStatus
+    CVJobResult, BackendConfig, JobStatus, ProcessingOutput
 )
 
 
@@ -58,7 +58,7 @@ class CVProcessor:
         job_description: str,
         job_id: str,
         status_callback=None
-    ) -> CVJobResult:
+    ) -> ProcessingOutput:
         """Process a CV against a job description."""
         
         if status_callback:
@@ -256,15 +256,11 @@ class CVProcessor:
                 "artifacts": artifacts
             }
             
-            # We'll return a dict that matches what the frontend wants more closely, 
-            # even if it slightly deviates from the Pydantic model (FastAPI will serialize it)
-            # Actually, let's just make sure it's a valid dict.
-            
             # Cleanup
             if os.path.exists(job_desc_path):
                 os.remove(job_desc_path)
             
-            return result_data, jpa.data
+            return ProcessingOutput(result=CVJobResult.model_validate(result_data), job_analysis=jpa.data)
             
         except Exception as e:
             # Cleanup on error

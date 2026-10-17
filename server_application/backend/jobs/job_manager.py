@@ -7,8 +7,9 @@ import os
 from datetime import datetime
 from typing import Optional, Dict, List, Any, Union
 from models.api_models import (
-    CVJobResponse, JobStatus, CVJobResult, ArtifactResponse
+    CVJobResponse, JobStatus, CVJobResult, Artifact, JobAnalysis
 )
+from models.legacy import normalize_persisted_job
 from core.paths import JOBS_DIR, ensure_data_dirs
 
 ensure_data_dirs()
@@ -55,7 +56,7 @@ class JobManager:
                 try:
                     with open(os.path.join(self.storage_dir, filename), 'r') as f:
                         data = json.load(f)
-                        job = CVJobResponse(**data)
+                        job = CVJobResponse.model_validate(normalize_persisted_job(data))
                         self._jobs[job.id] = job
                 except Exception as e:
                     print(f"Error loading job {filename}: {e}")
@@ -93,7 +94,7 @@ class JobManager:
         progress: Optional[str] = None,
         message: Optional[str] = None,
         result: Optional[Union[CVJobResult, Dict[str, Any]]] = None,
-        job_analysis: Optional[Dict[str, Any]] = None,
+        job_analysis: Optional[JobAnalysis] = None,
         error: Optional[str] = None
     ) -> Optional[CVJobResponse]:
         """Update job status and details."""
@@ -101,32 +102,17 @@ class JobManager:
         if not job:
             return None
         
-        job.status = status
-        job.updated_at = datetime.now()
-        
-        if progress is not None:
-            job.progress = progress
-        if message is not None:
-            job.message = message
-        if result is not None:
-            if isinstance(result, CVJobResult):
-                job.result = result
-            elif isinstance(result, dict):
-                try:
-                    job.result = CVJobResult(**result)
-                except Exception:
-                    # Last-resort fallback to preserve backward compatibility
-                    # if older payloads are slightly malformed.
-                    job.result = result
-            else:
-                job.result = result
-        if job_analysis is not None:
-            job.job_analysis = job_analysis
-        if error is not None:
-            job.error = error
-        
-        self._save_job(job)
-        return job
+        # Validate the entire proposed update before mutating memory or disk.
+        data = job.model_dump()
+        data.update(status=status, updated_at=datetime.now())
+        for key, value in (("progress", progress), ("message", message), ("result", result),
+                           ("job_analysis", job_analysis), ("error", error)):
+            if value is not None:
+                data[key] = value
+        updated = CVJobResponse.model_validate(data)
+        self._save_job(updated)
+        self._jobs[job_id] = updated
+        return updated
     
     def cancel_job(self, job_id: str) -> bool:
         """Cancel a job if it's still pending/processing."""
@@ -166,7 +152,7 @@ class JobManager:
             os.remove(path)
         return True
     
-    def add_artifact(self, job_id: str, artifact_type: str, name: str, path: str) -> Optional[ArtifactResponse]:
+    def add_artifact(self, job_id: str, artifact_type: str, name: str, path: str) -> Optional[Artifact]:
         """Add an artifact to a job."""
         job = self._jobs.get(job_id)
         if not job:
@@ -178,15 +164,15 @@ class JobManager:
         artifact = {
             "id": str(uuid.uuid4()),
             "job_id": job_id,
-            "type": artifact_type,
-            "name": name,
+            "kind": artifact_type,
+            "filename": name,
             "path": path,
             "created_at": datetime.now().isoformat()
         }
-        job.result.artifacts.append(artifact)
-        job.updated_at = datetime.now()
-        self._save_job(job)
-        return ArtifactResponse(**artifact)
+        result = job.result.model_dump()
+        result["artifacts"].append(artifact)
+        self.update_job_status(job_id, job.status, result=result)
+        return artifact
 
 
 # Global job manager instance

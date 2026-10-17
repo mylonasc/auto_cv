@@ -1,74 +1,31 @@
-"""
-Event generator for Server-Sent Events (SSE) to provide real-time job updates.
-"""
-import json
+"""SSE snapshots use the exact validated HTTP job contract."""
+
+import asyncio
 from typing import AsyncGenerator
+
+from models.api_models import JobStatus, StreamError
 
 
 async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, None]:
-    """
-    Generate SSE events for job status updates.
-    
-    Yields events whenever the job status changes.
-    """
-    last_status = None
-    last_progress = None
+    last_revision = None
     idle_loops = 0
-    
     while True:
         job = job_manager.get_job(job_id)
-        if not job:
-            yield f"event: error\ndata: {json.dumps({'error': 'Job not found'})}\n\n"
+        if job is None:
+            error = StreamError(id=job_id, error="Job not found")
+            yield f"event: error\ndata: {error.model_dump_json()}\n\n"
             break
-        
-        current_status = job.status
-        current_progress = job.progress
-        
-        # Send event if status or progress changed
-        if current_status != last_status or current_progress != last_progress:
-            data = {
-                "job_id": job.id,
-                "status": current_status,
-                "progress": job.progress,
-                "message": job.message,
-                "updated_at": job.updated_at.isoformat() if job.updated_at else None
-            }
-            yield f"event: job_update\ndata: {json.dumps(data)}\n\n"
-            
-            last_status = current_status
-            last_progress = current_progress
+        revision = (job.status, job.updated_at, job.progress)
+        if revision != last_revision:
+            yield f"event: job_update\ndata: {job.model_dump_json()}\n\n"
+            last_revision = revision
             idle_loops = 0
         else:
             idle_loops += 1
-
-        # Keep-alive to avoid idle proxy timeouts during long model calls.
+        if job.status in (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED):
+            yield f"event: job_complete\ndata: {job.model_dump_json()}\n\n"
+            break
         if idle_loops >= 15:
             yield ": keepalive\n\n"
             idle_loops = 0
-        
-        # If job is complete (succeeded, failed, cancelled), send final event and break
-        if current_status in ["succeeded", "failed", "cancelled"]:
-            result_data = None
-            if job.result:
-                if hasattr(job.result, 'model_dump'):
-                    result_data = job.result.model_dump()
-                elif isinstance(job.result, dict):
-                    result_data = job.result
-                else:
-                    result_data = str(job.result)
-
-            final_data = {
-                "job_id": job.id,
-                "status": current_status,
-                "progress": job.progress,
-                "message": job.message,
-                "result": result_data,
-                "error": job.error,
-                "updated_at": job.updated_at.isoformat() if job.updated_at else None
-            }
-            yield f"event: job_complete\ndata: {json.dumps(final_data)}\n\n"
-            break
-        
-        # Wait before checking again
-        import asyncio
         await asyncio.sleep(1)
