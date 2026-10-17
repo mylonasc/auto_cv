@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import List, Dict, Any, Union
-from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Union, Literal
+from pydantic import BaseModel, ConfigDict, Field
 import os
 from .template_registry import resolve_template_path
 
 
 class ExperienceSectionData(BaseModel):
     """ExperienceSectionData model."""
+    model_config = ConfigDict(extra="forbid")
     company: str
     duration: str
     position: str
@@ -28,15 +29,37 @@ class CandidateData(BaseModel):
 
 class CVTemplateData(BaseModel):
     """CVTemplateData model."""
+    model_config = ConfigDict(extra="forbid")
     template_id: str = "default_cv"
-    template_path: str
+    template_path: str | None = None
     experience_section_title: str = "Work Experience"
 
 
 class MotivationLetterTemplateData(BaseModel):
     """MotivationLetterTemplateData model."""
+    model_config = ConfigDict(extra="forbid")
     template_id: str = "default_motivation_letter"
-    template_path: str
+    template_path: str | None = None
+
+
+class CandidateMetadata(BaseModel):
+    """Identity/profile only: CV content is never duplicated under candidate."""
+    model_config = ConfigDict(extra="forbid")
+    candidate_id: str
+    full_name: str = ""
+    profile: Dict[str, Any] = Field(default_factory=dict)
+
+
+class CVData(BaseModel):
+    """Canonical persisted and editable CV. Paths resolve only when rendering."""
+    model_config = ConfigDict(extra="forbid")
+    schema_version: Literal[1] = 1
+    candidate: CandidateMetadata
+    personal_statement: str = ""
+    alternative_statements: List[str] = Field(default_factory=list)
+    experience_sections: List[ExperienceSectionData] = Field(default_factory=list)
+    cv_template: CVTemplateData = Field(default_factory=CVTemplateData)
+    motivation_letter_template: MotivationLetterTemplateData = Field(default_factory=MotivationLetterTemplateData)
 
 
 class CandidateBundle(BaseModel):
