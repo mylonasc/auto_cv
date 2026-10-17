@@ -1,70 +1,36 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAppState, type BackendJob, type WorkingCopy, type SectionFilterConfig } from '../../contexts/AppStateContext';
+import React, { useState, useEffect } from 'react';
+import { useAppState, type WorkingCopy, type SectionFilterConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import type { TemplateRegistryResponse } from '../../services/api';
 import { applySectionFilter as filterSection } from '../../domain/selection';
 import './ProcessingTab.css';
 
 const ProcessingTab: React.FC = () => {
-  const { state, dispatch } = useAppState();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { state, dispatch, workflow } = useAppState();
+  const { viewedJob, activeJob, draft, loadDraft } = workflow;
+  const isProcessing = Boolean(activeJob || state.workflow.starting);
   const [isRendering, setIsRendering] = useState(false);
   const [templateRegistry, setTemplateRegistry] = useState<TemplateRegistryResponse>({
     cv_templates: {},
     motivation_letter_templates: {},
   });
   const [selectedTemplateId, setSelectedTemplateId] = useState('default_cv');
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const stage1ProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
   // ── Working Copy State ──
-  const [localWorkingCopy, setLocalWorkingCopy] = useState<WorkingCopy | null>(null);
-  const [isLoadingWorkingCopy, setIsLoadingWorkingCopy] = useState(false);
-  const [isSavingWorkingCopy, setIsSavingWorkingCopy] = useState(false);
+  const localWorkingCopy = draft?.value || null;
+  const isLoadingWorkingCopy = Boolean(viewedJob?.result && !draft);
+  const isSavingWorkingCopy = draft?.saving || false;
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const selectedId = viewedJob?.jobId;
+  const setLocalWorkingCopy = (update: WorkingCopy | ((previous: WorkingCopy | null) => WorkingCopy | null)) => {
+    if (selectedId) workflow.updateDraft(selectedId, update);
+  };
   const [isRescoring, setIsRescoring] = useState(false);
   const [expandedAnalysis, setExpandedAnalysis] = useState<Set<string>>(new Set());
 
-  const hasCvAnalysisResult = Boolean(state.processingState?.result);
-
-  const stopStage1ProgressTicker = () => {
-    if (stage1ProgressTimerRef.current) {
-      clearInterval(stage1ProgressTimerRef.current);
-      stage1ProgressTimerRef.current = null;
-    }
-  };
-
-  const startStage1ProgressTicker = () => {
-    stopStage1ProgressTicker();
-    const startedAt = Date.now();
-    const messages = [
-      'Preparing job analysis request...',
-      'Extracting role and company context...',
-      'Identifying required skills...',
-      'Extracting qualifications and preferences...',
-      'Finalizing structured analysis...',
-    ];
-
-    let index = 0;
-    stage1ProgressTimerRef.current = setInterval(() => {
-      const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
-      const msg = `${messages[index % messages.length]} (${elapsedSeconds}s)`;
-      dispatch({
-        type: 'SET_PROCESSING_STATE',
-        payload: {
-          jobId: null,
-          status: 'processing',
-          progress: msg,
-          message: 'Running Stage 1: Job analysis only',
-          error: null,
-          result: null,
-          jobAnalysis: state.processingState?.jobAnalysis || null,
-          lastSuccessfulJobId: state.processingState?.lastSuccessfulJobId || null,
-        },
-      });
-      index += 1;
-    }, 2000);
-  };
+  const hasCvAnalysisResult = Boolean(viewedJob?.result);
+  const displayState = activeJob || viewedJob;
 
   const startProcessing = async () => {
     const currentJob = state.jobDescriptions.find(j => j.id === state.currentJobDescriptionId);
@@ -74,23 +40,9 @@ const ProcessingTab: React.FC = () => {
     }
 
     try {
-      setIsProcessing(true);
-      const jobResponse = await apiService.createJob(
-        currentJob.content, 
-        'charilaos_mylonas',
-        state.currentCVVersionId || 'master',
-        state.backendConfig
-      );
-
-      dispatch({ 
-        type: 'SET_PROCESSING_STATE', 
-        payload: jobResponse 
-      });
-
-      startListeningToJob(jobResponse.jobId!);
+      await workflow.start(currentJob.content, state.currentCVVersionId || 'master', state.backendConfig);
     } catch (error) {
       console.error('Error starting job:', error);
-      setIsProcessing(false);
       alert('Failed to start processing');
     }
   };
@@ -102,83 +54,15 @@ const ProcessingTab: React.FC = () => {
       return;
     }
     try {
-      setIsProcessing(true);
-      dispatch({
-        type: 'SET_PROCESSING_STATE',
-        payload: {
-          jobId: null,
-          status: 'processing',
-          progress: 'Starting job analysis...',
-          message: 'Running Stage 1: Job analysis only',
-          result: null,
-          jobAnalysis: state.processingState?.jobAnalysis || null,
-          error: null,
-          lastSuccessfulJobId: state.processingState?.lastSuccessfulJobId || null,
-        },
-      });
-      startStage1ProgressTicker();
-
-      const response = await apiService.analyzeJobOnly(currentJob.content, state.backendConfig);
-      stopStage1ProgressTicker();
-      dispatch({
-        type: 'SET_PROCESSING_STATE',
-        payload: {
-          jobId: null,
-          status: 'succeeded',
-          progress: 'Job analysis complete',
-          message: 'Job requirements extracted successfully',
-          result: null,
-          jobAnalysis: response.job_analysis,
-          error: null,
-          lastSuccessfulJobId: state.processingState?.lastSuccessfulJobId || null,
-        },
-      });
+      await workflow.analyzePosting(currentJob.content, state.backendConfig);
     } catch (error) {
-      stopStage1ProgressTicker();
       console.error('Error running job analysis:', error);
-      dispatch({
-        type: 'SET_PROCESSING_STATE',
-        payload: {
-          jobId: null,
-          status: 'failed',
-          progress: 'Job analysis failed',
-          message: 'Stage 1 failed before completion',
-          result: null,
-          jobAnalysis: state.processingState?.jobAnalysis || null,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          lastSuccessfulJobId: state.processingState?.lastSuccessfulJobId || null,
-        },
-      });
       alert('Failed to run job analysis.');
-    } finally {
-      stopStage1ProgressTicker();
-      setIsProcessing(false);
     }
   };
 
   const renderFromCurrentAnalysis = async () => {
-    let jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
-
-    if (!jobId) {
-      try {
-        const jobs = await apiService.listJobs();
-        const latestSucceeded = [...jobs]
-          .filter((j: BackendJob) => j.status === 'succeeded')
-          .sort((a: BackendJob, b: BackendJob) => {
-            const ta = new Date(a.updated_at).getTime();
-            const tb = new Date(b.updated_at).getTime();
-            return tb - ta;
-          })[0];
-
-        if (latestSucceeded?.id) {
-          jobId = latestSucceeded.id;
-          const stateFromHistory = apiService.transformJobToProcessingState(latestSucceeded);
-          dispatch({ type: 'SET_PROCESSING_STATE', payload: stateFromHistory });
-        }
-      } catch (error) {
-        console.error('Failed to load job history for rendering:', error);
-      }
-    }
+    const jobId = viewedJob?.jobId;
 
     if (!jobId) {
       alert('No analysis jobs found. Run analysis first or load one from History.');
@@ -187,7 +71,7 @@ const ProcessingTab: React.FC = () => {
 
     try {
       setIsRendering(true);
-      const nextState = await apiService.renderJobArtifacts(jobId, {
+      await workflow.render(jobId, {
         min_relevance_score: state.backendConfig.rewritePolicy.minRelevanceScore,
         min_section_items_keep: state.backendConfig.rewritePolicy.minSectionItemsKeep,
         max_section_items_keep: state.backendConfig.rewritePolicy.maxSectionItemsKeep,
@@ -196,8 +80,8 @@ const ProcessingTab: React.FC = () => {
         include_latex: state.backendConfig.outputs.includeLaTeX,
         render_pdf: state.backendConfig.outputs.renderPDF,
         include_scoring_comments: state.backendConfig.outputs.includeScoringComments,
-      });
-      dispatch({ type: 'SET_PROCESSING_STATE', payload: nextState });
+      }, false);
+      workflow.exportJob(jobId);
       dispatch({ type: 'SET_UI_STATE', payload: { showExportDialog: true } });
     } catch (error) {
       console.error('Error rendering artifacts:', error);
@@ -209,27 +93,14 @@ const ProcessingTab: React.FC = () => {
 
   // ── Working Copy Functions ──
 
-  const loadWorkingCopy = useCallback(async (jobId: string) => {
-    try {
-      setIsLoadingWorkingCopy(true);
-      const data = await apiService.getWorkingCopy(jobId);
-      const wc = apiService.transformWorkingCopyFromBackend(data);
-      setLocalWorkingCopy(wc);
-      dispatch({ type: 'SET_WORKING_COPY', payload: wc });
-    } catch (err) {
-      console.error('Failed to load working copy:', err);
-    } finally {
-      setIsLoadingWorkingCopy(false);
-    }
-  }, [dispatch]);
-
-  // Auto-load working copy when analysis completes
   useEffect(() => {
-    const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
-    if (jobId && state.processingState?.status === 'succeeded' && !localWorkingCopy) {
-      loadWorkingCopy(jobId);
+    let disposed = false;
+    setLoadError(null);
+    if (selectedId && viewedJob?.status === 'succeeded') {
+      void loadDraft(selectedId).catch(error => { if (!disposed) setLoadError(String(error)); });
     }
-  }, [state.processingState?.jobId, state.processingState?.status, state.processingState?.lastSuccessfulJobId, loadWorkingCopy, localWorkingCopy]);
+    return () => { disposed = true; };
+  }, [selectedId, viewedJob?.status, loadDraft]);
 
   const applySectionFilter = (sectionIndex: number) => {
     if (!localWorkingCopy) return;
@@ -292,15 +163,10 @@ const ProcessingTab: React.FC = () => {
   const handleSaveWorkingCopy = async () => {
     if (!localWorkingCopy) return;
     try {
-      setIsSavingWorkingCopy(true);
-      const backendData = apiService.transformWorkingCopyToBackend(localWorkingCopy);
-      await apiService.saveWorkingCopy(localWorkingCopy.jobId, backendData);
-      dispatch({ type: 'SET_WORKING_COPY', payload: localWorkingCopy });
+      await workflow.saveDraft(localWorkingCopy.jobId);
     } catch (err) {
       console.error('Failed to save working copy:', err);
       alert('Failed to save working copy');
-    } finally {
-      setIsSavingWorkingCopy(false);
     }
   };
 
@@ -308,33 +174,7 @@ const ProcessingTab: React.FC = () => {
     if (!localWorkingCopy) return;
     try {
       setIsRescoring(true);
-      const item = localWorkingCopy.sections[sectionIndex].items[itemIndex];
-      const result = await apiService.rescoreWorkingCopyItems(localWorkingCopy.jobId, {
-        section_index: sectionIndex,
-        item_indices: [itemIndex],
-        items: [{ index: itemIndex, text: item.text }],
-      });
-      if (result.items.length > 0) {
-        const ri = result.items[0];
-        setLocalWorkingCopy(prev => {
-          if (!prev) return prev;
-          const sections = prev.sections.map((s, si) => {
-            if (si !== sectionIndex) return s;
-            const items = s.items.map((it, ii) => {
-              if (ii !== itemIndex) return it;
-              return {
-                ...it,
-                relevanceScore: ri.relevance_score,
-                scoredText: ri.scored_text,
-                explanation: ri.explanation,
-                postingEvidence: ri.posting_evidence,
-              };
-            });
-            return { ...s, items };
-          });
-          return { ...prev, sections };
-        });
-      }
+      await workflow.rescore(localWorkingCopy.jobId, sectionIndex, [itemIndex]);
     } catch (err) {
       console.error('Failed to rescore item:', err);
       alert('Failed to rescore item');
@@ -347,34 +187,7 @@ const ProcessingTab: React.FC = () => {
     if (!localWorkingCopy) return;
     try {
       setIsRescoring(true);
-      const section = localWorkingCopy.sections[sectionIndex];
-      const items = section.items.map((it, ii) => ({ index: ii, text: it.text }));
-      const result = await apiService.rescoreWorkingCopyItems(localWorkingCopy.jobId, {
-        section_index: sectionIndex,
-        item_indices: section.items.map((_, ii) => ii),
-        items,
-      });
-      if (result.items.length > 0) {
-        setLocalWorkingCopy(prev => {
-          if (!prev) return prev;
-          const sections = prev.sections.map((s, si) => {
-            if (si !== sectionIndex) return s;
-            const newItems = s.items.map((it, ii) => {
-              const ri = result.items.find((r) => r.index === ii);
-              if (!ri) return it;
-              return {
-                ...it,
-                relevanceScore: ri.relevance_score,
-                scoredText: ri.scored_text,
-                explanation: ri.explanation,
-                postingEvidence: ri.posting_evidence,
-              };
-            });
-            return { ...s, items: newItems };
-          });
-          return { ...prev, sections };
-        });
-      }
+      await workflow.rescore(localWorkingCopy.jobId, sectionIndex);
     } catch (err) {
       console.error('Failed to rescore section:', err);
       alert('Failed to rescore section');
@@ -395,9 +208,7 @@ const ProcessingTab: React.FC = () => {
 
     try {
       setIsRendering(true);
-      await handleSaveWorkingCopy();
-      const backendWC = apiService.transformWorkingCopyToBackend(localWorkingCopy);
-      const nextState = await apiService.renderJobArtifacts(localWorkingCopy.jobId, {
+      await workflow.render(localWorkingCopy.jobId, {
         min_relevance_score: 0,
         min_section_items_keep: 0,
         max_section_items_keep: 999,
@@ -406,9 +217,8 @@ const ProcessingTab: React.FC = () => {
         include_latex: state.backendConfig.outputs.includeLaTeX,
         render_pdf: state.backendConfig.outputs.renderPDF,
         include_scoring_comments: state.backendConfig.outputs.includeScoringComments,
-        working_copy: backendWC,
-      });
-      dispatch({ type: 'SET_PROCESSING_STATE', payload: nextState });
+      }, true);
+      workflow.exportJob(localWorkingCopy.jobId);
       dispatch({ type: 'SET_UI_STATE', payload: { showExportDialog: true } });
     } catch (error) {
       console.error('Error rendering from working copy:', error);
@@ -418,92 +228,12 @@ const ProcessingTab: React.FC = () => {
     }
   };
 
-  const startListeningToJob = (jobId: string) => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    const eventSource = apiService.createJobStream(jobId);
-    eventSourceRef.current = eventSource;
-
-    eventSource.addEventListener('job_update', (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        const processingState = apiService.transformJobToProcessingState(data);
-        dispatch({ 
-          type: 'SET_PROCESSING_STATE', 
-          payload: processingState
-        });
-      } catch (e) {
-        console.error('Error parsing job_update:', e);
-      }
-    });
-
-    eventSource.addEventListener('job_complete', (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        const processingState = apiService.transformJobToProcessingState(data);
-        
-        dispatch({ 
-          type: 'SET_PROCESSING_STATE', 
-          payload: processingState
-        });
-
-        if (data.status === 'succeeded') {
-          dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results', isLoading: false } });
-        } else {
-          dispatch({ type: 'SET_UI_STATE', payload: { isLoading: false } });
-        }
-
-        eventSource.close();
-        eventSourceRef.current = null;
-        setIsProcessing(false);
-      } catch (e) {
-        console.error('Error parsing job_complete:', e);
-      }
-    });
-
-    eventSource.onerror = (err) => {
-      console.error('SSE Error:', err);
-      eventSource.close();
-      eventSourceRef.current = null;
-      setIsProcessing(false);
-    };
-  };
-
   const cancelJob = async () => {
-    if (!state.processingState?.jobId) return;
     try {
-      await apiService.cancelJob(state.processingState.jobId);
-      dispatch({
-        type: 'SET_PROCESSING_STATE',
-        payload: {
-          ...state.processingState,
-          status: 'cancelled',
-          message: 'Job was cancelled by user'
-        }
-      });
-
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      setIsProcessing(false);
+      await workflow.cancel();
     } catch (error: unknown) {
       console.error('Error cancelling job:', error);
-      if (typeof error === 'object' && error !== null && 'response' in error &&
-          typeof (error as { response?: { status?: number } }).response?.status === 'number' &&
-          (error as { response?: { status?: number } }).response?.status === 400) {
-        try {
-          const job = await apiService.getJob(state.processingState.jobId);
-          dispatch({ type: 'SET_PROCESSING_STATE', payload: job });
-          if (job.status === 'succeeded') {
-            dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results' } });
-          }
-        } catch (e) {
-          console.error('Error fetching job after cancel failure:', e);
-        }
-      }
+      alert('Could not cancel; job status has been refreshed.');
     }
   };
 
@@ -532,12 +262,6 @@ const ProcessingTab: React.FC = () => {
     };
     loadTemplates();
 
-    return () => {
-      stopStage1ProgressTicker();
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
   }, [selectedTemplateId]);
 
   return (
@@ -553,18 +277,23 @@ const ProcessingTab: React.FC = () => {
           <button
             className="btn btn-primary"
             onClick={runJobAnalysisOnly}
-            disabled={isProcessing || !state.currentJobDescriptionId}
+            disabled={state.workflow.posting?.status === 'processing' || !state.currentJobDescriptionId}
           >
-            {isProcessing ? 'Running...' : 'Run Job Analysis Only'}
+            {state.workflow.posting?.status === 'processing' ? 'Running...' : 'Run Job Analysis Only'}
           </button>
         </div>
+        {state.workflow.posting && <section aria-label="Posting preview">
+          <p role="status">Posting preview: {state.workflow.posting.status}</p>
+          {state.workflow.posting.error && <p role="alert">{state.workflow.posting.error}</p>}
+          {state.workflow.posting.jobAnalysis && <pre>{JSON.stringify(state.workflow.posting.jobAnalysis, null, 2)}</pre>}
+        </section>}
       </div>
 
       <div className="rewrite-controls-card">
         <h3>Stage 2: CV Analysis + Personal Statement Selection</h3>
         <p className="hint">Run complete posting and CV analysis, statement optimization and configured initial outputs. Stage 1 is an optional preview, not a prerequisite.</p>
         <div className="processing-actions">
-          {!state.processingState || ['succeeded', 'failed', 'cancelled'].includes(state.processingState.status) ? (
+          {!activeJob ? (
             <button
               className="btn btn-primary"
               onClick={startProcessing}
@@ -590,11 +319,17 @@ const ProcessingTab: React.FC = () => {
       <div className="rewrite-controls-card">
         <h3>Stage 3: Edit & Review CV (Working Copy)</h3>
         <p className="hint">Edit the AI-rewritten personal statement, toggle/adjust bullet points, and set per-section filters before rendering.</p>
+        <p>Result working copy for job: {selectedId || 'none selected'}. Source CVs are edited separately in CV Data Editor.</p>
+        {draft && <p role="status">{isSavingWorkingCopy ? 'Saving…' : workflow.dirty ? 'Unsaved changes' : 'All changes saved'}</p>}
+        {(draft?.error || loadError) && <p role="alert">{draft?.error || loadError}</p>}
+        {draft && <button className="btn btn-secondary" disabled={isSavingWorkingCopy} onClick={() => selectedId && workflow.resetDraft(selectedId)}>Reset to saved working copy</button>}
 
         {!hasCvAnalysisResult ? (
           <div className="workcpy-empty">
             <p>Run CV analysis (Stage 2) first to create an editable working copy.</p>
           </div>
+        ) : loadError ? (
+          <button onClick={() => selectedId && loadDraft(selectedId).then(() => setLoadError(null)).catch(error => setLoadError(String(error)))}>Retry loading working copy</button>
         ) : isLoadingWorkingCopy ? (
           <div className="workcpy-empty"><p>Loading working copy...</p></div>
         ) : localWorkingCopy ? (
@@ -604,6 +339,7 @@ const ProcessingTab: React.FC = () => {
               <label style={{ fontWeight: 600, fontSize: '14px' }}>Personal Statement</label>
               <textarea
                 className="workcpy-statement-textarea"
+                aria-label="Working copy personal statement"
                 value={localWorkingCopy.personalStatement}
                 onChange={(e) => {
                   setLocalWorkingCopy({ ...localWorkingCopy, personalStatement: e.target.value });
@@ -789,8 +525,7 @@ const ProcessingTab: React.FC = () => {
             <button
               className="btn btn-secondary"
               onClick={() => {
-                const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
-                if (jobId) loadWorkingCopy(jobId);
+                if (selectedId) void loadDraft(selectedId).catch(error => setLoadError(String(error)));
               }}
               disabled={isLoadingWorkingCopy}
             >
@@ -827,97 +562,98 @@ const ProcessingTab: React.FC = () => {
         </div>
       </div>
 
-      {state.processingState && (
+      {state.workflow.monitorError && <p role="alert">{state.workflow.monitorError}</p>}
+      {displayState && (
         <div className="processing-content">
           <div className="status-card">
             <div className="status-header">
               <span className="status-label">Status:</span>
               <span 
-                className={`status-badge ${state.processingState.status}`}
-                style={{ backgroundColor: getStatusColor(state.processingState.status) }}
+                className={`status-badge ${displayState.status}`}
+                style={{ backgroundColor: getStatusColor(displayState.status) }}
               >
-                {state.processingState.status}
+                {displayState.status}
               </span>
             </div>
             
             <div className="progress-info">
-              <div className="progress-message">{state.processingState.progress || 'Initializing...'}</div>
-              <div className="detail-message">{state.processingState.message}</div>
+              <div className="progress-message">{displayState.progress || 'Initializing...'}</div>
+              <div className="detail-message">{displayState.message}</div>
             </div>
 
-            {state.processingState.status === 'processing' && (
+            {displayState.status === 'processing' && (
               <div className="loader-container">
                 <div className="loader"></div>
               </div>
             )}
           </div>
 
-          {state.processingState.error && (
+          {displayState.error && (
             <div className="error-card">
               <h3>Error</h3>
-              <p>{state.processingState.error}</p>
+              <p>{displayState.error}</p>
             </div>
           )}
 
-          {state.processingState.jobAnalysis && (
+          {displayState.jobAnalysis && (
             <div className="job-analysis-details">
               <h3>Job Posting Analysis Results</h3>
               <p className="hint">Extracting key information from the job posting to ground the CV customization.</p>
               
               <div className="analysis-grid">
-                {state.processingState.jobAnalysis.industry_and_position_analysis && (
+                {displayState.jobAnalysis.industry_and_position_analysis && (
                   <div className="analysis-card">
                     <h4>Industry & Position</h4>
                     <div className="analysis-item">
-                      <strong>Title:</strong> {state.processingState.jobAnalysis.industry_and_position_analysis.job_title}
+                      <strong>Title:</strong> {displayState.jobAnalysis.industry_and_position_analysis.job_title}
                     </div>
                     <div className="analysis-item">
-                      <strong>Company:</strong> {state.processingState.jobAnalysis.industry_and_position_analysis.company_name}
+                      <strong>Company:</strong> {displayState.jobAnalysis.industry_and_position_analysis.company_name}
                     </div>
                     <div className="analysis-item">
-                      <strong>Industry:</strong> {state.processingState.jobAnalysis.industry_and_position_analysis.industry}
+                      <strong>Industry:</strong> {displayState.jobAnalysis.industry_and_position_analysis.industry}
                     </div>
                     <div className="skill-balance">
                       <div className="balance-row">
                         <span>Hands-on:</span>
-                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(state.processingState.jobAnalysis.industry_and_position_analysis.hands_on_skills || 0) * 10}%` }}></div></div>
+                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(displayState.jobAnalysis.industry_and_position_analysis.hands_on_skills || 0) * 10}%` }}></div></div>
                       </div>
                       <div className="balance-row">
                         <span>Business:</span>
-                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(state.processingState.jobAnalysis.industry_and_position_analysis.business_skills || 0) * 10}%` }}></div></div>
+                        <div className="mini-bar-bg"><div className="mini-bar-fill" style={{ width: `${(displayState.jobAnalysis.industry_and_position_analysis.business_skills || 0) * 10}%` }}></div></div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {state.processingState.jobAnalysis.basic_analysis && (
+                {displayState.jobAnalysis.basic_analysis && (
                   <>
                     <div className="analysis-card">
                       <h4>Extracted Skills</h4>
-                      {state.processingState.jobAnalysis.provenance?.skills?.status === 'fallback' && (
-                        <p role="note">Heuristic fallback — {state.processingState.jobAnalysis.provenance.skills.reason}</p>
+                      {displayState.jobAnalysis.provenance?.skills?.status === 'fallback' && (
+                        <p role="note">Heuristic fallback — {displayState.jobAnalysis.provenance.skills.reason}</p>
                       )}
                       <div className="tags-container">
-                        {state.processingState.jobAnalysis.basic_analysis.skills?.split(';').map((s: string, i: number) => (
+                        {displayState.jobAnalysis.basic_analysis.skills?.split(';').map((s: string, i: number) => (
                           <span key={i} className="skill-tag">{s.trim()}</span>
                         ))}
                       </div>
                     </div>
                     <div className="analysis-card">
                       <h4>Qualifications</h4>
-                      {state.processingState.jobAnalysis.provenance?.qualifications?.status === 'fallback' && (
-                        <p role="note">Heuristic fallback — {state.processingState.jobAnalysis.provenance.qualifications.reason}</p>
+                      {displayState.jobAnalysis.provenance?.qualifications?.status === 'fallback' && (
+                        <p role="note">Heuristic fallback — {displayState.jobAnalysis.provenance.qualifications.reason}</p>
                       )}
                       <ul className="qual-list">
-                        {state.processingState.jobAnalysis.basic_analysis.qualifications?.split(';').map((q: string, i: number) => (
+                        {displayState.jobAnalysis.basic_analysis.qualifications?.split(';').map((q: string, i: number) => (
                           <li key={i}>{q.trim()}</li>
                         ))}
                       </ul>
-                      {state.processingState.jobAnalysis.basic_analysis.preferred_qualifications && (
+                      {displayState.jobAnalysis.basic_analysis.preferred_qualifications && (
                         <>
                           <h5>Preferred</h5>
                           <ul className="qual-list preferred">
-                            {state.processingState.jobAnalysis.basic_analysis.preferred_qualifications.split(';').map((q: string, i: number) => (
+                            {displayState.jobAnalysis.basic_analysis.preferred_qualifications.split(';').map((q: string, i: number) => (
                               <li key={i}>{q.trim()}</li>
                             ))}
                           </ul>
@@ -932,7 +668,7 @@ const ProcessingTab: React.FC = () => {
         </div>
       )}
 
-      {!state.processingState && !isProcessing && (
+      {!displayState && !isProcessing && (
         <div className="no-processing">
           <p>Click "Start Processing" to begin AI analysis using version: <strong>{state.cvVersions.find(v => v.id === state.currentCVVersionId)?.name || state.currentCVVersionId}</strong></p>
         </div>

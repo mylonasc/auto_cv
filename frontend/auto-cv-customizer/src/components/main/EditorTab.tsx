@@ -306,6 +306,7 @@ const EditorTab: React.FC = () => {
         <div className="editor-header">
           <div className="header-title">
             <h2>Editing: {state.cvVersions.find(v => v.id === state.currentCVVersionId)?.name || state.currentCVVersionId}</h2>
+            <p>Source CV version — saving here changes inputs for future analyses, not a result working copy.</p>
             {isDirty && <span className="dirty-indicator">• Unsaved Changes</span>}
           </div>
           <div className="editor-actions">

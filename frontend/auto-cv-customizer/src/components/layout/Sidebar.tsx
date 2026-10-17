@@ -4,7 +4,8 @@ import './Sidebar.css';
 
 const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void }> = 
   ({ sidebarCollapsed, onToggleSidebar }) => {
-  const { state, dispatch } = useAppState();
+  const { state, dispatch, workflow } = useAppState();
+  const jobStatus = workflow.activeJob || workflow.viewedJob;
 
   const handleEditJob = (jobId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -125,9 +126,9 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
 
       <div className="sidebar-footer">
         <div className="processing-status">
-          {state.processingState && (
-            <div className={`status-badge ${state.processingState.status}`}>
-              {state.processingState.status}
+          {jobStatus && (
+            <div className={`status-badge ${jobStatus.status}`}>
+              {jobStatus.status}
             </div>
           )}
           <div className="current-version-tag">

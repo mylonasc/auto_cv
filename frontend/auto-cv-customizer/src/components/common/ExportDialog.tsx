@@ -11,6 +11,7 @@ interface ExportDialogProps {
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
+  const exportedJob = state.workflow.exportJobId ? state.workflow.jobs[state.workflow.exportJobId] : null;
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [isCreatingSubmission, setIsCreatingSubmission] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -18,7 +19,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const jobId = state.processingState?.jobId || state.processingState?.lastSuccessfulJobId;
+  const jobId = exportedJob?.status === 'succeeded' ? exportedJob.jobId : null;
 
   const handleDownload = async (artifactId: string, filename: string) => {
     if (!jobId) {
@@ -67,7 +68,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const artifacts = state.processingState?.result?.artifacts || [];
+  const artifacts = exportedJob?.result?.artifacts || [];
   const hasJob = !!jobId;
 
   return (
@@ -75,6 +76,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Export & Download</h2>
+          <p>Job: {jobId || 'none selected'}</p>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         

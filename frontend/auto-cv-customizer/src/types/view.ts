@@ -55,7 +55,6 @@ export interface ProcessingState {
   result: CVJobResult | null;
   jobAnalysis: JobAnalysis | null;
   error: string | null;
-  lastSuccessfulJobId?: string | null;
 }
 
 export interface SectionFilterConfig {

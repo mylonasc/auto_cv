@@ -4,10 +4,11 @@ import ScoreVisualization from '../scoring/ScoreVisualization';
 import '../main/ResultsTab.css';
 
 const ResultsTab: React.FC = () => {
-  const { state, dispatch } = useAppState();
+  const { dispatch, workflow } = useAppState();
+  const { viewedJob } = workflow;
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-  if (!state.processingState?.result) {
+  if (!viewedJob?.result) {
     return (
       <div className="results-tab">
         <div className="no-results">
@@ -26,7 +27,7 @@ const ResultsTab: React.FC = () => {
     );
   }
 
-  const result = state.processingState.result;
+  const result = viewedJob.result;
   const metrics = result.summary_metrics;
   const experienceAnalysis = result.experience_analysis || [];
 
@@ -34,6 +35,7 @@ const ResultsTab: React.FC = () => {
     <div className="results-tab">
       <div className="results-header">
         <h2>CV Analysis Results</h2>
+        <p>Viewing job: {viewedJob.jobId}</p>
         {metrics && (
           <div className="metrics-summary">
             <div className="metric-card">
@@ -113,17 +115,17 @@ const ResultsTab: React.FC = () => {
             className="btn btn-primary"
             onClick={() => dispatch({ 
               type: 'SET_UI_STATE', 
-              payload: { activeTab: 'editor' } 
+              payload: { activeTab: 'processing' }
             })}
           >
-            Edit CV Sections →
+            Edit Result Working Copy →
           </button>
           <button 
             className="btn btn-secondary"
-            onClick={() => dispatch({ 
-              type: 'SET_UI_STATE', 
-              payload: { showExportDialog: true } 
-            })}
+            onClick={() => {
+              if (viewedJob.jobId) workflow.exportJob(viewedJob.jobId);
+              dispatch({ type: 'SET_UI_STATE', payload: { showExportDialog: true } });
+            }}
           >
             📦 Export CV
           </button>

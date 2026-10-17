@@ -7,7 +7,7 @@ import './HistoryTab.css';
 type JobSort = 'created_desc' | 'created_asc' | 'score_desc' | 'score_asc' | 'status';
 
 const HistoryTab: React.FC = () => {
-  const { state, dispatch } = useAppState();
+  const { state, dispatch, workflow } = useAppState();
   const [jobs, setJobs] = useState<BackendJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,8 +67,8 @@ const HistoryTab: React.FC = () => {
 
     try {
       // Transform backend job to frontend processing state
-      const processingState = apiService.transformJobToProcessingState(job);
-      dispatch({ type: 'SET_PROCESSING_STATE', payload: processingState });
+      const processingState = await apiService.getJob(job.id);
+      workflow.viewJob(processingState);
       dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results' } });
     } catch (error) {
       console.error('Failed to load job results:', error);

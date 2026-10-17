@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useEffect, useReducer, type Dispatch } from 'react';
-import type { BackendConfig, ProcessingState, WorkingCopy } from '../types/view';
+import React, { createContext, useContext, useEffect, useReducer, useCallback, type Dispatch } from 'react';
+import type { BackendConfig } from '../types/view';
+import { initialWorkflow, workflowReducer } from '../domain/workflow';
+import type { WorkflowState, WorkflowAction } from '../domain/workflow';
+import { useWorkflow } from '../hooks/useWorkflow';
 import { DEFAULT_BACKEND_CONFIG } from '../types/api.generated';
 import { configToView } from '../services/mappers';
 export type {
@@ -19,10 +22,7 @@ export interface AppState {
   currentCVVersionId: string | null;
   // Backend configuration
   backendConfig: BackendConfig;
-  // Processing state
-  processingState: ProcessingState | null;
-  // Working copy (editable CV derived from analysis result)
-  workingCopy: WorkingCopy | null;
+  workflow: WorkflowState;
   // UI state
   uiState: UIState;
 }
@@ -34,8 +34,7 @@ type AppStateAction =
   | { type: 'SET_CV_VERSIONS'; payload: CVVersionInfo[] }
   | { type: 'SET_CURRENT_CV_VERSION'; payload: string | null }
   | { type: 'SET_BACKEND_CONFIG'; payload: BackendConfig }
-  | { type: 'SET_PROCESSING_STATE'; payload: ProcessingState | null }
-  | { type: 'SET_WORKING_COPY'; payload: WorkingCopy | null }
+  | { type: 'WORKFLOW'; payload: WorkflowAction }
   | { type: 'SET_UI_STATE'; payload: Partial<UIState> }
   | { type: 'RESET_STATE' };
 
@@ -93,8 +92,7 @@ const initialState: AppState = {
   cvVersions: [],
   currentCVVersionId: 'master',
   backendConfig: configToView(DEFAULT_BACKEND_CONFIG),
-  processingState: null,
-  workingCopy: null,
+  workflow: initialWorkflow,
   uiState: {
     sidebarCollapsed: false,
     activeTab: 'jobInput',
@@ -160,21 +158,7 @@ function appStateReducer(state: AppState, action: AppStateAction): AppState {
       return { ...state, currentCVVersionId: action.payload };
     case 'SET_BACKEND_CONFIG':
       return { ...state, backendConfig: action.payload };
-    case 'SET_PROCESSING_STATE': {
-      const lastSuccessfulJobId = action.payload?.status === 'succeeded' 
-        ? action.payload.jobId 
-        : state.processingState?.lastSuccessfulJobId;
-      
-      return { 
-        ...state, 
-        processingState: action.payload ? {
-          ...action.payload,
-          lastSuccessfulJobId
-        } : null 
-      };
-    }
-    case 'SET_WORKING_COPY':
-      return { ...state, workingCopy: action.payload };
+    case 'WORKFLOW': return { ...state, workflow: workflowReducer(state.workflow, action.payload) };
     case 'SET_UI_STATE':
       return { ...state, uiState: { ...state.uiState, ...action.payload } };
     case 'RESET_STATE':
@@ -188,13 +172,13 @@ function appStateReducer(state: AppState, action: AppStateAction): AppState {
 const AppStateContext = createContext<{
   state: AppState;
   dispatch: Dispatch<AppStateAction>;
-}>({
-  state: initialState,
-  dispatch: () => null
-});
+  workflow: ReturnType<typeof useWorkflow>;
+} | null>(null);
 
 export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appStateReducer, undefined, getInitialState);
+  const send = useCallback((payload: WorkflowAction) => dispatch({ type: 'WORKFLOW', payload }), []);
+  const workflow = useWorkflow(state.workflow, send);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -213,7 +197,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [state.jobDescriptions, state.currentJobDescriptionId]);
 
   return (
-    <AppStateContext.Provider value={{ state, dispatch }}>
+    <AppStateContext.Provider value={{ state, dispatch, workflow }}>
       {children}
     </AppStateContext.Provider>
   );
