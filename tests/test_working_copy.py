@@ -1,17 +1,9 @@
 """Tests for the WorkingCopy system — models, helpers, and endpoints."""
 
-import os
-import sys
 import json
-import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import pytest
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "server_application", "backend")))
-
 
 # ── Model Tests ────────────────────────────────────────────────────────
 
@@ -231,11 +223,6 @@ class TestWorkingCopyDiskPersistence:
         assert len(loaded.sections) == 1
         assert loaded.sections[0].items[0].text == "Test item"
 
-        # Cleanup
-        path = os.path.join(WORKING_CVS_DIR, "disk_test.json")
-        if os.path.exists(path):
-            os.remove(path)
-
     def test_load_nonexistent(self):
         from api.cv_jobs import _load_working_copy_from_disk
         loaded = _load_working_copy_from_disk("nonexistent_job")
@@ -243,8 +230,9 @@ class TestWorkingCopyDiskPersistence:
 
 
 class TestRenderFromWorkingCopy:
-    def test_build_doc_items_from_working_copy(self):
+    def test_render_uses_only_kept_content(self, pdf_calls):
         from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, RenderCVRequest
+        from api.cv_jobs import _render_from_working_copy
 
         wc = WorkingCopy(
             job_id="render_test",
@@ -271,47 +259,29 @@ class TestRenderFromWorkingCopy:
             ],
         )
 
-        # Build DocSectionItem list manually (the logic inside _render_from_working_copy)
-        from src.utils import DocSectionItem
-
-        doc_items = []
-        for section in wc.sections:
-            kept_texts = [it.text for it in section.items if it.kept]
-            if kept_texts:
-                doc_items.append(
-                    DocSectionItem(
-                        company=section.company,
-                        duration=section.duration,
-                        position=section.position,
-                        text_items=kept_texts,
-                    )
-                )
-
-        assert len(doc_items) == 1  # second section has no kept items
-        assert doc_items[0].company == "RenderCorp"
-        kept_texts = [sl.text for sl in doc_items[0].section_item_list]
-        assert kept_texts == ["Kept item", "Another kept"]
-        assert "Removed item" not in kept_texts
+        artifacts = _render_from_working_copy(wc, RenderCVRequest(), wc.job_id)
+        assert {artifact["kind"] for artifact in artifacts} == {"pdf", "latex"}
+        latex = next(artifact for artifact in artifacts if artifact["kind"] == "latex")
+        content = Path(latex["path"]).read_text()
+        assert "Rendered statement" in content
+        assert "RenderCorp" in content
+        assert "Kept item" in content
+        assert "Another kept" in content
+        assert "Removed item" not in content
+        assert "AllRemoved" not in content
+        assert pdf_calls[0].latex == content
+        assert all(artifact["source"] == "working_copy" for artifact in artifacts)
 
 
 # ── Endpoint Tests ─────────────────────────────────────────────────────
 
 
 class TestWorkingCopyEndpoints:
-    @pytest.fixture
-    def client(self):
-        from fastapi.testclient import TestClient
-        from api.cv_jobs import router
-        from fastapi import FastAPI
-
-        app = FastAPI()
-        app.include_router(router)
-        return TestClient(app)
-
     def test_get_working_copy_no_job(self, client):
         response = client.get("/v1/cv-jobs/nonexistent/working-cv")
         assert response.status_code == 404
 
+    @pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-06 #11: reject orphan working copies")
     def test_put_working_copy_no_job(self, client):
         payload = {
             "job_id": "ghost_job",
@@ -319,11 +289,7 @@ class TestWorkingCopyEndpoints:
             "sections": [],
         }
         response = client.put("/v1/cv-jobs/ghost_job/working-cv", json=payload)
-        # PUT creates/overwrites on disk, so it should succeed even without a backend job
-        assert response.status_code == 200
-        data = response.json()
-        assert data["job_id"] == "ghost_job"
-        assert data["personal_statement"] == "Test"
+        assert response.status_code == 404
 
     def test_rescore_no_working_copy(self, client):
         payload = {"section_index": 0, "item_indices": [0]}
@@ -337,56 +303,24 @@ class TestWorkingCopyEndpoints:
 class TestArtifactSourceTagging:
     """Working copy renders tag artifacts with source='working_copy'."""
 
-    def test_working_copy_artifact_dict_has_source(self):
-        """Verify the artifact dict structure that _render_from_working_copy produces."""
-        from datetime import datetime
+    @pytest.mark.parametrize("render_pdf,include_latex", [(True, False), (False, True), (True, True)])
+    def test_actual_render_artifacts_survive_job_persistence(self, render_pdf, include_latex):
+        from api.cv_jobs import _render_from_working_copy
+        from jobs.job_manager import JobManager, job_manager
+        from models.api_models import WorkingCopy, RenderCVRequest, JobStatus
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        job_id = "test_wc_source"
-        template_id = "default_cv"
-
-        artifact_pdf = {
-            "id": f"pdf_{job_id}_{timestamp}",
-            "kind": "pdf",
-            "filename": f"cv_output_{job_id}_{template_id}_{timestamp}.pdf",
-            "path": f"/tmp/cv_output_{job_id}_{template_id}_{timestamp}.pdf",
-            "source": "working_copy",
-        }
-
-        artifact_latex = {
-            "id": f"latex_{job_id}_{timestamp}",
-            "kind": "latex",
-            "filename": f"cv_output_{job_id}_{template_id}_{timestamp}.tex",
-            "path": f"/tmp/cv_output_{job_id}_{template_id}_{timestamp}.tex",
-            "source": "working_copy",
-        }
-
-        assert artifact_pdf["source"] == "working_copy"
-        assert artifact_latex["source"] == "working_copy"
-        assert artifact_pdf["kind"] == "pdf"
-        assert artifact_latex["kind"] == "latex"
-
-    def test_working_copy_artifact_persistence(self):
-        """Verify artifacts with source field can roundtrip through JSON."""
-        import json
-        from datetime import datetime
-
-        ts = datetime.now().isoformat()
-        artifacts = [
-            {"id": "pdf_1", "kind": "pdf", "filename": "out.pdf", "source": "working_copy"},
-            {"id": "tex_1", "kind": "latex", "filename": "out.tex", "source": "working_copy"},
-        ]
-
-        # Simulate storing in job result
-        job_result = {
-            "personal_statement": "Test",
-            "sections": [],
-            "artifacts": artifacts,
-        }
-
-        serialized = json.dumps(job_result)
-        restored = json.loads(serialized)
-
-        for art in restored["artifacts"]:
-            assert art["source"] == "working_copy"
-            assert art["kind"] in ("pdf", "latex")
+        job = job_manager.create_job()
+        artifacts = _render_from_working_copy(
+            WorkingCopy(job_id=job.id),
+            RenderCVRequest(render_pdf=render_pdf, include_latex=include_latex), job.id,
+        )
+        job_manager.update_job_status(job.id, JobStatus.SUCCEEDED,
+                                      result={"sections": [], "artifacts": artifacts})
+        restored = JobManager(storage_dir=job_manager.storage_dir).get_job(job.id)
+        assert restored.result.artifacts == artifacts
+        assert {a["kind"] for a in artifacts} == (
+            ({"pdf"} if render_pdf else set()) | ({"latex"} if include_latex else set())
+        )
+        for artifact in artifacts:
+            assert artifact["source"] == "working_copy"
+            assert Path(artifact["path"]).is_file()

@@ -6,6 +6,9 @@
   review, RFK-01 through RFK-10, priorities, dependencies, and acceptance criteria.
 - Parent epic: https://github.com/mylonasc/auto_cv/issues/5. Child issues #6–#15
   map to RFK-01–RFK-10; consult native blocked-by relationships before starting.
+- Track genuinely out-of-scope findings in `technical debt` issue #16. Include
+  evidence, scope rationale, and follow-up acceptance criteria; do not move RFK
+  deliverables there just to close an incomplete task.
 - Use the single branch `enhancement/epic-refactor` for this epic unless the user
   requests otherwise. Do not implement blocked tasks before their prerequisites.
 - Preserve the current single-CV scope. Do not add product features, generic
@@ -22,9 +25,10 @@
 - Treat CVs, working copies, submissions, caches, artifacts, backups, and legacy
   assets as potentially valuable user data. Inventory before removal/migration;
   never delete broad runtime directories as cleanup.
-- Before RFK-01 is complete, do not run the existing pytest suite against normal
-  storage: submission fixtures delete JSON files and working-copy tests write
-  application data. Inspect fixtures and isolate all storage first.
+- RFK-01 provides collection-time and per-test isolation. Run the default backend
+  suite with `.venv/bin/python -m pytest -q`; see `tests/README.md`. Never bypass
+  the sandbox to run tests against normal storage. Earlier fixtures deleted user
+  JSON files, so retain sentinel-preservation coverage when changing isolation.
 - Default tests must be deterministic and offline, use temporary storage and
   fake LLM/PDF dependencies, and exercise production code rather than copies.
   Live model/LaTeX checks are explicit opt-in integration tests.

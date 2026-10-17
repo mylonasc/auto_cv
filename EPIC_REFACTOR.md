@@ -14,6 +14,12 @@ commits, and progress reports.
 All ten RFK issues are native sub-issues of this epic; the blocking relationships
 in the task table are also recorded as native GitHub issue dependencies.
 
+**Out-of-scope findings:** [technical debt #16](https://github.com/mylonasc/auto_cv/issues/16).
+Use this register for findings requiring requirements beyond this epic, not to
+waive existing RFK acceptance criteria. The initial item concerns the deployment
+trust/security boundary (authentication, CORS, template/path access, and untrusted
+LaTeX execution).
+
 Non-goals: multi-user or multi-candidate support, new authoring features,
 microservices, a database migration, a generic CV framework, or adoption of a
 new agent orchestration/state-management framework merely for its own sake.
@@ -322,15 +328,31 @@ dependencies. Establish the safety net before refactoring production behavior.
 
 Acceptance criteria:
 
-- [ ] Every filesystem test uses temporary storage; no fixture deletes or writes
+- [x] Every filesystem test uses temporary storage; no fixture deletes or writes
   configured user/runtime data. Sentinel files outside test storage survive.
-- [ ] Default unit/API tests use fake LLMs and fake PDF execution; no network,
+- [x] Default unit/API tests use fake LLMs and fake PDF execution; no network,
   credentials, Ollama service, or LaTeX installation is required.
-- [ ] Characterization/regression tests cover CV save round trips, SSE identity,
+- [x] Characterization/regression tests cover CV save round trips, SSE identity,
   evidence preservation, working-copy selection, and render-source selection.
   Known defects may start as strict expected failures tied to their RFK issue.
-- [ ] Tests invoke production code rather than reimplementing its algorithms.
-- [ ] Test commands and opt-in live integration checks are documented.
+- [x] Tests invoke production code rather than reimplementing its algorithms.
+- [x] Test commands and opt-in live integration checks are documented.
+
+Delivery evidence (on `enhancement/epic-refactor`, not yet merged):
+
+- Collection-time storage sandbox plus per-test runtime/CWD, isolated global
+  stores, deterministic structured-output/PDF fakes, and network/process guards.
+- Removed destructive submission cleanup and replaced duplicated rendering tests
+  with production helper/endpoint calls and actual job-persistence round trips.
+- `.venv/bin/python -m pytest -q --tb=short`: **41 passed, 12 strict expected
+  failures**. Expected failures belong to RFK-02 (#7: six cases), RFK-03 (#8: four),
+  RFK-04 (#9: one), and RFK-06 (#11: one); they assert intended behavior and must
+  be unmarked when their owning task fixes the defect.
+- Independent subprocess safety checks preserve five external store sentinels
+  and SHA-256 snapshots of 664 existing runtime/CV/user files.
+- Setup and explicitly opt-in live checks: [`tests/README.md`](tests/README.md).
+  Live model and real LaTeX checks were not run; no rendering claim relies on the
+  unit-test placeholder PDF.
 
 ### RFK-02 — Canonical CV schema and migration
 

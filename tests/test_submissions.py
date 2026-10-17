@@ -3,8 +3,6 @@
 import os
 import json
 
-import pytest
-
 class TestSubmissionModels:
     def test_submission_create_request(self):
         from models.api_models import SubmissionCreateRequest
