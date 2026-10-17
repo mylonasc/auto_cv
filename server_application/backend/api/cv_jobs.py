@@ -1,585 +1,107 @@
-"""
-API routes for CV job management.
-"""
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
-from typing import List, Optional
-import asyncio
-import os
-from uuid import uuid4
+"""HTTP adapters; repositories and job execution belong to application services."""
 
-from models.api_models import (
-    CreateJobRequest, CVJobResponse, JobStatus, CVJobResult, RenderCVRequest, JobAnalysisRequest,
-    WorkingCopy, WorkingCopySection, WorkingCopyItem, SectionFilterConfig,
-    RescoreRequest, RescoreResponse, RescoredItemResult, RescoreItem, JobAnalysisResponse,
-)
-from models.legacy import normalize_working_copy
-from jobs.job_manager import job_manager
-from services.cv_processor import CVProcessor
-from core.paths import ARTIFACTS_DIR, WORKING_CVS_DIR, ensure_data_dirs
-from src.utils import FullCVDocument, DocSection, DocSectionItem
-from src.domain import CVTemplateData
-from src.template_registry import resolve_template_path
-from src.analysis import score_comment, select_scored_ids, SelectionPolicy
-from src.pipeline import analyze_posting, bullet_scoring_chain
-from src.artifacts import render_artifacts
-from .config import get_config
-from datetime import datetime
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import FileResponse, StreamingResponse
 
-ensure_data_dirs()
+from models.api_models import (CreateJobRequest, CVJobResponse, CVJobResult, JobAnalysisRequest,
+    JobAnalysisResponse, WorkingCopy, RenderCVRequest, RescoreRequest, RescoreResponse)
+from services.application import ApplicationServices, OperationError
+from utils.sse import job_status_stream
+from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/cv-jobs", tags=["CV Jobs"])
 
-# Store active background tasks
-active_tasks = {}
-
-
-def _resolve_artifact_file_path(job_id: str, artifact: dict) -> Optional[str]:
-    """Resolve the on-disk artifact path across environments."""
-    artifacts_dir = ARTIFACTS_DIR
-    kind = artifact["kind"]
-    ext = "tex" if kind == "latex" else kind
-
-    candidates = []
-    stored_path = artifact.get("path")
-    if stored_path:
-        candidates.append(stored_path)
-        candidates.append(os.path.join(artifacts_dir, os.path.basename(stored_path)))
-
-    candidates.append(os.path.join(artifacts_dir, f"cv_output_{job_id}.{ext}"))
-
-    seen = set()
-    for candidate in candidates:
-        if not candidate or candidate in seen:
-            continue
-        seen.add(candidate)
-        if candidate.lower().endswith(f".{ext}") and os.path.isfile(candidate):
-            return candidate
-
-    return None
-
-
-# ── Working Copy Helpers ──────────────────────────────────────────────
-
-def _create_working_copy_from_job(job) -> WorkingCopy:
-    """Derive a WorkingCopy from a completed job result."""
-    result_obj = job.result.model_dump() if hasattr(job.result, "model_dump") else job.result
-    if not isinstance(result_obj, dict):
-        result_obj = {}
-    sections = result_obj.get("sections", []) or []
-    personal_statement = result_obj.get("personal_statement", "") or ""
-
-    wc_sections = []
-    for section in sections:
-        items = section.get("items", []) or []
-        wc_items = [
-            WorkingCopyItem(
-                **({"id": it["id"]} if it.get("id") else {}),
-                text=it.get("text", ""),
-                scored_text=it.get("text") if it.get("relevance_score") is not None else None,
-                original_text=it.get("text", ""),
-                relevance_score=it.get("relevance_score"),
-                explanation=it.get("explanation"),
-                posting_evidence=it.get("posting_evidence"),
-                kept=it.get("kept", True),
-            )
-            for it in items
-        ]
-        wc_sections.append(WorkingCopySection(
-            **({"id": section["id"]} if section.get("id") else {}),
-            company=section.get("company", ""),
-            position=section.get("position", ""),
-            duration=section.get("duration", ""),
-            section_score=section.get("section_score"),
-            section_explanation=section.get("explanation"),
-            section_posting_evidence=section.get("posting_evidence"),
-            items=wc_items,
-        ))
-
-    now = datetime.now().isoformat()
-    return WorkingCopy(
-        job_id=job.id,
-        personal_statement=personal_statement,
-        sections=wc_sections,
-        created_at=now,
-        updated_at=now,
-    )
-
-
-def _save_working_copy_to_disk(working_copy: WorkingCopy):
-    """Persist a WorkingCopy to disk."""
-    import json
-    os.makedirs(WORKING_CVS_DIR, exist_ok=True)
-    path = os.path.join(WORKING_CVS_DIR, f"{working_copy.job_id}.json")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(working_copy.model_dump_json(indent=2))
-
-
-def _load_working_copy_from_disk(job_id: str) -> Optional[WorkingCopy]:
-    """Load a WorkingCopy from disk, or None."""
-    import json
-    path = os.path.join(WORKING_CVS_DIR, f"{job_id}.json")
-    if not os.path.exists(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return WorkingCopy.model_validate(normalize_working_copy(data))
-
-
-def _render_from_working_copy(working_copy: WorkingCopy, request: RenderCVRequest, job_id: str) -> list:
-    """Render PDF/LaTeX artifacts from a WorkingCopy directly."""
-    doc_items = []
-    for section in working_copy.sections:
-        kept_items = [item for item in section.items if item.kept]
-        kept_texts = [item.text for item in kept_items]
-        if kept_texts:
-            rendered = DocSectionItem(
-                company=section.company,
-                duration=section.duration,
-                position=section.position,
-                text_items=kept_texts,
-                id=section.id, item_ids=[item.id for item in kept_items],
-            )
-            if request.include_scoring_comments:
-                rendered.set_comment(score_comment(section.section_score, section.section_explanation,
-                                                   section.section_posting_evidence))
-                for point, item in zip(rendered.section_item_list, kept_items):
-                    if item.scored_text == item.text:
-                        point.set_comment(score_comment(item.relevance_score, item.explanation, item.posting_evidence))
-            doc_items.append(rendered)
-
-    title = "Work Experience"
-    experience_section = DocSection(title, doc_items)
-    cv_template_path = resolve_template_path("cv_templates", request.cv_template_id, request.cv_template_path)
-    cv_template = CVTemplateData(template_id=request.cv_template_id, template_path=cv_template_path)
-    document = FullCVDocument(working_copy.personal_statement, experience_section, cv_template=cv_template)
-
-    return render_artifacts(document, ARTIFACTS_DIR, f"cv_output_{job_id}_{uuid4().hex}",
-                            render_pdf=request.render_pdf, include_latex=request.include_latex,
-                            include_scoring_comments=request.include_scoring_comments, source="working_copy")
-
-
-async def status_callback(job_id: str, status: JobStatus, progress: Optional[str] = None, message: Optional[str] = None):
-    """Callback to update job status."""
-    # Check if cancelled
-    job = job_manager.get_job(job_id)
-    if job and job.status == JobStatus.CANCELLED:
-        raise asyncio.CancelledError("Job was cancelled by user")
-        
-    job_manager.update_job_status(
-        job_id=job_id,
-        status=status,
-        progress=progress,
-        message=message
-    )
-
-
-async def process_job_background(job_id: str, request: CreateJobRequest):
-    """Background task to process a CV job."""
-    try:
-        # Check if already cancelled
-        job = job_manager.get_job(job_id)
-        if not job or job.status == JobStatus.CANCELLED:
-            return
-
-        # Update status to processing
-        job_manager.update_job_status(
-            job_id=job_id,
-            status=JobStatus.PROCESSING,
-            progress="Starting CV processing...",
-            message="Initializing CV processor"
-        )
-        
-        # Run processing
-        processor = CVProcessor(
-            candidate=request.candidate,
-            config=request.config,
-            cv_version_id=request.cv_version_id
-        )
-
-        
-        # Process
-        output = await processor.process(
-            job_description=request.job_description,
-            job_id=job_id,
-            status_callback=status_callback
-        )
-        
-        # Save result to job (keep as PROCESSING so SSE doesn't fire job_complete yet)
-        job_manager.update_job_status(
-            job_id=job_id,
-            status=JobStatus.PROCESSING,
-            progress="Creating working copy...",
-            message="Saving analysis and creating editable working copy",
-            result=output.result,
-            job_analysis=output.job_analysis
-        )
-
-        # Auto-create working copy from the result BEFORE marking succeeded
-        # (avoids race condition where frontend loads WC before it's on disk)
-        try:
-            saved_job = job_manager.get_job(job_id)
-            if saved_job and saved_job.result:
-                wc = _create_working_copy_from_job(saved_job)
-                _save_working_copy_to_disk(wc)
-        except Exception as wc_err:
-            print(f"Warning: failed to auto-create working copy: {wc_err}")
-
-        # Now mark as succeeded
-        job_manager.update_job_status(
-            job_id=job_id,
-            status=JobStatus.SUCCEEDED,
-            progress="Processing complete",
-            message="CV has been successfully processed",
-        )
-        
-    except asyncio.CancelledError:
-        # Job was already marked as CANCELLED in status_callback or cancel_job endpoint
-        pass
-    except Exception as e:
-        job_manager.update_job_status(
-            job_id=job_id,
-            status=JobStatus.FAILED,
-            error=str(e),
-            message=f"Processing failed: {str(e)}"
-        )
-    finally:
-        # Clean up task reference
-        if job_id in active_tasks:
-            del active_tasks[job_id]
-
 
 @router.post("/", response_model=CVJobResponse)
-async def create_job(request: CreateJobRequest, background_tasks: BackgroundTasks):
-    """
-    Create a new CV processing job.
-    
-    - **job_description**: Text of the job posting
-    - **candidate**: Candidate name (default: charilaos_mylonas)
-    - **config**: Optional backend configuration
-    """
-    # Create job
-    effective_config = (request.config or await get_config()).model_copy(deep=True)
-    if effective_config.outputs.include_cover_letter:
-        raise HTTPException(status_code=422, detail="Cover-letter output is CLI-only; disable it for HTTP jobs")
-    request = request.model_copy(update={"config": effective_config})
-    job = job_manager.create_job(candidate=request.candidate, job_description=request.job_description,
-                                 effective_config=effective_config)
-    
-    # Store request for background task
-    active_tasks[job.id] = request
-    
-    # Start background processing
-    background_tasks.add_task(process_job_background, job.id, request)
-    
-    return job
+async def create_job(request: CreateJobRequest, services: ApplicationServices = Depends(get_services)):
+    return await services.create_job(request)
 
 
 @router.post("/job-analysis", response_model=JobAnalysisResponse)
-async def analyze_job_only(request: JobAnalysisRequest):
-    """Analyze job posting only and return extracted job analysis."""
-    result = await analyze_posting(request.job_description, request.config or await get_config())
-    return {"job_analysis": result.data}
+async def analyze_job_only(request: JobAnalysisRequest, services: ApplicationServices = Depends(get_services)):
+    return await services.analyze_posting(request)
+
+
+@router.get("/", response_model=list[CVJobResponse])
+async def list_jobs(services: ApplicationServices = Depends(get_services)):
+    return services.jobs.list_jobs()
 
 
 @router.get("/{job_id}", response_model=CVJobResponse)
-async def get_job(job_id: str):
-    """Get the status and details of a specific job."""
-    job = job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
+async def get_job(job_id: str, services: ApplicationServices = Depends(get_services)):
+    return services.get_job(job_id)
 
 
 @router.post("/{job_id}/cancel", response_model=CVJobResponse)
-async def cancel_job(job_id: str):
-    """Cancel a running or queued job."""
-    success = job_manager.cancel_job(job_id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Job cannot be cancelled (not found or already completed)")
-    
-    job = job_manager.get_job(job_id)
-    return job
+async def cancel_job(job_id: str, services: ApplicationServices = Depends(get_services)):
+    services.get_job(job_id)
+    if not services.runner.cancel(job_id):
+        raise OperationError(400, "Job cannot be cancelled after completion")
+    return services.get_job(job_id)
 
 
 @router.post("/{job_id}/archive", response_model=CVJobResponse)
-async def archive_job(job_id: str):
-    """Archive a job to declutter history views."""
-    job = job_manager.archive_job(job_id, archived=True)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
+async def archive_job(job_id: str, services: ApplicationServices = Depends(get_services)):
+    services.get_job(job_id)
+    return services.jobs.archive_job(job_id)
 
 
 @router.post("/{job_id}/unarchive", response_model=CVJobResponse)
-async def unarchive_job(job_id: str):
-    """Restore an archived job."""
-    job = job_manager.archive_job(job_id, archived=False)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
+async def unarchive_job(job_id: str, services: ApplicationServices = Depends(get_services)):
+    services.get_job(job_id)
+    return services.jobs.archive_job(job_id, archived=False)
 
 
 @router.delete("/{job_id}")
-async def delete_job(job_id: str):
-    """Permanently delete a job from history."""
-    success = job_manager.delete_job(job_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Job not found")
+async def delete_job(job_id: str, services: ApplicationServices = Depends(get_services)):
+    services.get_job(job_id)
+    services.jobs.delete_job(job_id)
+    # Conservatively retain working copies, artifacts, render records and sent
+    # submissions. Deleting history does not authorize destroying user outputs.
     return {"ok": True, "job_id": job_id}
 
 
 @router.get("/{job_id}/result", response_model=CVJobResult)
-async def get_job_result(job_id: str):
-    """Get the result of a completed job."""
-    job = job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if job.status != JobStatus.SUCCEEDED:
-        raise HTTPException(status_code=400, detail=f"Job is not completed (status: {job.status})")
-    
-    return job.result
-
-
-@router.get("/", response_model=List[CVJobResponse])
-async def list_jobs():
-    """List all jobs."""
-    return job_manager.list_jobs()
-
-
-@router.get("/{job_id}/artifacts/{artifact_id}")
-async def get_artifact(job_id: str, artifact_id: str, inline: bool = Query(default=False)):
-    """Download a specific artifact from a job."""
-    print(f"Artifact requested: job_id={job_id}, artifact_id={artifact_id}")
-    job = job_manager.get_job(job_id)
-    if not job or not job.result:
-        print(f"Job or result not found for {job_id}")
-        raise HTTPException(status_code=404, detail="Job or result not found")
-
-    artifacts = job.result.artifacts
-    
-    # Try to find artifact by ID
-    artifact = next((a for a in artifacts if a["id"] == artifact_id), None)
-
-    if not artifact:
-        print(f"Artifact {artifact_id} not found in job {job_id}. Available IDs: {[a.get('id') for a in artifacts if isinstance(a, dict)]}")
-        raise HTTPException(status_code=404, detail="Artifact not found")
-    
-    file_path = _resolve_artifact_file_path(job_id, artifact)
-    if not file_path:
-        expected_filename = artifact["filename"]
-        print(f"Artifact file not found for job {job_id}, artifact {artifact_id}")
-        raise HTTPException(status_code=404, detail=f"Artifact file '{expected_filename}' not found on disk")
-
-    from fastapi.responses import FileResponse
-    response_filename = artifact["filename"]
-    lower = response_filename.lower()
-    media_type = 'application/octet-stream'
-    if lower.endswith('.pdf'):
-        media_type = 'application/pdf'
-    elif lower.endswith('.tex'):
-        media_type = 'application/x-tex'
-
-    headers = None
-    if inline:
-        headers = {"Content-Disposition": f'inline; filename="{response_filename}"'}
-
-    return FileResponse(
-        path=file_path,
-        media_type=media_type,
-        filename=response_filename,
-        headers=headers
-    )
+async def get_job_result(job_id: str, services: ApplicationServices = Depends(get_services)):
+    return services.completed_job(job_id).result
 
 
 @router.get("/{job_id}/stream")
-async def stream_job_updates(job_id: str):
-    """
-    SSE endpoint for real-time job status updates.
-    Returns a stream of events: job_update, job_complete, error
-    """
-    from fastapi.responses import StreamingResponse
-    from utils.sse import job_status_stream
-    
-    job = job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    return StreamingResponse(
-        job_status_stream(job_id, job_manager),
-        media_type="text/event-stream"
-    )
+async def stream_job_updates(job_id: str, services: ApplicationServices = Depends(get_services)):
+    services.get_job(job_id)
+    return StreamingResponse(job_status_stream(job_id, services.jobs), media_type="text/event-stream")
 
 
-# ── Working Copy Endpoints ────────────────────────────────────────────
+@router.get("/{job_id}/artifacts/{artifact_id}")
+async def get_artifact(job_id: str, artifact_id: str, inline: bool = Query(default=False),
+                       services: ApplicationServices = Depends(get_services)):
+    job = services.completed_job(job_id)
+    artifact = next((item for item in job.result.artifacts if item["id"] == artifact_id), None)
+    if artifact is None:
+        raise OperationError(404, "Artifact not found")
+    path = services.artifacts.resolve(job_id, artifact)
+    if path is None:
+        raise OperationError(404, "Artifact file not found")
+    media = {"pdf": "application/pdf", "latex": "application/x-tex", "json": "application/json"}[artifact["kind"]]
+    headers = {"Content-Disposition": f'inline; filename="{artifact["filename"]}"'} if inline else None
+    return FileResponse(path, media_type=media, filename=artifact["filename"], headers=headers)
 
 
 @router.get("/{job_id}/working-cv", response_model=WorkingCopy)
-async def get_working_copy(job_id: str):
-    """Get the working copy for a job. Auto-creates from result if missing."""
-    wc = _load_working_copy_from_disk(job_id)
-    if wc:
-        return wc
-
-    # Auto-create from job result
-    job = job_manager.get_job(job_id)
-    if not job or not job.result:
-        raise HTTPException(status_code=404, detail="Job not found or has no result")
-    wc = _create_working_copy_from_job(job)
-    _save_working_copy_to_disk(wc)
-    return wc
+async def get_working_copy(job_id: str, services: ApplicationServices = Depends(get_services)):
+    return services.get_working_copy(job_id)
 
 
 @router.put("/{job_id}/working-cv", response_model=WorkingCopy)
-async def save_working_copy(job_id: str, working_copy: WorkingCopy):
-    """Save (overwrite) the working copy for a job."""
-    working_copy.job_id = job_id
-    working_copy.updated_at = datetime.now().isoformat()
-    if not working_copy.created_at:
-        working_copy.created_at = working_copy.updated_at
-    _save_working_copy_to_disk(working_copy)
-    return working_copy
+async def save_working_copy(job_id: str, copy: WorkingCopy, services: ApplicationServices = Depends(get_services)):
+    return services.save_working_copy(job_id, copy)
 
 
 @router.post("/{job_id}/working-cv/rescore", response_model=RescoreResponse)
-async def rescore_working_copy_items(job_id: str, request: RescoreRequest):
-    """Rescore specific items in a working copy, optionally with new text."""
-    job = job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    wc = _load_working_copy_from_disk(job_id)
-    if not wc:
-        raise HTTPException(status_code=404, detail="Working copy not found")
-
-    if request.section_index >= len(wc.sections):
-        raise HTTPException(status_code=400, detail="Invalid section_index")
-
-    section = wc.sections[request.section_index]
-
-    # Determine which items to rescore (empty = all)
-    indices = request.item_indices if request.item_indices else list(range(len(section.items)))
-
-    # Build optional new-text map
-    text_map: dict = {}
-    if request.items:
-        for ri in request.items:
-            text_map[ri.index] = ri.text
-
-    # Job posting context for the LLM
-    job_analysis_data = job.job_analysis or {}
-    job_post_data_str = str(job_analysis_data)
-
-    # Create the analysis chain
-    chain = bullet_scoring_chain(job.effective_config or await get_config())
-
-    results: list = []
-    for idx in indices:
-        if idx >= len(section.items):
-            continue
-        item = section.items[idx]
-        text = text_map.get(idx, item.text)
-
-        try:
-            res = await chain.ainvoke({
-                "cv_experience": text,
-                "job_posting_data": job_post_data_str,
-            })
-
-            item.text = text
-            item.scored_text = text
-            item.relevance_score = res.experience_relevance_score
-            item.explanation = res.explanation
-            item.posting_evidence = res.posting_evidence
-
-            results.append(RescoredItemResult(
-                index=idx,
-                relevance_score=res.experience_relevance_score,
-                explanation=res.explanation,
-                posting_evidence=res.posting_evidence,
-                scored_text=text,
-            ))
-        except Exception as e:
-            print(f"Rescore failed for item {idx}: {e}")
-
-    wc.updated_at = datetime.now().isoformat()
-    _save_working_copy_to_disk(wc)
-
-    return RescoreResponse(section_index=request.section_index, items=results)
-
-
-# ── Render ────────────────────────────────────────────────────────────
+async def rescore_working_copy_items(job_id: str, request: RescoreRequest, services: ApplicationServices = Depends(get_services)):
+    return await services.rescore(job_id, request)
 
 
 @router.post("/{job_id}/render", response_model=CVJobResponse)
-async def render_job_artifacts(job_id: str, request: RenderCVRequest):
-    """Render CV artifacts from existing analysis or from a WorkingCopy."""
-    job = job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    # ── Branch: render from WorkingCopy when provided ──
-    if request.working_copy:
-        artifacts = await asyncio.to_thread(_render_from_working_copy, request.working_copy, request, job_id)
-        # Update job result artifacts
-        result_obj = job.result.model_dump() if hasattr(job.result, "model_dump") else job.result
-        if isinstance(result_obj, dict):
-            existing = result_obj.get("artifacts", []) or []
-            result_obj["artifacts"] = existing + artifacts
-            job_manager.update_job_status(job_id=job_id, status=job.status, result=result_obj)
-        updated = job_manager.get_job(job_id)
-        if not updated:
-            raise HTTPException(status_code=404, detail="Job not found after rendering")
-        return updated
-
-    # ── Legacy path: render from stored analysis ──
-    if not job.result:
-        raise HTTPException(status_code=404, detail="Job result not found")
-
-    result_obj = job.result.model_dump() if hasattr(job.result, "model_dump") else job.result
-    sections = result_obj.get("sections") if isinstance(result_obj, dict) else None
-    if not sections:
-        raise HTTPException(status_code=400, detail="Job has no section analysis to render from")
-
-    doc_items = []
-    policy = SelectionPolicy(min_items=request.min_section_items_keep,
-                             max_items=request.max_section_items_keep, min_score=request.min_relevance_score)
-    for section in sections:
-        raw_items = section.get("items") or []
-        selected = select_scored_ids(tuple((str(index), item.get("relevance_score"))
-                                           for index, item in enumerate(raw_items)), policy)
-        kept = [item for index, item in enumerate(raw_items) if str(index) in selected and item.get("text")]
-        if not kept:
-            continue
-        rendered = DocSectionItem(
-                company=section.get("company") or "",
-                duration=section.get("duration") or "",
-                position=section.get("position") or "",
-                text_items=[item["text"] for item in kept],
-                id=section.get("id"), item_ids=[item.get("id") for item in kept],
-            )
-        if request.include_scoring_comments:
-            rendered.set_comment(score_comment(section.get("section_score"), section.get("explanation"),
-                                               section.get("posting_evidence")))
-            for point, item in zip(rendered.section_item_list, kept):
-                point.set_comment(score_comment(item.get("relevance_score"), item.get("explanation"), item.get("posting_evidence")))
-        doc_items.append(rendered)
-
-    title = sections[0].get("title") if sections and isinstance(sections[0], dict) else "Work Experience"
-    experience_section = DocSection(title or "Work Experience", doc_items)
-    cv_template_path = resolve_template_path("cv_templates", request.cv_template_id, request.cv_template_path)
-    cv_template = CVTemplateData(template_id=request.cv_template_id, template_path=cv_template_path)
-    document = FullCVDocument(result_obj.get("personal_statement", ""), experience_section, cv_template=cv_template)
-
-    artifacts = result_obj.get("artifacts", []) + await asyncio.to_thread(
-        render_artifacts,
-        document, ARTIFACTS_DIR, f"cv_output_{job_id}_{uuid4().hex}",
-        render_pdf=request.render_pdf, include_latex=request.include_latex,
-        include_scoring_comments=request.include_scoring_comments,
-    )
-
-    result_obj["artifacts"] = artifacts
-    job_manager.update_job_status(job_id=job_id, status=job.status, result=result_obj)
-    updated = job_manager.get_job(job_id)
-    if not updated:
-        raise HTTPException(status_code=404, detail="Job not found after rendering")
-    return updated
+async def render_job_artifacts(job_id: str, request: RenderCVRequest, services: ApplicationServices = Depends(get_services)):
+    return await services.render(job_id, request)

@@ -1,21 +1,13 @@
-"""CV version endpoints using one canonical schema and a storage adapter."""
+"""Canonical CV HTTP adapters; legacy adaptation and saves belong to the repository."""
 
-import os
-from pathlib import Path
-
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
-
-from core.paths import CV_DATA_DIR, ensure_data_dirs
-from src.cv_storage import (
-    cv_version_path, find_cv_file, load_cv_file, normalize_cv_data, save_cv_file,
-)
 from src.domain import CVData
 from src.template_registry import load_template_registry
+from services.application import ApplicationServices, OperationError
+from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/cv-data", tags=["CV Data"])
-ensure_data_dirs()
-CV_DATA_BASE_DIR = CV_DATA_DIR
 
 
 class CVVersionInfo(BaseModel):
@@ -24,17 +16,15 @@ class CVVersionInfo(BaseModel):
     last_modified: float
 
 
-def _no_cache(response: Response) -> None:
+def _no_cache(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
 
-def _validate_identity(data: CVData, candidate: str) -> CVData:
-    try:
-        return normalize_cv_data(data, candidate)
-    except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+def _validate_identity(data, candidate):
+    if data.candidate.candidate_id != candidate:
+        raise OperationError(422, "candidate_id does not match the requested candidate")
 
 
 @router.get("/templates")
@@ -43,68 +33,46 @@ async def list_templates():
 
 
 @router.get("/{candidate}/versions", response_model=list[CVVersionInfo])
-async def list_cv_versions(candidate: str = "charilaos_mylonas"):
-    directory = Path(CV_DATA_BASE_DIR) / candidate
-    files = {path.stem: path for path in directory.glob("*.json")}
-    master = find_cv_file(CV_DATA_BASE_DIR, candidate, "master")
-    if "master" not in files and master.exists():
-        files["master"] = master
-    return sorted(
-        [CVVersionInfo(id=version, name=version.replace("_", " ").title(),
-                       last_modified=os.path.getmtime(path)) for version, path in files.items()],
-        key=lambda item: item.last_modified, reverse=True,
-    )
+async def list_cv_versions(candidate: str, services: ApplicationServices = Depends(get_services)):
+    return services.cvs.list(candidate)
 
 
 @router.get("/{candidate}/versions/{version_id}", response_model=CVData)
-async def get_cv_version(candidate: str, version_id: str, response: Response):
-    path = find_cv_file(CV_DATA_BASE_DIR, candidate, version_id)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail=f"CV version '{version_id}' not found")
-    try:
-        data = load_cv_file(path, candidate)
-    except ValueError as error:
-        # No write/migration has taken place. The user can resolve the original
-        # file explicitly instead of losing one side of a conflicting document.
-        raise HTTPException(status_code=409, detail=f"CV data requires resolution: {error}") from error
+async def get_cv_version(candidate: str, version_id: str, response: Response,
+                         services: ApplicationServices = Depends(get_services)):
+    result = services.cvs.get(candidate, version_id)
     _no_cache(response)
-    return data
+    return result
 
 
 @router.post("/{candidate}/versions/{version_id}", response_model=CVData)
-async def create_cv_version(version_id: str, data: CVData, candidate: str = "charilaos_mylonas"):
-    if find_cv_file(CV_DATA_BASE_DIR, candidate, version_id).exists():
-        raise HTTPException(status_code=400, detail=f"CV version '{version_id}' already exists")
-    data = _validate_identity(data, candidate)
-    save_cv_file(cv_version_path(CV_DATA_BASE_DIR, candidate, version_id), data)
-    return data
+async def create_cv_version(candidate: str, version_id: str, data: CVData,
+                            services: ApplicationServices = Depends(get_services)):
+    _validate_identity(data, candidate)
+    return services.cvs.save(candidate, version_id, data, create=True)
 
 
 @router.put("/{candidate}/versions/{version_id}", response_model=CVData)
-async def update_cv_version(candidate: str, version_id: str, data: CVData, response: Response):
-    data = _validate_identity(data, candidate)
-    save_cv_file(cv_version_path(CV_DATA_BASE_DIR, candidate, version_id), data)
+async def update_cv_version(candidate: str, version_id: str, data: CVData, response: Response,
+                            services: ApplicationServices = Depends(get_services)):
+    _validate_identity(data, candidate)
+    result = services.cvs.save(candidate, version_id, data)
     _no_cache(response)
-    return data
+    return result
 
 
 @router.delete("/{candidate}/versions/{version_id}")
-async def delete_cv_version(version_id: str, candidate: str = "charilaos_mylonas"):
-    path = cv_version_path(CV_DATA_BASE_DIR, candidate, version_id)
-    if path.name == "master.json":
-        raise HTTPException(status_code=400, detail="Cannot delete the master version")
-    if not path.exists():
-        raise HTTPException(status_code=404, detail=f"CV version '{version_id}' not found")
-    path.unlink()
+async def delete_cv_version(candidate: str, version_id: str, services: ApplicationServices = Depends(get_services)):
+    services.cvs.delete(candidate, version_id)
     return {"status": "success", "message": f"Version '{version_id}' deleted"}
 
 
-# Preserve endpoint aliases, not competing payload shapes.
 @router.get("/{candidate}", response_model=CVData)
-async def get_cv_data_legacy(response: Response, candidate: str = "charilaos_mylonas"):
-    return await get_cv_version(candidate, "master", response)
+async def get_cv_data_legacy(candidate: str, response: Response, services: ApplicationServices = Depends(get_services)):
+    return await get_cv_version(candidate, "master", response, services)
 
 
 @router.put("/{candidate}", response_model=CVData)
-async def update_cv_data_legacy(data: CVData, response: Response, candidate: str = "charilaos_mylonas"):
-    return await update_cv_version(candidate, "master", data, response)
+async def update_cv_data_legacy(candidate: str, data: CVData, response: Response,
+                               services: ApplicationServices = Depends(get_services)):
+    return await update_cv_version(candidate, "master", data, response, services)

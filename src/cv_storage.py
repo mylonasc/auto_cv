@@ -10,10 +10,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import tempfile
 from typing import Any
 
 from .domain import CVData, CandidateMetadata
+from .storage import atomic_write_bytes
 
 
 class CVDataConflict(ValueError):
@@ -110,15 +110,5 @@ def save_cv_file(path: str | Path, data: CVData) -> Path | None:
         except FileExistsError:
             if backup.read_bytes() != original:
                 raise ValueError("Existing CV backup does not match its content hash")
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as target:
-            temporary = Path(target.name)
-            target.write(content)
-            target.flush()
-            os.fsync(target.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    atomic_write_bytes(path, content)
     return backup

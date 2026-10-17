@@ -25,7 +25,7 @@ async def analyze_posting(text: str, config: BackendConfig, *, model=None):
 
 
 async def analyze_cv(source: CVData, text: str, config: BackendConfig | None = None, *,
-                     model_builder=build_model, progress_callback=None) -> CVRun:
+                     model_builder=build_model, progress_callback=None, cache=None) -> CVRun:
     config = (config or BackendConfig()).model_copy(deep=True)
 
     async def progress(message):
@@ -40,7 +40,7 @@ async def analyze_cv(source: CVData, text: str, config: BackendConfig | None = N
         DocSectionItem(**section.model_dump()) for section in source.experience_sections
     ]), cv_template=source.cv_template)
     editor_model = model_builder(config.statement_editor_model) if source.alternative_statements else analysis_model
-    analyzer = CVCrossAnalyzer(posting, document, llm_model=analysis_model, llm_editor_model=editor_model)
+    analyzer = CVCrossAnalyzer(posting, document, llm_model=analysis_model, llm_editor_model=editor_model, cache=cache)
     if source.alternative_statements:
         await progress("Optimizing personal statement...")
         await analyzer.analyze_rewrite_personal_statement(source.alternative_statements + [source.personal_statement])

@@ -1,8 +1,6 @@
 """HTTP job adapter around the shared application pipeline."""
 
 from uuid import uuid4
-from core.paths import CV_DATA_DIR, ARTIFACTS_DIR
-from src.cv_storage import find_cv_file, load_cv_file
 from src.config import BackendConfig
 from src.pipeline import analyze_cv
 from src.artifacts import render_artifacts
@@ -10,25 +8,23 @@ from models.api_models import CVJobResult, JobStatus, ProcessingOutput
 
 
 class CVProcessor:
-    def __init__(self, candidate="charilaos_mylonas", config=None, cv_version_id="master"):
-        self.candidate = candidate
+    def __init__(self, *, source, artifacts_dir, config=None, cache=None):
+        self.source = source.model_copy(deep=True)
+        self.artifacts_dir = artifacts_dir
+        self.cache = cache
         self.config = config or BackendConfig()
-        self.cv_version_id = cv_version_id
-
-    def _load_cv_data(self):
-        return load_cv_file(find_cv_file(CV_DATA_DIR, self.candidate, self.cv_version_id), self.candidate)
 
     async def process(self, job_description, job_id, status_callback=None) -> ProcessingOutput:
         async def progress(message):
             if status_callback:
                 await status_callback(job_id, JobStatus.PROCESSING, message)
 
-        run = await analyze_cv(self._load_cv_data(), job_description, self.config, progress_callback=progress)
+        run = await analyze_cv(self.source, job_description, self.config, progress_callback=progress, cache=self.cache)
         await progress("Rendering selected CV outputs...")
         import asyncio
         artifacts = await asyncio.to_thread(
             render_artifacts, run.analyzer.render_document(self.config.outputs.include_scoring_comments),
-            ARTIFACTS_DIR, f"cv_output_{job_id}_{uuid4().hex}",
+            self.artifacts_dir, f"cv_output_{job_id}_{uuid4().hex}",
             render_pdf=self.config.outputs.render_pdf, include_latex=self.config.outputs.include_latex,
             include_scoring_comments=self.config.outputs.include_scoring_comments,
         )
@@ -52,4 +48,4 @@ class CVProcessor:
         result = CVJobResult(personal_statement=run.analyzer.cv_model.statement, sections=sections,
                              overall_score=metrics['weighted_mean_section_relevance'],
                              summary_metrics=metrics, artifacts=artifacts)
-        return ProcessingOutput(result=result, job_analysis=run.job.data)
+        return ProcessingOutput(result=result, job_analysis=run.job.data, rendered_cv=run.source)

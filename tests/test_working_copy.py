@@ -160,10 +160,9 @@ class TestCreateWorkingCopyFromJob:
             id = "job_123"
             result = FakeResult()
 
-        # Import the helper via the cv_jobs module
-        from api.cv_jobs import _create_working_copy_from_job
+        from services.working_copy import create_working_copy
 
-        wc = _create_working_copy_from_job(FakeJob())
+        wc = create_working_copy(FakeJob())
 
         assert isinstance(wc, WorkingCopy)
         assert wc.job_id == "job_123"
@@ -190,17 +189,16 @@ class TestCreateWorkingCopyFromJob:
             id = "job_empty"
             result = FakeEmptyResult()
 
-        from api.cv_jobs import _create_working_copy_from_job
+        from services.working_copy import create_working_copy
 
-        wc = _create_working_copy_from_job(FakeJob())
+        wc = create_working_copy(FakeJob())
         assert wc.personal_statement == "Just a statement"
         assert len(wc.sections) == 0
 
 
 class TestWorkingCopyDiskPersistence:
-    def test_save_and_load(self):
+    def test_save_and_load(self, services):
         from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
-        from api.cv_jobs import _save_working_copy_to_disk, _load_working_copy_from_disk, WORKING_CVS_DIR
 
         wc = WorkingCopy(
             job_id="disk_test",
@@ -214,8 +212,8 @@ class TestWorkingCopyDiskPersistence:
             ],
         )
 
-        _save_working_copy_to_disk(wc)
-        loaded = _load_working_copy_from_disk("disk_test")
+        services.working.save(wc)
+        loaded = services.working.get("disk_test")
 
         assert loaded is not None
         assert loaded.job_id == "disk_test"
@@ -223,16 +221,17 @@ class TestWorkingCopyDiskPersistence:
         assert len(loaded.sections) == 1
         assert loaded.sections[0].items[0].text == "Test item"
 
-    def test_load_nonexistent(self):
-        from api.cv_jobs import _load_working_copy_from_disk
-        loaded = _load_working_copy_from_disk("nonexistent_job")
+    def test_load_nonexistent(self, services):
+        loaded = services.working.get("nonexistent_job")
         assert loaded is None
 
 
 class TestRenderFromWorkingCopy:
-    def test_render_uses_only_kept_content(self, pdf_calls):
+    def test_render_uses_only_kept_content(self, pdf_calls, client, job_manager):
         from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, RenderCVRequest
-        from api.cv_jobs import _render_from_working_copy
+        from models.api_models import JobStatus
+        job = job_manager.create_job()
+        job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})
 
         wc = WorkingCopy(
             job_id="render_test",
@@ -259,7 +258,9 @@ class TestRenderFromWorkingCopy:
             ],
         )
 
-        artifacts = _render_from_working_copy(wc, RenderCVRequest(), wc.job_id)
+        response = client.post(f"/v1/cv-jobs/{job.id}/render", json={"working_copy": wc.model_dump()})
+        assert response.status_code == 200
+        artifacts = response.json()["result"]["artifacts"]
         assert {artifact["kind"] for artifact in artifacts} == {"pdf", "latex"}
         latex = next(artifact for artifact in artifacts if artifact["kind"] == "latex")
         content = Path(latex["path"]).read_text()
@@ -281,7 +282,6 @@ class TestWorkingCopyEndpoints:
         response = client.get("/v1/cv-jobs/nonexistent/working-cv")
         assert response.status_code == 404
 
-    @pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-06 #11: reject orphan working copies")
     def test_put_working_copy_no_job(self, client):
         payload = {
             "job_id": "ghost_job",
@@ -304,18 +304,18 @@ class TestArtifactSourceTagging:
     """Working copy renders tag artifacts with source='working_copy'."""
 
     @pytest.mark.parametrize("render_pdf,include_latex", [(True, False), (False, True), (True, True)])
-    def test_actual_render_artifacts_survive_job_persistence(self, render_pdf, include_latex):
-        from api.cv_jobs import _render_from_working_copy
-        from jobs.job_manager import JobManager, job_manager
+    def test_actual_render_artifacts_survive_job_persistence(self, render_pdf, include_latex, client, job_manager):
+        from jobs.job_manager import JobManager
         from models.api_models import WorkingCopy, RenderCVRequest, JobStatus
 
         job = job_manager.create_job()
-        artifacts = _render_from_working_copy(
-            WorkingCopy(job_id=job.id),
-            RenderCVRequest(render_pdf=render_pdf, include_latex=include_latex), job.id,
-        )
-        job_manager.update_job_status(job.id, JobStatus.SUCCEEDED,
-                                      result={"sections": [], "artifacts": artifacts})
+        job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})
+        response = client.post(f"/v1/cv-jobs/{job.id}/render", json={
+            "working_copy": WorkingCopy(job_id=job.id).model_dump(),
+            "render_pdf": render_pdf, "include_latex": include_latex,
+        })
+        assert response.status_code == 200
+        artifacts = response.json()["result"]["artifacts"]
         restored = JobManager(storage_dir=job_manager.storage_dir).get_job(job.id)
         assert restored.result.artifacts == artifacts
         assert {a["kind"] for a in artifacts} == (

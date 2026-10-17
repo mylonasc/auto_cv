@@ -119,29 +119,28 @@ def test_document_copy_and_json_preserve_ids_comments_and_parent_links(tmp_path)
     assert restored.experience_section.doc_section_items[0].to_dict() == role.to_dict()
 
 
-def test_legacy_working_copy_ids_are_stable_without_rewriting(client, isolated_runtime):
+def test_legacy_working_copy_ids_are_stable_without_rewriting(services, isolated_runtime):
     path = isolated_runtime / "working_cvs" / "legacy.json"
     original = json.dumps({"job_id": "legacy", "sections": [{"items": [
         {"text": "Same", "relevance_score": 8}, {"text": "Same", "relevance_score": 8},
     ]}]}).encode()
     path.write_bytes(original)
-    first = client.get("/v1/cv-jobs/legacy/working-cv").json()
-    second = client.get("/v1/cv-jobs/legacy/working-cv").json()
+    first = services.working.get("legacy").model_dump()
+    second = services.working.get("legacy").model_dump()
     assert first == second
     assert first["sections"][0]["items"][0]["id"] != first["sections"][0]["items"][1]["id"]
     assert first["sections"][0]["items"][0]["scored_text"] is None
     assert path.read_bytes() == original
 
 
-def test_rescore_records_the_exact_scored_text_and_preserves_identity(client):
-    from jobs.job_manager import job_manager
-    from api.cv_jobs import _save_working_copy_to_disk
-    from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
+def test_rescore_records_the_exact_scored_text_and_preserves_identity(client, job_manager, services):
+    from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
 
     job = job_manager.create_job()
+    job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})
     item = WorkingCopyItem(text="Original", original_text="Original", scored_text="Original", relevance_score=8)
     wc = WorkingCopy(job_id=job.id, sections=[WorkingCopySection(items=[item])])
-    _save_working_copy_to_disk(wc)
+    services.working.save(wc)
     response = client.post(f"/v1/cv-jobs/{job.id}/working-cv/rescore", json={
         "section_index": 0, "item_indices": [0], "items": [{"index": 0, "text": "Edited Python work"}],
     })
@@ -153,8 +152,7 @@ def test_rescore_records_the_exact_scored_text_and_preserves_identity(client):
     assert restored["original_text"] == "Original"
 
 
-def test_working_copy_comment_options_do_not_publish_stale_bullet_scores(client, pdf_calls):
-    from jobs.job_manager import job_manager
+def test_working_copy_comment_options_do_not_publish_stale_bullet_scores(client, pdf_calls, job_manager):
     from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
 
     job = job_manager.create_job()

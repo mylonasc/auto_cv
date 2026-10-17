@@ -10,6 +10,7 @@ from src.config import BackendConfig, ModelConfig
 from src.domain import CVData, CandidateMetadata, ExperienceSectionData
 from src.pipeline import analyze_cv
 from tests.fakes import StructuredModel
+from tests.helpers import wait_for_job
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def test_http_default_config_and_rescore_use_saved_effective_model(client, sourc
     assert client.put("/v1/config/", json=config.model_dump()).status_code == 200
     assert client.post("/v1/cv-data/test/versions/master", json=source.model_dump()).status_code == 200
     created = client.post("/v1/cv-jobs/", json={"candidate": "test", "job_description": "Python engineer"}).json()
-    job = client.get(f"/v1/cv-jobs/{created['id']}").json()
+    job = wait_for_job(client, created['id'])
     assert job["status"] == "succeeded"
     assert job["effective_config"] == config.model_dump()
     assert built[:2] == [("google", "analysis-A", {"temperature": 0}), ("ollama", "editor-A", None)]
@@ -91,6 +92,8 @@ async def test_cli_and_http_use_identical_analysis_selection_and_latex(client, t
     assert client.post("/v1/cv-data/test/versions/master", json=source.model_dump()).status_code == 200
     job = client.post("/v1/cv-jobs/", json={"candidate": "test", "job_description": posting.read_text(),
                                              "config": config.model_dump()}).json()
+    settled = wait_for_job(client, job['id'])
+    assert settled['status'] == 'succeeded', settled['error']
     result = client.get(f"/v1/cv-jobs/{job['id']}/result").json()
     await run_pipeline(args)
     api_latex = Path(next(a for a in result["artifacts"] if a["kind"] == "latex")["path"]).read_text()
@@ -153,8 +156,7 @@ def test_http_rejects_cli_only_outputs_instead_of_silently_ignoring_them(client)
     assert client.get("/v1/cv-jobs/").json() == []
 
 
-def test_persisted_effective_configuration_excludes_credentials():
-    from jobs.job_manager import job_manager
+def test_persisted_effective_configuration_excludes_credentials(job_manager):
 
     config = BackendConfig(analysis_model=ModelConfig(config={
         "API_KEY": "request-secret", "temperature": 0.1,

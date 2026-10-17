@@ -31,10 +31,23 @@ export interface BasicJobAnalysis {
   preferred_qualifications?: string | null;
 }
 
+export interface CVData {
+  schema_version: 1;
+  candidate: CandidateMetadata;
+  personal_statement: string;
+  alternative_statements: Array<string>;
+  experience_sections: Array<ExperienceSectionData>;
+  cv_template: CVTemplateData;
+  motivation_letter_template: MotivationLetterTemplateData;
+}
+
 export interface CVJobResponse {
   id: string;
   status: JobStatus;
   effective_config: BackendConfig | null;
+  candidate: string;
+  cv_version_id: string | null;
+  cv_snapshot: CVData | null;
   archived: boolean;
   job_description: string | null;
   progress: string | null;
@@ -54,11 +67,30 @@ export interface CVJobResult {
   artifacts: Array<Artifact>;
 }
 
+export interface CVTemplateData {
+  template_id: string;
+  template_path: string | null;
+  experience_section_title: string;
+}
+
+export interface CandidateMetadata {
+  candidate_id: string;
+  full_name: string;
+  profile: Record<string, unknown>;
+}
+
 export interface CreateJobRequest {
   job_description: string;
   candidate: string;
   cv_version_id: string;
   config: BackendConfig | null;
+}
+
+export interface ExperienceSectionData {
+  company: string;
+  duration: string;
+  position: string;
+  text_items: Array<string>;
 }
 
 export interface IndustryJobAnalysis {
@@ -92,6 +124,11 @@ export interface ModelConfig {
   config: Record<string, unknown> | null;
 }
 
+export interface MotivationLetterTemplateData {
+  template_id: string;
+  template_path: string | null;
+}
+
 export interface OutputsConfig {
   include_cover_letter: boolean;
   render_pdf: boolean;
@@ -102,6 +139,7 @@ export interface OutputsConfig {
 export interface ProcessingOutput {
   result: CVJobResult;
   job_analysis: JobAnalysis;
+  rendered_cv: CVData | null;
 }
 
 export interface RenderCVRequest {

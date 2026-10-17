@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from tests.helpers import wait_for_job
 
 
 @pytest.fixture
@@ -73,8 +74,7 @@ def test_cv_editor_changes_survive_save(client, cv_payload, path, field):
 
 
 @pytest.fixture
-def completed_job(client, cv_payload):
-    from jobs.job_manager import job_manager
+def completed_job(client, cv_payload, job_manager):
 
     assert client.post("/v1/cv-data/test/versions/master", json=cv_payload).status_code == 200
     response = client.post("/v1/cv-jobs/", json={
@@ -82,6 +82,7 @@ def completed_job(client, cv_payload):
         "config": {"outputs": {"render_pdf": False, "include_latex": False}},
     })
     assert response.status_code == 200
+    wait_for_job(client, response.json()["id"])
     job = job_manager.get_job(response.json()["id"])
     assert job.status == "succeeded", job.error
     return job

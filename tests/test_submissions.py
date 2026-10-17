@@ -83,10 +83,9 @@ class TestSubmissionEndpoints:
         response = client.delete("/v1/submissions/nonexistent")
         assert response.status_code == 404
 
-    def test_submission_crud_cycle(self, client):
+    def test_submission_crud_cycle(self, client, services):
         # Create a submission by directly saving one
         from models.api_models import Submission
-        from core.paths import SUBMISSIONS_DIR
 
         sub = Submission(
             id="crud_test",
@@ -99,9 +98,7 @@ class TestSubmissionEndpoints:
             created_at="2025-03-01T00:00:00",
             updated_at="2025-03-01T00:00:00",
         )
-        path = os.path.join(SUBMISSIONS_DIR, "crud_test.json")
-        with open(path, "w") as f:
-            json.dump(json.loads(sub.model_dump_json()), f)
+        services.submissions.save(sub)
 
         # List
         resp = client.get("/v1/submissions/")

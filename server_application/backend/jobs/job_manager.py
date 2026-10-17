@@ -1,182 +1,133 @@
-"""
-Job manager for tracking CV processing jobs.
-"""
-import uuid
-import json
-import os
+"""Explicitly constructed job repository; no global store or task ownership."""
+
 from datetime import datetime
-from typing import Optional, Dict, List, Any, Union
-from models.api_models import (
-    CVJobResponse, JobStatus, CVJobResult, Artifact, JobAnalysis, BackendConfig
-)
+import json
+import logging
+from pathlib import Path
+from threading import RLock
+from uuid import uuid4
+
+from models.api_models import CVJobResponse, JobStatus
 from models.legacy import normalize_persisted_job
 from src.config import public_config
-from core.paths import JOBS_DIR, ensure_data_dirs
+from src.storage import atomic_write_json
 
-ensure_data_dirs()
+logger = logging.getLogger(__name__)
+TERMINAL = frozenset((JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED))
 
 
 class JobManager:
-    """Manages job creation, tracking, and persistence."""
-    
-    def __init__(self, storage_dir: Optional[str] = None):
-        """  init  .
+    """Single-process, lock-serialized JSON job records with terminal-state guards.
 
-        Args:
-            storage_dir: TODO: describe.
+    Callers receive copies. Writes validate and atomically replace disk data
+    before publishing new memory state. A queued job may finish immediately;
+    terminal statuses cannot transition back or change to another terminal state.
+    """
+    def __init__(self, storage_dir):
+        self.storage_dir = str(storage_dir)
+        Path(storage_dir).mkdir(parents=True, exist_ok=True)
+        self._lock = RLock()
+        self._jobs = {}
+        self.load_errors = {}
+        for path in Path(storage_dir).glob("*.json"):
+            try:
+                job = CVJobResponse.model_validate(normalize_persisted_job(json.loads(path.read_text())))
+                if path.stem != job.id:
+                    raise ValueError("Job ID does not match record filename")
+                self._jobs[job.id] = job
+            except (ValueError, OSError) as error:
+                self.load_errors[path.name] = str(error)
+                logger.warning("Could not load job %s; original retained", path.name)
 
-        Returns:
-            TODO: describe return value.
-        """
-        if storage_dir is None:
-            self.storage_dir = JOBS_DIR
-        else:
-            self.storage_dir = storage_dir
-            
-        os.makedirs(self.storage_dir, exist_ok=True)
-        self._jobs: Dict[str, CVJobResponse] = {}
-        self._load_jobs()
-    
-    def _job_path(self, job_id: str) -> str:
-        """ job path.
+    def _job_path(self, job_id):
+        if not job_id or Path(job_id).name != job_id or job_id in (".", "..") or "\\" in job_id:
+            raise ValueError("Invalid job ID")
+        return Path(self.storage_dir) / f"{job_id}.json"
 
-        Args:
-            job_id: TODO: describe.
+    def _save_job(self, job):
+        atomic_write_json(self._job_path(job.id), job.model_dump(mode="json"))
 
-        Returns:
-            TODO: describe return value.
-        """
-        return os.path.join(self.storage_dir, f"{job_id}.json")
-    
-    def _load_jobs(self):
-        """Load existing jobs from disk."""
-        if not os.path.exists(self.storage_dir):
-            return
-        for filename in os.listdir(self.storage_dir):
-            if filename.endswith(".json"):
-                try:
-                    with open(os.path.join(self.storage_dir, filename), 'r') as f:
-                        data = json.load(f)
-                        job = CVJobResponse.model_validate(normalize_persisted_job(data))
-                        self._jobs[job.id] = job
-                except Exception as e:
-                    print(f"Error loading job {filename}: {e}")
-    
-    def _save_job(self, job: CVJobResponse):
-        """Save job to disk."""
-        with open(self._job_path(job.id), 'w') as f:
-            json.dump(job.model_dump(mode='json'), f, default=str)
-    
-    def create_job(self, candidate: str = "charilaos_mylonas", job_description: Optional[str] = None,
-                   effective_config: Optional[BackendConfig] = None) -> CVJobResponse:
-        """Create a new job."""
-        now = datetime.now()
-        job = CVJobResponse(
-            id=str(uuid.uuid4()),
-            status=JobStatus.QUEUED,
-            effective_config=public_config(effective_config) if effective_config is not None else None,
-            archived=False,
-            job_description=job_description,
-            progress="Job created",
-            message="Job has been queued for processing",
-            created_at=now,
-            updated_at=now
-        )
-        self._jobs[job.id] = job
-        self._save_job(job)
-        return job
-    
-    def get_job(self, job_id: str) -> Optional[CVJobResponse]:
-        """Get a job by ID."""
-        return self._jobs.get(job_id)
-    
-    def update_job_status(
-        self, 
-        job_id: str, 
-        status: JobStatus,
-        progress: Optional[str] = None,
-        message: Optional[str] = None,
-        result: Optional[Union[CVJobResult, Dict[str, Any]]] = None,
-        job_analysis: Optional[JobAnalysis] = None,
-        error: Optional[str] = None
-    ) -> Optional[CVJobResponse]:
-        """Update job status and details."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return None
-        
-        # Validate the entire proposed update before mutating memory or disk.
-        data = job.model_dump()
-        data.update(status=status, updated_at=datetime.now())
-        for key, value in (("progress", progress), ("message", message), ("result", result),
-                           ("job_analysis", job_analysis), ("error", error)):
-            if value is not None:
-                data[key] = value
-        updated = CVJobResponse.model_validate(data)
-        self._save_job(updated)
-        self._jobs[job_id] = updated
-        return updated
-    
-    def cancel_job(self, job_id: str) -> bool:
-        """Cancel a job if it's still pending/processing."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return False
-        if job.status in [JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED]:
-            return False
-        job.status = JobStatus.CANCELLED
-        job.updated_at = datetime.now()
-        job.message = "Job was cancelled by user"
-        self._save_job(job)
-        return True
-    
-    def list_jobs(self) -> List[CVJobResponse]:
-        """List all jobs."""
-        return list(self._jobs.values())
+    def create_job(self, candidate="charilaos_mylonas", job_description=None, effective_config=None,
+                   cv_version_id=None, cv_snapshot=None):
+        with self._lock:
+            now = datetime.now()
+            job = CVJobResponse(id=str(uuid4()), status=JobStatus.QUEUED, candidate=candidate,
+                                cv_version_id=cv_version_id, cv_snapshot=cv_snapshot.model_copy(deep=True) if cv_snapshot is not None else None,
+                                effective_config=public_config(effective_config) if effective_config else None,
+                                job_description=job_description, progress="Job created",
+                                message="Job has been queued for processing", created_at=now, updated_at=now)
+            self._save_job(job)
+            self._jobs[job.id] = job
+            return job.model_copy(deep=True)
 
-    def archive_job(self, job_id: str, archived: bool = True) -> Optional[CVJobResponse]:
-        """Archive or unarchive a job."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return None
-        job.archived = archived
-        job.updated_at = datetime.now()
-        self._save_job(job)
-        return job
+    def get_job(self, job_id):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            return job.model_copy(deep=True) if job else None
 
-    def delete_job(self, job_id: str) -> bool:
-        """Delete a job and remove it from persistence."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return False
-        self._jobs.pop(job_id, None)
-        path = self._job_path(job_id)
-        if os.path.exists(path):
-            os.remove(path)
-        return True
-    
-    def add_artifact(self, job_id: str, artifact_type: str, name: str, path: str) -> Optional[Artifact]:
-        """Add an artifact to a job."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return None
-        
-        if not job.result:
-            job.result = CVJobResult(sections=[], artifacts=[])
-        
-        artifact = {
-            "id": str(uuid.uuid4()),
-            "job_id": job_id,
-            "kind": artifact_type,
-            "filename": name,
-            "path": path,
-            "created_at": datetime.now().isoformat()
-        }
-        result = job.result.model_dump()
-        result["artifacts"].append(artifact)
-        self.update_job_status(job_id, job.status, result=result)
-        return artifact
+    def update_job_status(self, job_id, status, progress=None, message=None, result=None, job_analysis=None, error=None):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return None
+            if job.status in TERMINAL and status != job.status:
+                raise ValueError(f"Cannot transition terminal job {job.status} to {status}")
+            data = job.model_dump()
+            data.update(status=status, updated_at=datetime.now())
+            for key, value in (("progress", progress), ("message", message), ("result", result),
+                               ("job_analysis", job_analysis), ("error", error)):
+                if value is not None:
+                    data[key] = value
+            updated = CVJobResponse.model_validate(data).model_copy(deep=True)
+            self._save_job(updated)
+            self._jobs[job_id] = updated
+            return updated.model_copy(deep=True)
 
+    def append_artifacts(self, job_id, artifacts):
+        with self._lock:
+            job = self._jobs[job_id]
+            if job.status != JobStatus.SUCCEEDED or job.result is None:
+                raise ValueError("Only succeeded jobs can publish render artifacts")
+            result = job.result.model_dump()
+            result["artifacts"].extend(artifacts)
+            return self.update_job_status(job_id, job.status, result=result)
 
-# Global job manager instance
-job_manager = JobManager()
+    def cancel_job(self, job_id, message="Job was cancelled by user"):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None or job.status in TERMINAL:
+                return False
+            self.update_job_status(job_id, JobStatus.CANCELLED, message=message)
+            return True
+
+    def list_jobs(self):
+        with self._lock:
+            return [job.model_copy(deep=True) for job in self._jobs.values()]
+
+    def archive_job(self, job_id, archived=True):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return None
+            updated = CVJobResponse.model_validate(dict(job.model_dump(), archived=archived, updated_at=datetime.now()))
+            self._save_job(updated)
+            self._jobs[job_id] = updated
+            return updated.model_copy(deep=True)
+
+    def delete_job(self, job_id):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return False
+            if job.status not in TERMINAL:
+                raise ValueError("Cancel or finish a job before deleting it")
+            self._job_path(job_id).unlink(missing_ok=True)
+            del self._jobs[job_id]
+            return True
+
+    def recover_interrupted(self):
+        for job in self.list_jobs():
+            if job.status not in TERMINAL:
+                self.update_job_status(job.id, JobStatus.FAILED,
+                    error="Processing interrupted by server restart; create a new job",
+                    message="Interrupted job was not automatically replayed")

@@ -16,8 +16,7 @@ from pydantic import ValidationError
     {"sections": [], "artifacts": [{"id": "a", "kind": "pdf"}]},
     {"sections": [], "overall_score": float("nan")},
 ])
-def test_invalid_new_results_do_not_change_job_or_disk(result):
-    from jobs.job_manager import job_manager
+def test_invalid_new_results_do_not_change_job_or_disk(result, job_manager):
     from models.api_models import JobStatus
 
     job = job_manager.create_job()
@@ -63,11 +62,10 @@ def test_conflicting_legacy_artifacts_are_not_silently_resolved():
     assert payload == before
 
 
-def test_artifact_resolution_does_not_fall_back_to_the_wrong_kind(isolated_runtime):
-    from api.cv_jobs import _resolve_artifact_file_path
+def test_artifact_resolution_does_not_fall_back_to_the_wrong_kind(isolated_runtime, services):
 
     (isolated_runtime / "artifacts" / "cv_output_job.pdf").write_bytes(b"%PDF")
-    assert _resolve_artifact_file_path("job", {
+    assert services.artifacts.resolve("job", {
         "id": "latex", "kind": "latex", "filename": "cv.tex",
     }) is None
 
@@ -82,8 +80,7 @@ def test_job_analysis_only_has_the_declared_response(client):
 
 
 @pytest.mark.parametrize("status,error", [("failed", "model unavailable"), ("cancelled", None)])
-def test_terminal_sse_payload_is_exactly_the_http_snapshot(client, status, error):
-    from jobs.job_manager import job_manager
+def test_terminal_sse_payload_is_exactly_the_http_snapshot(client, status, error, job_manager):
     from models.api_models import CVJobResponse
 
     job = job_manager.create_job()
@@ -98,8 +95,7 @@ def test_terminal_sse_payload_is_exactly_the_http_snapshot(client, status, error
         assert CVJobResponse.model_validate(payload).id == job.id
 
 
-def test_successful_job_contract_retains_section_and_bullet_evidence(client):
-    from jobs.job_manager import job_manager
+def test_successful_job_contract_retains_section_and_bullet_evidence(client, job_manager):
     from models.api_models import JobStatus
 
     job = job_manager.create_job()
@@ -113,8 +109,7 @@ def test_successful_job_contract_retains_section_and_bullet_evidence(client):
     assert payload["result"]["sections"][0]["items"][0]["posting_evidence"] == "Bullet evidence"
 
 
-def test_shared_frontend_fixture_is_the_real_http_and_sse_contract(client):
-    from jobs.job_manager import job_manager
+def test_shared_frontend_fixture_is_the_real_http_and_sse_contract(client, job_manager):
     from models.api_models import CVJobResponse
 
     fixture = json.loads((Path(__file__).parent / "fixtures/job-contract.json").read_text())

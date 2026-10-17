@@ -9,6 +9,7 @@ from enum import Enum
 from uuid import uuid4
 from src.artifacts import Artifact
 from src.config import ModelConfig, RewritePolicy, AnalysisPolicy, OutputsConfig, BackendConfig
+from src.domain import CVData
 
 
 class APIModel(BaseModel):
@@ -110,6 +111,7 @@ class ProcessingOutput(APIModel):
     """The processor returns analysis and result explicitly, not an untyped tuple."""
     result: CVJobResult
     job_analysis: JobAnalysis
+    rendered_cv: Optional[CVData] = None
 
 
 class JobAnalysisResponse(APIModel):
@@ -126,6 +128,9 @@ class CVJobResponse(APIModel):
     id: str
     status: JobStatus
     effective_config: Optional[BackendConfig] = None
+    candidate: str = "charilaos_mylonas"
+    cv_version_id: Optional[str] = None
+    cv_snapshot: Optional[CVData] = None
     archived: bool = False
     job_description: Optional[str] = None
     progress: Optional[str] = None
@@ -254,3 +259,14 @@ class Submission(APIModel):
     artifacts: List[Artifact] = Field(default_factory=list)
     created_at: str
     updated_at: str
+
+
+class RenderRecord(APIModel):
+    """Immutable source/selection/scoring provenance for one render operation."""
+    id: str
+    job_id: str
+    artifacts: List[Artifact]
+    cv_snapshot: CVData
+    working_copy: WorkingCopy
+    scoring_snapshot: CVJobResult
+    created_at: str

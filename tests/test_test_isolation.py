@@ -7,32 +7,26 @@ import subprocess
 import pytest
 
 
-def test_application_stores_are_empty_and_inside_test_runtime(isolated_runtime):
-    from api import cv_data, cv_jobs, submissions
-    from core import paths
-    from jobs.job_manager import job_manager
-    from services import cv_processor
-    from src.utils_cross_analysis import _analysis_cache
+def test_application_stores_are_empty_and_inside_test_runtime(isolated_runtime, services):
 
     for path in (
-        paths.DATA_ROOT, cv_data.CV_DATA_BASE_DIR, cv_jobs.ARTIFACTS_DIR,
-        cv_jobs.WORKING_CVS_DIR, submissions.SUBMISSIONS_DIR,
-        cv_processor.CV_DATA_DIR, job_manager.storage_dir, _analysis_cache.cache_path,
+        services.paths.root, services.cvs.directory, services.artifacts.directory,
+        services.working.directory, services.submissions.directory,
+        services.jobs.storage_dir, services.cache.cache_path,
     ):
         assert Path(path).is_relative_to(isolated_runtime)
-    assert job_manager.list_jobs() == []
+    assert services.jobs.list_jobs() == []
     assert list(isolated_runtime.rglob("*.json")) == []
 
 
-def test_working_copy_write_does_not_touch_neighboring_user_data(tmp_path, isolated_runtime):
-    from api.cv_jobs import _save_working_copy_to_disk
+def test_working_copy_write_does_not_touch_neighboring_user_data(tmp_path, isolated_runtime, services):
     from models.api_models import WorkingCopy
 
     # This sentinel is outside the runtime root, as a real user's data would be.
     sentinel = tmp_path / "user-data" / "working_cvs" / "same-id.json"
     sentinel.parent.mkdir(parents=True)
     sentinel.write_text("user content")
-    _save_working_copy_to_disk(WorkingCopy(job_id="same-id", personal_statement="test"))
+    services.working.save(WorkingCopy(job_id="same-id", personal_statement="test"))
     assert sentinel.read_text() == "user content"
     assert (isolated_runtime / "working_cvs" / "same-id.json").is_file()
 

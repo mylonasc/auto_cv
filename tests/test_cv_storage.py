@@ -117,8 +117,7 @@ def test_failed_replacement_retains_original_and_backup(tmp_path, flat_cv, monke
 
 
 @pytest.mark.parametrize("shape", ["flat", "nested", "duplicated", "list"])
-def test_api_and_processor_use_same_adapter_without_rewriting_source(client, isolated_runtime, flat_cv, shape):
-    from services.cv_processor import CVProcessor
+def test_api_and_repository_use_same_adapter_without_rewriting_source(client, isolated_runtime, flat_cv, shape, services):
 
     if shape == "nested":
         payload = {"candidate": {k: v for k, v in flat_cv.items() if k != "cv_template"},
@@ -136,7 +135,7 @@ def test_api_and_processor_use_same_adapter_without_rewriting_source(client, iso
     response = client.get("/v1/cv-data/test/versions/master")
     assert response.status_code == 200
     canonical = response.json()
-    assert canonical == CVProcessor(candidate="test")._load_cv_data().model_dump(mode="json")
+    assert canonical == services.cvs.get("test").model_dump(mode="json")
     assert canonical["schema_version"] == 1
     assert set(canonical["candidate"]) == {"candidate_id", "full_name", "profile"}
     assert path.read_bytes() == original
@@ -147,15 +146,14 @@ def test_api_and_processor_use_same_adapter_without_rewriting_source(client, iso
 
 
 @pytest.mark.parametrize("location", ["cv_section_data", "."])
-def test_legacy_master_filename_is_read_only_fallback(client, isolated_runtime, flat_cv, location):
-    from services.cv_processor import CVProcessor
+def test_legacy_master_filename_is_read_only_fallback(client, isolated_runtime, flat_cv, location, services):
 
     source = isolated_runtime / location / "test_cv_data.json"
     original = json.dumps(flat_cv).encode()
     source.write_bytes(original)
     response = client.get("/v1/cv-data/test")
     assert response.status_code == 200
-    assert response.json() == CVProcessor(candidate="test")._load_cv_data().model_dump(mode="json")
+    assert response.json() == services.cvs.get("test").model_dump(mode="json")
     assert client.get("/v1/cv-data/test/versions").json()[0]["id"] == "master"
     destination = isolated_runtime / "cv_section_data" / "test" / "master.json"
     assert not destination.exists()

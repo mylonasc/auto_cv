@@ -5,6 +5,7 @@ import threading
 from bs4 import BeautifulSoup
 import os
 import pandas as pd
+from .storage import atomic_write_json
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
@@ -94,7 +95,6 @@ class AnalysisResultCache:
         cv_root = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
         data_root = os.getenv('AUTO_CV_DATA_ROOT', os.path.join(cv_root, 'data'))
         cache_dir = os.path.join(data_root, 'cache')
-        os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, 'analysis_results_cache.json')
 
     def _load(self):
@@ -124,11 +124,8 @@ class AnalysisResultCache:
             TODO: describe return value.
         """
         with self._lock:
-            tmp_path = f"{self.cache_path}.tmp"
             try:
-                with open(tmp_path, 'w', encoding='utf-8') as f:
-                    json.dump(self._cache, f)
-                os.replace(tmp_path, self.cache_path)
+                atomic_write_json(self.cache_path, self._cache)
             except PermissionError:
                 pass
 
@@ -168,9 +165,6 @@ class AnalysisResultCache:
             TODO: describe return value.
         """
         self._save()
-
-
-_analysis_cache = AnalysisResultCache()
 
 
 def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
@@ -243,7 +237,7 @@ class CoverLetterDrafter:
 
 class CVCrossAnalyzer:
     """CVCrossAnalyzer model."""
-    def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3):
+    def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3, *, cache=None):
         """  init  .
 
         Args:
@@ -257,6 +251,7 @@ class CVCrossAnalyzer:
             TODO: describe return value.
         """
         self.cv_model = full_cv_document
+        self.cache = cache if cache is not None else AnalysisResultCache()
         self.source_cv = full_cv_document.copy()
         self.snapshot: AnalysisSnapshot | None = None
         self.selected_ids: frozenset[str] | None = None
@@ -338,11 +333,11 @@ class CVCrossAnalyzer:
             async with semaphore:
                 try:
                     key = _make_cache_key(scope, payload)
-                    data = _analysis_cache.get(key)
+                    data = self.cache.get(key)
                     if data is None:
                         output = await self.chains[chain_name]['chain'].ainvoke(inputs)
                         data = output.model_dump()
-                        _analysis_cache.set(key, data, persist=False)
+                        self.cache.set(key, data, persist=False)
                     return Assessment.model_validate(data)
                 except Exception:
                     # Missing assessments remain explicit in the snapshot. RFK-07
@@ -374,7 +369,7 @@ class CVCrossAnalyzer:
 
         self.snapshot = AnalysisSnapshot(roles=tuple(await asyncio.gather(
             *(analyze_role(role) for role in section.doc_section_items))))
-        _analysis_cache.flush()
+        self.cache.flush()
         self.data['experience_section_analysis'] = self.snapshot.model_dump(mode='json')
         return self.snapshot
         
