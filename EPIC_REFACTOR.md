@@ -611,27 +611,35 @@ Delivery evidence:
 Extract application hooks, shared CV-version access, pure editing operations,
 and small view components from the current tab implementations.
 
-Implementation in progress (not complete): shared `useCVVersion` now serves
-source-version loading/saving for Job Input and CV Data Editor with late-load
-guards. Pure source edit operations remove shallow nested mutations; JSON/visual
-mode switching validates and applies JSON instead of silently discarding it.
-Twenty-three typed frontend unit tests and ten isolated browser checks, build
-and scoped source/test lint pass for this increment. Component decomposition,
-shared presentation primitives/style isolation and final acceptance verification
-remain RFK-09 deliverables; #14 stays open.
-
 Acceptance criteria:
 
-- [ ] Processing/editor views compose focused controls and editors; SSE, workflow
+- [x] Processing/editor views compose focused controls and editors; SSE, workflow
   commands, and selection policies are not implemented in view components.
-- [ ] Shared CV-version load/save behavior serves Job Input and CV Data Editor;
+- [x] Shared CV-version load/save behavior serves Job Input and CV Data Editor;
   domain/transport types do not depend on React context.
-- [ ] Nested edits are immutable and covered by tests; visual and JSON modes have
+- [x] Nested edits are immutable and covered by tests; visual and JSON modes have
   explicit synchronization and validation behavior.
-- [ ] Shared modal/button/status primitives own shared styling; feature styles
+- [x] Shared modal/button/status primitives own shared styling; feature styles
   are scoped so unrelated tabs cannot override each other's selectors.
-- [ ] Existing capabilities remain accessible; build, lint, component tests,
+- [x] Existing capabilities remain accessible; build, lint, component tests,
   and updated deterministic navigation/editing E2E checks pass.
+
+Delivery evidence:
+
+- `063995b`: shared source-version access, immutable nested CV edits and validated
+  JSON/visual synchronization. `6c2aa1b`: focused editor/workflow components,
+  command/controller hooks, shared modal/button/status primitives and feature CSS
+  scoping. No dependency/framework additions or user data migrations.
+- **178 backend tests**, **24 typed frontend unit tests**, and **12 isolated
+  Chromium checks** passed, including component-focused evidence/selection,
+  modal keyboard/focus and outside-feature style-isolation regressions.
+- Build, **full frontend lint**, schema drift and diff checks pass. The previous
+  Vite proxy cast errors are fixed using typed timeout options, not suppressed.
+- Independent suite rerun preserved five external sentinels and all 697 existing
+  data/assets file hashes. No live providers, real XeLaTeX or exporter delivery
+  was exercised.
+- Architecture, source draft semantics and browser boundaries:
+  [FRONTEND_COMPONENTS.md](docs/FRONTEND_COMPONENTS.md).
 
 ### RFK-10 — Package boundaries, legacy cleanup, and verification
 

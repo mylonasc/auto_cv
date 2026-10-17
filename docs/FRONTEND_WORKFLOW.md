@@ -69,4 +69,5 @@ From `frontend/auto-cv-customizer`:
 - `npm run build` and `npx eslint src tests/unit/workflow.test.ts tests/workflow.spec.ts`.
 
 Component decomposition, shared source-version hooks, editing primitives and
-style isolation are the follow-on RFK-09 scope; package-wide cleanup is RFK-10.
+style isolation are delivered in RFK-09; see [FRONTEND_COMPONENTS.md](FRONTEND_COMPONENTS.md).
+Package-wide cleanup/entry-point verification remains RFK-10.
