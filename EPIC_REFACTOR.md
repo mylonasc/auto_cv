@@ -510,18 +510,34 @@ storage and one application process as the initial operating model.
 
 Acceptance criteria:
 
-- [ ] Concrete repositories own CV versions, jobs, working copies, submissions,
+- [x] Concrete repositories own CV versions, jobs, working copies, submissions,
   and artifact metadata; routers delegate application operations.
-- [ ] App factory/lifespan constructs dependencies. Importing domain/service
+- [x] App factory/lifespan constructs dependencies. Importing domain/service
   modules does not read runtime stores or create runtime directories.
-- [ ] JSON writes are atomic; update serialization/concurrency rules and
+- [x] JSON writes are atomic; update serialization/concurrency rules and
   deletion/related-record policies are documented and tested.
-- [ ] A job runner owns actual execution handles and legal status transitions;
+- [x] A job runner owns actual execution handles and legal status transitions;
   cancellation cannot later become success. Restart/shutdown behavior is explicit.
-- [ ] Jobs retain source version/snapshot and effective configuration; submission
+- [x] Jobs retain source version/snapshot and effective configuration; submission
   snapshots refer to the actual selected render input, not today's master CV.
-- [ ] Repositories and runner can be injected into isolated tests without
+- [x] Repositories and runner can be injected into isolated tests without
   mutating process-global application stores.
+
+Delivery evidence:
+
+- `712a441` replaces global stores/router orchestration with repositories,
+  injected services, factory/lifespan and owned asyncio execution handles.
+- Lifecycle/repository regression coverage verifies import-time inactivity,
+  independent apps, atomic replacement failures, serialized updates, immutable
+  input/render provenance, queued/in-flight cancellation, late-success suppression,
+  shutdown/restart policy and retained data on history deletion. The RFK-06 orphan
+  PUT expected failure is now a passing regression, not an xfail.
+- Operational boundaries and compatibility: [PERSISTENCE_LIFECYCLE.md](docs/PERSISTENCE_LIFECYCLE.md).
+- Verification: **152 backend tests passed** (no expected failures), nine typed
+  frontend unit tests, four isolated Chromium checks, TypeScript/Vite build and
+  schema drift/diff checks passed. Independent suite rerun preserved five
+  external sentinels and all 697 existing data/assets file hashes. Live provider,
+  real XeLaTeX and exporter delivery were not exercised.
 
 ### RFK-07 — Failure outcomes, fallback provenance, and cache identity
 

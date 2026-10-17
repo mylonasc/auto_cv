@@ -89,3 +89,10 @@ def test_active_jobs_cannot_be_deleted(job_manager):
     with pytest.raises(ValueError, match="Cancel or finish"):
         job_manager.delete_job(job.id)
     assert job_manager.get_job(job.id) is not None
+
+
+def test_processing_job_cannot_return_to_queue(job_manager):
+    job = job_manager.create_job()
+    job_manager.update_job_status(job.id, "processing")
+    with pytest.raises(ValueError, match="queue"):
+        job_manager.update_job_status(job.id, "queued")

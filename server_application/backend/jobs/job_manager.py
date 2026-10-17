@@ -72,6 +72,8 @@ class JobManager:
                 return None
             if job.status in TERMINAL and status != job.status:
                 raise ValueError(f"Cannot transition terminal job {job.status} to {status}")
+            if job.status == JobStatus.PROCESSING and status == JobStatus.QUEUED:
+                raise ValueError("Cannot return a processing job to the queue")
             data = job.model_dump()
             data.update(status=status, updated_at=datetime.now())
             for key, value in (("progress", progress), ("message", message), ("result", result),

@@ -12,9 +12,10 @@ discovery is restricted to `tests/`; research and scripts are not collected.
 
 ## Isolation guarantees
 
-- `conftest.py` overrides `AUTO_CV_DATA_ROOT` **before collection**, so current
-  import-time stores never load the normal runtime data, even if a developer
-  exports that environment variable before invoking pytest.
+- `conftest.py` overrides `AUTO_CV_DATA_ROOT` **before collection** as defense
+  for path defaults and CLI tests, even if a developer exports it before pytest.
+  Application imports no longer initialize stores; a guarded subprocess probe
+  verifies import/factory construction without runtime reads or filesystem writes.
 - Every test receives fresh temporary directories, job/config stores, and cache.
   Relative processing files are written inside a per-test temporary CWD.
 - Structured-output model calls are deterministic fakes. Production prompts,
@@ -24,9 +25,12 @@ discovery is restricted to `tests/`; research and scripts are not collected.
   compilation.
 - Network connects and subprocess launches fail immediately. Never remove these
   guards just to make a unit test pass. Use an explicit dependency fake instead.
-- Temporary compatibility fixtures rebind imported storage aliases until RFK-06
-  removes import-time globals. New storage consumers must be added to isolation
-  or accept an injected repository; do not point tests at normal data.
+- Tests inject fresh repositories/application services into the real app factory;
+  no process-global application store aliases are rebound. New storage consumers
+  must accept injected paths/repositories; never point tests at normal data.
+- The import-only subprocess probe captures the interpreter launcher before the
+  per-test guards and installs its own filesystem/network/process audit guards.
+  This exception does not authorize model/PDF or live integration subprocesses.
 
 Known defects are strict expected failures linked to their owning RFK issue. They
 assert intended behavior against production code. When a fix produces an XPASS,

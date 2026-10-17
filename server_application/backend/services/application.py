@@ -25,7 +25,7 @@ class OperationError(Exception):
 
 class ApplicationServices:
     def __init__(self, paths, *, jobs=None, cvs=None, working=None, submissions=None, artifacts=None,
-                 cache=None, processor_factory=CVProcessor):
+                 cache=None, processor_factory=CVProcessor, runner_factory=JobRunner):
         self.paths = paths
         self.jobs = jobs if jobs is not None else JobManager(paths.jobs)
         self.cvs = cvs if cvs is not None else CVRepository(paths.cvs)
@@ -36,7 +36,7 @@ class ApplicationServices:
         self.cache = cache if cache is not None else AnalysisResultCache(str(paths.cache))
         self.config = BackendConfig()
         self.processor_factory = processor_factory
-        self.runner = JobRunner(self.jobs, self.execute)
+        self.runner = runner_factory(self.jobs, self.execute)
 
     def get_job(self, id):
         job = self.jobs.get_job(id)
