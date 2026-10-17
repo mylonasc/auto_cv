@@ -8,8 +8,11 @@ scope. This is a behavior-preserving architectural refactor except where explici
 regression tests document the correction of existing defects.
 
 Work on `enhancement/epic-refactor`. Use the RFK identifiers below in issues,
-commits, and progress reports. GitHub tracking links will be recorded below once
-the epic and its child issues have been published.
+commits, and progress reports.
+
+**Parent epic:** [#5 — CV stack maintainability and architecture refactor](https://github.com/mylonasc/auto_cv/issues/5).
+All ten RFK issues are native sub-issues of this epic; the blocking relationships
+in the task table are also recorded as native GitHub issue dependencies.
 
 Non-goals: multi-user or multi-candidate support, new authoring features,
 microservices, a database migration, a generic CV framework, or adoption of a
@@ -299,18 +302,18 @@ P2 = structural cleanup after the core boundaries stabilize. Dependencies are
 blocking relationships, not merely suggested reading. Priority does not override
 a prerequisite. Independent tasks may proceed once their prerequisites are met.
 
-| ID | Priority | Goal | Blocked by |
-| --- | --- | --- | --- |
-| RFK-01 | P0 | Safe, deterministic regression harness | None |
-| RFK-02 | P0 | Canonical CV schema and storage-boundary migration | RFK-01 |
-| RFK-03 | P0 | Authoritative HTTP, SSE, and artifact contracts | RFK-01, RFK-02 |
-| RFK-04 | P1 | Separate analysis, selection, editing, and rendering data | RFK-02, RFK-03 |
-| RFK-05 | P1 | One workflow and effective configuration for API/CLI/telemetry | RFK-04 |
-| RFK-06 | P1 | Explicit repositories and job execution lifecycle | RFK-03, RFK-05 |
-| RFK-07 | P1 | Explicit failure/fallback outcomes and correct cache identity | RFK-05, RFK-06 |
-| RFK-08 | P1 | Frontend state ownership independent of tabs | RFK-03, RFK-04, RFK-06 |
-| RFK-09 | P2 | Focused frontend components and scoped presentation | RFK-08 |
-| RFK-10 | P2 | Package boundaries, legacy cleanup, and integration verification | RFK-07, RFK-09 |
+| ID | Issue | Priority | Goal | Blocked by |
+| --- | --- | --- | --- | --- |
+| RFK-01 | [#6](https://github.com/mylonasc/auto_cv/issues/6) | P0 | Safe, deterministic regression harness | None |
+| RFK-02 | [#7](https://github.com/mylonasc/auto_cv/issues/7) | P0 | Canonical CV schema and storage-boundary migration | RFK-01 |
+| RFK-03 | [#8](https://github.com/mylonasc/auto_cv/issues/8) | P0 | Authoritative HTTP, SSE, and artifact contracts | RFK-01, RFK-02 |
+| RFK-04 | [#9](https://github.com/mylonasc/auto_cv/issues/9) | P1 | Separate analysis, selection, editing, and rendering data | RFK-02, RFK-03 |
+| RFK-05 | [#10](https://github.com/mylonasc/auto_cv/issues/10) | P1 | One workflow and effective configuration for API/CLI/telemetry | RFK-04 |
+| RFK-06 | [#11](https://github.com/mylonasc/auto_cv/issues/11) | P1 | Explicit repositories and job execution lifecycle | RFK-03, RFK-05 |
+| RFK-07 | [#12](https://github.com/mylonasc/auto_cv/issues/12) | P1 | Explicit failure/fallback outcomes and correct cache identity | RFK-05, RFK-06 |
+| RFK-08 | [#13](https://github.com/mylonasc/auto_cv/issues/13) | P1 | Frontend state ownership independent of tabs | RFK-03, RFK-04, RFK-06 |
+| RFK-09 | [#14](https://github.com/mylonasc/auto_cv/issues/14) | P2 | Focused frontend components and scoped presentation | RFK-08 |
+| RFK-10 | [#15](https://github.com/mylonasc/auto_cv/issues/15) | P2 | Package boundaries, legacy cleanup, and integration verification | RFK-07, RFK-09 |
 
 ### RFK-01 — Safe, deterministic regression harness
 

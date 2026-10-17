@@ -4,6 +4,8 @@
 
 - Read `EPIC_REFACTOR.md` before working on the refactor. It contains the design
   review, RFK-01 through RFK-10, priorities, dependencies, and acceptance criteria.
+- Parent epic: https://github.com/mylonasc/auto_cv/issues/5. Child issues #6–#15
+  map to RFK-01–RFK-10; consult native blocked-by relationships before starting.
 - Use the single branch `enhancement/epic-refactor` for this epic unless the user
   requests otherwise. Do not implement blocked tasks before their prerequisites.
 - Preserve the current single-CV scope. Do not add product features, generic
