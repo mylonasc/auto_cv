@@ -440,16 +440,32 @@ from editable working-copy text and selection decisions.
 
 Acceptance criteria:
 
-- [ ] Analysis can be serialized and reconstructed without Python object-key
+- [x] Analysis can be serialized and reconstructed without Python object-key
   identity; stable IDs remain associated after copy and round trip.
-- [ ] Full analyzed content is retained, including deselected bullets; a working
+- [x] Full analyzed content is retained, including deselected bullets; a working
   copy can toggle them without reloading source data or rerunning analysis.
-- [ ] Filtering and metrics are deterministic pure functions with boundary tests
+- [x] Filtering and metrics are deterministic pure functions with boundary tests
   for missing scores, ties, empty sections, and min/max policies.
-- [ ] Analysis does not mutate document text or attach rendering comments as a
+- [x] Analysis does not mutate document text or attach rendering comments as a
   side effect; stale scores after edits have an explicit representation/policy.
-- [ ] Rendering receives explicit content, selection, template, and comment
+- [x] Rendering receives explicit content, selection, template, and comment
   options. Ordinary copying does not secretly remove annotations.
+
+Delivery evidence (epic branch, not yet merged):
+
+- Frozen snapshots with stable role/bullet IDs replace object-keyed dictionaries;
+  analysis does not mutate content or attach comments. Full analyzed content is
+  retained in results and working copies; the RFK-04 expected failure is fixed.
+- Pure selection/metrics cover ties, missing scores, invalid limits, empty
+  sections, plain-content weighting and null empty metrics. Rendering constructs
+  a selected copy; comments are explicit options and are escaped separately.
+- Copies preserve IDs/comments and correct parent links. Legacy working-copy IDs
+  normalize deterministically without rewriting files. Edited/legacy scores have
+  explicit scored-text provenance/staleness, including browser display/filtering.
+- **121 backend tests and eight typed frontend unit tests passed**; only RFK-06's
+  orphan-working-copy strict expected failure remains. Build, scoped lint, type
+  drift and diff checks pass. No real model/LaTeX execution was performed.
+- Semantics and historical-result limitations: [`docs/ANALYSIS_MODEL.md`](docs/ANALYSIS_MODEL.md).
 
 ### RFK-05 — Shared application workflow and configuration
 
