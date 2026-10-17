@@ -1,40 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  useAppState,
-  type CVData,
-  type ExperienceSection,
-  type CVTemplateMeta,
-  type MotivationLetterTemplateMeta,
-} from '../../contexts/AppStateContext';
+import { useAppState } from '../../contexts/AppStateContext';
+import type { CVData, ExperienceSection, CVTemplateMeta, MotivationLetterTemplateMeta } from '../../types/cv';
+import { useCVVersion } from '../../hooks/useCVVersion';
+import { editText, editSection, addBullet, removeBullet, parseCVJSON } from '../../domain/cvEditing';
 import apiService from '../../services/api';
-import type { TemplateRegistryResponse } from '../../services/api';
+import type { TemplateRegistryResponse, CVVersionInfo } from '../../services/api';
 import '../main/EditorTab.css';
 
 const EditorTab: React.FC = () => {
   const { state, dispatch } = useAppState();
-  const [cvData, setCvData] = useState<CVData | null>(null);
+  const versionsChanged = useCallback((versions: CVVersionInfo[]) => dispatch({ type: 'SET_CV_VERSIONS', payload: versions }), [dispatch]);
+  const source = useCVVersion(state.currentCVVersionId || 'master', versionsChanged);
+  const { data: cvData, setData: setCvData, isLoading } = source;
   const [editingText, setEditingText] = useState('');
   const [selectedItem, setSelectedItem] = useState<{ type: 'experience' | 'alternative' | 'personal', sectionIdx?: number, itemIdx?: number } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [newVersionName, setNewVersionName] = useState('');
   const [showNewVersionInput, setShowNewVersionInput] = useState(false);
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonContent, setJsonContent] = useState('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
   const [templateRegistry, setTemplateRegistry] = useState<TemplateRegistryResponse>({
     cv_templates: {},
     motivation_letter_templates: {},
   });
-
-  const fetchVersions = useCallback(async () => {
-    try {
-      const versions = await apiService.listCVVersions();
-      dispatch({ type: 'SET_CV_VERSIONS', payload: versions });
-    } catch (error) {
-      console.error('Failed to fetch CV versions:', error);
-    }
-  }, [dispatch]);
 
   const fetchTemplateRegistry = useCallback(async () => {
     try {
@@ -45,27 +35,20 @@ const EditorTab: React.FC = () => {
     }
   }, []);
 
-  const fetchCVData = useCallback(async (versionId: string) => {
-    try {
-      setIsLoading(true);
-      const data = await apiService.getCVVersion(versionId);
-      setCvData(data);
-      setJsonContent(JSON.stringify(data, null, 4));
-      setIsDirty(false);
-    } catch (error) {
-      console.error(`Failed to fetch CV data for version ${versionId}:`, error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  useEffect(() => {
+    fetchTemplateRegistry();
+  }, [fetchTemplateRegistry]);
 
   useEffect(() => {
-    fetchVersions();
-    fetchTemplateRegistry();
-    fetchCVData(state.currentCVVersionId || 'master');
-  }, [fetchCVData, fetchVersions, fetchTemplateRegistry, state.currentCVVersionId]);
+    setSelectedItem(null);
+    setIsDirty(false);
+    setIsJsonMode(false);
+  }, [state.currentCVVersionId]);
+
+  useEffect(() => { if (cvData) setJsonContent(JSON.stringify(cvData, null, 4)); }, [cvData]);
 
   const handleVersionChange = (versionId: string) => {
+    if (isSaving) return;
     if (isDirty && !window.confirm('You have unsaved changes. Discard them?')) {
       return;
     }
@@ -77,8 +60,7 @@ const EditorTab: React.FC = () => {
     const versionId = newVersionName.toLowerCase().replace(/\s+/g, '_');
     try {
       setIsSaving(true);
-      await apiService.createCVVersion(versionId, cvData);
-      await fetchVersions();
+      await source.create(versionId, isJsonMode ? parseCVJSON(jsonContent) : cvData);
       dispatch({ type: 'SET_CURRENT_CV_VERSION', payload: versionId });
       setNewVersionName('');
       setShowNewVersionInput(false);
@@ -96,8 +78,7 @@ const EditorTab: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete version "${versionId}"?`)) return;
     
     try {
-      await apiService.deleteCVVersion(versionId);
-      await fetchVersions();
+      await source.remove(versionId);
       if (state.currentCVVersionId === versionId) {
         dispatch({ type: 'SET_CURRENT_CV_VERSION', payload: 'master' });
       }
@@ -110,14 +91,14 @@ const EditorTab: React.FC = () => {
     if (!cvData || !state.currentCVVersionId) return;
     try {
       setIsSaving(true);
-      const dataToSave = isJsonMode ? JSON.parse(jsonContent) : cvData;
-      await apiService.updateCVVersion(state.currentCVVersionId, dataToSave);
-      // Re-fetch to ensure we show the actual saved data
-      await fetchCVData(state.currentCVVersionId);
+      const dataToSave = isJsonMode ? parseCVJSON(jsonContent) : cvData;
+      await source.save(dataToSave);
       setIsDirty(false);
+      setJsonError(null);
       alert('Version saved successfully!');
     } catch (error) {
       console.error('Failed to save CV data:', error);
+      setJsonError(String(error));
       alert('Failed to save changes.');
     } finally {
       setIsSaving(false);
@@ -125,6 +106,7 @@ const EditorTab: React.FC = () => {
   };
 
   const updateCvData = (updater: (prev: CVData) => CVData) => {
+    if (isSaving) return;
     setCvData((prev) => {
       if (!prev) {
         return prev;
@@ -134,6 +116,17 @@ const EditorTab: React.FC = () => {
       return next;
     });
     setIsDirty(true);
+  };
+
+  const toggleJsonMode = () => {
+    if (isSaving) return;
+    try {
+      if (isJsonMode) setCvData(parseCVJSON(jsonContent));
+      else if (cvData) setJsonContent(JSON.stringify(cvData, null, 4));
+      setJsonError(null);
+      setSelectedItem(null);
+      setIsJsonMode(!isJsonMode);
+    } catch (error) { setJsonError(String(error)); }
   };
 
   // Experience handlers
@@ -156,23 +149,14 @@ const EditorTab: React.FC = () => {
   const handleApplyEdit = () => {
     if (!selectedItem || !cvData) return;
 
-    if (selectedItem.type === 'experience') {
-      const next = { ...cvData };
-      next.experience_sections[selectedItem.sectionIdx!].text_items[selectedItem.itemIdx!] = editingText;
-      updateCvData(() => next);
-    } else if (selectedItem.type === 'personal') {
-      updateCvData(prev => ({ ...prev, personal_statement: editingText }));
-    } else if (selectedItem.type === 'alternative') {
-      const next = { ...cvData };
-      next.alternative_statements[selectedItem.itemIdx!] = editingText;
-      updateCvData(() => next);
-    }
+    updateCvData(prev => editText(prev, selectedItem, editingText));
 
     setSelectedItem(null);
     setEditingText('');
   };
 
   const handleAddSection = () => {
+    setSelectedItem(null);
     const newSection = {
       company: "New Company",
       duration: "Duration",
@@ -197,26 +181,18 @@ const EditorTab: React.FC = () => {
   };
 
   const handleAddItem = (sectionIdx: number) => {
-    updateCvData(prev => {
-      const sections = [...prev.experience_sections];
-      sections[sectionIdx].text_items.push("New experience bullet...");
-      return { ...prev, experience_sections: sections };
-    });
+    setSelectedItem(null);
+    updateCvData(prev => addBullet(prev, sectionIdx));
   };
 
   const handleDeleteItem = (sectionIdx: number, itemIdx: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    updateCvData(prev => {
-      const sections = [...prev.experience_sections];
-      sections[sectionIdx].text_items.splice(itemIdx, 1);
-      return { ...prev, experience_sections: sections };
-    });
-    if (selectedItem?.type === 'experience' && selectedItem.sectionIdx === sectionIdx && selectedItem.itemIdx === itemIdx) {
-      setSelectedItem(null);
-    }
+    updateCvData(prev => removeBullet(prev, sectionIdx, itemIdx));
+    setSelectedItem(null);
   };
 
   const handleAddAlternative = () => {
+    setSelectedItem(null);
     updateCvData(prev => ({
       ...prev,
       alternative_statements: ["New alternative personal statement...", ...prev.alternative_statements]
@@ -230,9 +206,7 @@ const EditorTab: React.FC = () => {
       alts.splice(idx, 1);
       return { ...prev, alternative_statements: alts };
     });
-    if (selectedItem?.type === 'alternative' && selectedItem.itemIdx === idx) {
-      setSelectedItem(null);
-    }
+    setSelectedItem(null);
   };
 
   const updateCVTemplate = (field: keyof CVTemplateMeta, value: string) => {
@@ -261,6 +235,8 @@ const EditorTab: React.FC = () => {
 
   return (
     <div className="editor-tab">
+      {source.error && <p role="alert">{source.error}</p>}
+      {jsonError && <p role="alert">{jsonError}</p>}
       <div className="editor-sidebar">
         <div className="sidebar-header">
           <h3>CV Versions</h3>
@@ -310,7 +286,7 @@ const EditorTab: React.FC = () => {
             {isDirty && <span className="dirty-indicator">• Unsaved Changes</span>}
           </div>
           <div className="editor-actions">
-            <button className={`btn ${isJsonMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setIsJsonMode(!isJsonMode)}>
+            <button className={`btn ${isJsonMode ? 'btn-primary' : 'btn-secondary'}`} onClick={toggleJsonMode} disabled={isSaving}>
               {isJsonMode ? 'Visual Mode' : '{ } JSON Mode'}
             </button>
             <button className="btn btn-success" onClick={handleSaveVersion} disabled={!isDirty || isSaving}>
@@ -326,6 +302,8 @@ const EditorTab: React.FC = () => {
           <div className="json-editor-container">
             <textarea 
               className="json-textarea"
+              aria-label="Source CV JSON"
+              disabled={isSaving}
               value={jsonContent}
               onChange={(e) => {
                 setJsonContent(e.target.value);
@@ -452,9 +430,7 @@ const EditorTab: React.FC = () => {
                           className="inline-input-bold"
                           value={section.company} 
                           onChange={(e) => {
-                            const next = {...cvData};
-                            next.experience_sections[sectionIdx].company = e.target.value;
-                            updateCvData(() => next);
+                            updateCvData(prev => editSection(prev, sectionIdx, { company: e.target.value }));
                           }}
                         />
                         <button className="btn-delete-sm" onClick={(e) => handleDeleteSection(sectionIdx, e)}>✕</button>
@@ -464,18 +440,14 @@ const EditorTab: React.FC = () => {
                           className="inline-input"
                           value={section.position} 
                           onChange={(e) => {
-                            const next = {...cvData};
-                            next.experience_sections[sectionIdx].position = e.target.value;
-                            updateCvData(() => next);
+                            updateCvData(prev => editSection(prev, sectionIdx, { position: e.target.value }));
                           }}
                         />
                         <input 
                           className="inline-input-right"
                           value={section.duration} 
                           onChange={(e) => {
-                            const next = {...cvData};
-                            next.experience_sections[sectionIdx].duration = e.target.value;
-                            updateCvData(() => next);
+                            updateCvData(prev => editSection(prev, sectionIdx, { duration: e.target.value }));
                           }}
                         />
                       </div>
@@ -521,7 +493,7 @@ const EditorTab: React.FC = () => {
                     <button className="btn btn-secondary" onClick={() => setSelectedItem(null)}>
                       Cancel
                     </button>
-                    <button className="btn btn-primary" onClick={handleApplyEdit}>
+                    <button className="btn btn-primary" onClick={handleApplyEdit} disabled={isSaving}>
                       Apply Edit
                     </button>
                   </div>

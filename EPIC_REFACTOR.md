@@ -611,6 +611,15 @@ Delivery evidence:
 Extract application hooks, shared CV-version access, pure editing operations,
 and small view components from the current tab implementations.
 
+Implementation in progress (not complete): shared `useCVVersion` now serves
+source-version loading/saving for Job Input and CV Data Editor with late-load
+guards. Pure source edit operations remove shallow nested mutations; JSON/visual
+mode switching validates and applies JSON instead of silently discarding it.
+Twenty-three typed frontend unit tests and ten isolated browser checks, build
+and scoped source/test lint pass for this increment. Component decomposition,
+shared presentation primitives/style isolation and final acceptance verification
+remain RFK-09 deliverables; #14 stays open.
+
 Acceptance criteria:
 
 - [ ] Processing/editor views compose focused controls and editors; SSE, workflow

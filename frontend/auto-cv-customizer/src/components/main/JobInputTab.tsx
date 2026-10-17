@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAppState, type CVData, type ExperienceSection } from '../../contexts/AppStateContext';
-import apiService from '../../services/api';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAppState } from '../../contexts/AppStateContext';
+import type { ExperienceSection } from '../../types/cv';
+import type { CVVersionInfo } from '../../services/api';
+import { useCVVersion } from '../../hooks/useCVVersion';
+import { editText } from '../../domain/cvEditing';
 import './JobInputTab.css';
 
 const JobInputTab: React.FC = () => {
@@ -11,28 +14,13 @@ const JobInputTab: React.FC = () => {
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   
   // Experience preview state
-  const [cvData, setCvData] = useState<CVData | null>(null);
+  const versionsChanged = useCallback((versions: CVVersionInfo[]) => dispatch({ type: 'SET_CV_VERSIONS', payload: versions }), [dispatch]);
+  const source = useCVVersion(state.currentCVVersionId || 'master', versionsChanged);
+  const { data: cvData } = source;
   const [editingItemId, setEditingItemId] = useState<{type: 'experience' | 'personal', sectionIdx?: number, itemIdx?: number} | null>(null);
   const [editingText, setEditingText] = useState('');
   const [isSavingCV, setIsSavingCV] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const versions = await apiService.listCVVersions();
-        dispatch({ type: 'SET_CV_VERSIONS', payload: versions });
-        
-        // Fetch current version data
-        const versionId = state.currentCVVersionId || 'master';
-        const data = await apiService.getCVVersion(versionId);
-        setCvData(data);
-      } catch (error) {
-        console.error('Failed to fetch initial data:', error);
-      }
-    };
-    fetchInitialData();
-  }, [dispatch, state.currentCVVersionId]);
 
   useEffect(() => {
     const selectedJob = state.jobDescriptions.find((job) => job.id === state.currentJobDescriptionId);
@@ -59,6 +47,8 @@ const JobInputTab: React.FC = () => {
   };
 
   const handleVersionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEditingItemId(null);
+    setEditingText('');
     dispatch({ type: 'SET_CURRENT_CV_VERSION', payload: e.target.value });
   };
 
@@ -185,17 +175,11 @@ Nice to have:
   const handleSaveCVEdit = async () => {
     if (!editingItemId || !cvData) return;
     
-    const updated = JSON.parse(JSON.stringify(cvData));
-    if (editingItemId.type === 'personal') {
-      updated.personal_statement = editingText;
-    } else {
-      updated.experience_sections[editingItemId.sectionIdx!].text_items[editingItemId.itemIdx!] = editingText;
-    }
+    const updated = editText(cvData, editingItemId, editingText);
     
     try {
       setIsSavingCV(true);
-      const saved = await apiService.updateCVVersion(state.currentCVVersionId || 'master', updated);
-      setCvData(saved);
+      await source.save(updated);
       setEditingItemId(null);
     } catch (error) {
       console.error('Failed to save CV edit:', error);
@@ -207,6 +191,7 @@ Nice to have:
 
   return (
     <div className="job-input-tab">
+      {source.error && <p role="alert">{source.error}</p>}
       <div className="input-grid">
         <div className="input-section">
           <h2>1. Job Description</h2>
@@ -242,7 +227,7 @@ Nice to have:
           <h2>2. Review CV Draft</h2>
           <div className="form-group">
             <label htmlFor="cvVersion">Using CV Version:</label>
-            <select id="cvVersion" className="form-input" value={state.currentCVVersionId || 'master'} onChange={handleVersionChange}>
+            <select id="cvVersion" className="form-input" value={state.currentCVVersionId || 'master'} onChange={handleVersionChange} disabled={isSavingCV}>
               {state.cvVersions.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
           </div>

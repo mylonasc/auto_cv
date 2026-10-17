@@ -77,6 +77,28 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
   return { saved: () => stored, unexpected };
 }
 
+test('JSON and visual source modes synchronize; invalid JSON cannot replace or save the CV', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Editing: Master' })).toBeVisible();
+  await page.getByRole('button', { name: '{ } JSON Mode', exact: true }).click();
+  const edited = structuredClone(initial);
+  edited.experience_sections[0].text_items[0] = 'JSON edit retained in visual mode';
+  await page.getByLabel('Source CV JSON').fill(JSON.stringify(edited));
+  await page.getByRole('button', { name: 'Visual Mode', exact: true }).click();
+  await expect(page.getByText('JSON edit retained in visual mode...', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '{ } JSON Mode', exact: true }).click();
+  expect(JSON.parse(await page.getByLabel('Source CV JSON').inputValue())).toEqual(edited);
+  await page.getByLabel('Source CV JSON').fill('{broken');
+  await page.getByRole('button', { name: 'Visual Mode', exact: true }).click();
+  await expect(page.getByLabel('Source CV JSON')).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('SyntaxError');
+  await page.getByRole('button', { name: 'Save Version' }).click();
+  expect(api.saved()).toEqual(initial);
+  expect(api.unexpected).toEqual([]);
+});
+
 test('Job Input preview saves canonical statements and experience, retaining metadata', async ({ page }) => {
   const api = await isolatedAPI(page);
   await page.goto('/');
