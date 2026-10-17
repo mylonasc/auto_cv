@@ -1,5 +1,6 @@
-/* EditorTab styles */
-.editor-tab {
+/* Feature rules cannot style the application sidebar or another editor. */
+@scope (.editor-tab) {
+:scope {
   display: flex;
   height: calc(100vh - 160px);
   gap: 20px;
@@ -361,4 +362,8 @@
   justify-content: center;
   align-items: center;
   height: 100%;
+}
+.source-editor-fields { border: 0; padding: 0; min-width: 0; display: flex; flex: 1; overflow: auto; }
+.source-editor-fields > * { flex: 1; }
+.item-edit-card > .btn:first-child { flex: 1; text-align: left; }
 }

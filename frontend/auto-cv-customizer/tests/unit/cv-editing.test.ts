@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { CVData } from '../../src/types/cv';
 import { editText, editSection, addBullet, removeBullet, parseCVJSON } from '../../src/domain/cvEditing.ts';
+import { editWorkingItem, editWorkingFilter, filterWorkingSection } from '../../src/domain/workingCopyEditing.ts';
+import type { WorkingCopy } from '../../src/types/view';
 
 const source: CVData = {
   schema_version: 1, candidate: { candidate_id: 'test', full_name: 'Candidate', profile: { custom: 'preserve' } },
@@ -42,4 +44,21 @@ test('JSON mode validates structure before returning data for visual editing', (
     { cv_template: {} }, { alternative_statements: [null] }]) {
     assert.throws(() => parseCVJSON(JSON.stringify({ ...source, ...patch })), /canonical CV schema/);
   }
+});
+
+test('working-copy edit/filter operations are immutable and retain rejected content/score provenance', () => {
+  const copy: WorkingCopy = { jobId: 'A', personalStatement: '', createdAt: null, updatedAt: null, sections: [{
+    id: 'role', company: '', position: '', duration: '', sectionScore: 5, sectionExplanation: null, sectionPostingEvidence: null,
+    filterConfig: { minRelevanceScore: 4, minItemsKeep: 0, maxItemsKeep: 5 },
+    items: [2, 9].map((score, index) => ({ id: String(index), text: 'Original', originalText: 'Original', scoredText: 'Original',
+      relevanceScore: score, explanation: null, postingEvidence: null, kept: true })),
+  }] };
+  freeze(copy);
+  const changed = editWorkingItem(copy, 0, 0, { text: 'Changed' });
+  assert.equal(changed.sections[0].items[0].scoredText, 'Original');
+  assert.equal(copy.sections[0].items[0].text, 'Original');
+  const filtered = filterWorkingSection(editWorkingFilter(changed, 0, { maxItemsKeep: 1 }), 0);
+  assert.equal(filtered.sections[0].items.length, 2);
+  assert.deepEqual(filtered.sections[0].items.map(item => item.kept), [false, true]);
+  assert.ok(copy.sections[0].items.every(item => item.kept));
 });

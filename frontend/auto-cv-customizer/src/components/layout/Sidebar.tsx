@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppState } from '../../contexts/AppStateContext';
 import './Sidebar.css';
+import { StatusBadge } from '../common/Primitives';
 
 const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void }> = 
   ({ sidebarCollapsed, onToggleSidebar }) => {
@@ -127,9 +128,7 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
       <div className="sidebar-footer">
         <div className="processing-status">
           {jobStatus && (
-            <div className={`status-badge ${jobStatus.status}`}>
-              {jobStatus.status}
-            </div>
+            <StatusBadge status={jobStatus.status} />
           )}
           <div className="current-version-tag">
             CV: {state.cvVersions.find(v => v.id === state.currentCVVersionId)?.name || state.currentCVVersionId}

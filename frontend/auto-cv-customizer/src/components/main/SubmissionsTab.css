@@ -1,4 +1,5 @@
-.submissions-tab {
+@scope (.submissions-tab) {
+:scope {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -204,4 +205,5 @@
   .detail-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
 }

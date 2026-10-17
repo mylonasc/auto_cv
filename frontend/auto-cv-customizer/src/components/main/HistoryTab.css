@@ -1,4 +1,5 @@
-.history-tab {
+@scope (.history-tab) {
+:scope {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -215,4 +216,5 @@
     min-width: 180px;
     max-width: 240px;
   }
+}
 }

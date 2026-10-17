@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppState, type Artifact } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import PdfPreviewModal from './PdfPreviewModal';
+import { Modal } from './Primitives';
 import './ExportDialog.css';
 
 interface ExportDialogProps {
@@ -72,15 +73,10 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
   const hasJob = !!jobId;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Export & Download</h2>
+    <>
+      <Modal title="Export & Download" onClose={onClose} className="export-dialog">
+        <div className="cv-modal-body">
           <p>Job: {jobId || 'none selected'}</p>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        
-        <div className="modal-body">
           {!hasJob ? (
             <div className="no-artifacts">
               <p>No job history found in the current session.</p>
@@ -153,7 +149,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="modal-footer">
+        <div className="cv-modal-footer">
           <button className="btn btn-secondary" onClick={() => { onClose(); dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'submissions' } }); }}>
             View Submissions
           </button>
@@ -161,14 +157,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose }) => {
             Close
           </button>
         </div>
-      </div>
+      </Modal>
       <PdfPreviewModal
         isOpen={!!previewUrl}
         url={previewUrl}
         title={previewTitle}
         onClose={() => setPreviewUrl(null)}
       />
-    </div>
+    </>
   );
 };
 

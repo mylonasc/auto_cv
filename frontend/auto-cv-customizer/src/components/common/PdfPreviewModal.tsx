@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from './Primitives';
 import './PdfPreviewModal.css';
 
 interface PdfPreviewModalProps {
@@ -14,14 +15,7 @@ const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ isOpen, url, title, o
   }
 
   return (
-    <div className="pdf-preview-overlay" onClick={onClose}>
-      <div className="pdf-preview-container" onClick={(e) => e.stopPropagation()}>
-        <div className="pdf-preview-header">
-          <h3>{title || 'PDF Preview'}</h3>
-          <button className="pdf-preview-close" onClick={onClose} aria-label="Close preview">
-            ✕
-          </button>
-        </div>
+    <Modal title={title || 'PDF Preview'} onClose={onClose} className="pdf-preview-modal">
         <div className="pdf-preview-frame-wrap">
           <iframe
             title={title || 'PDF Preview'}
@@ -29,8 +23,7 @@ const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ isOpen, url, title, o
             className="pdf-preview-frame"
           />
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -197,3 +197,51 @@ test('save completion after switching jobs preserves newer edits and the other d
   expect(api.writes).toEqual(['A']);
   expect(api.unexpected).toEqual([]);
 });
+
+test('focused working-copy controls preserve provenance, evidence and selection', async ({ page }) => {
+  const api = await setup(page);
+  api.copies.A.sections = [{ id: 'role', company: 'Example', position: 'Engineer', duration: '2020',
+    section_score: 8, section_explanation: 'Section assessment', section_posting_evidence: 'Role evidence',
+    filter_config: { min_relevance_score: 4, min_items_keep: 0, max_items_keep: 1 },
+    items: [2, 9].map((score, index) => ({ id: `bullet-${index}`, text: `Bullet text ${index + 1}`, original_text: `Bullet text ${index + 1}`,
+      scored_text: `Bullet text ${index + 1}`, relevance_score: score, explanation: 'Bullet assessment', posting_evidence: 'Python evidence', kept: true })),
+  }];
+  await page.goto('/');
+  await loadHistory(page, 'A');
+  await page.getByLabel('Bullet 1', { exact: true }).fill('Edited bullet');
+  await expect(page.locator('.workcpy-item-score').first()).toContainText('stale');
+  await page.getByRole('button', { name: 'Apply Filter', exact: true }).click();
+  await expect(page.getByLabel('Keep bullet 1', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('Keep bullet 2', { exact: true })).toBeChecked();
+  await page.getByRole('button', { name: 'Show Analysis', exact: true }).click();
+  await expect(page.getByText('Role evidence', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Analysis', exact: true }).first().click();
+  await expect(page.getByText('Python evidence', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Save Working Copy', exact: true }).click();
+  await expect(page.getByText('All changes saved', { exact: true })).toBeVisible();
+  expect(api.copies.A.sections[0].items[0].scored_text).toBe('Bullet text 1');
+  expect(api.copies.A.sections[0].items.map(item => item.kept)).toEqual([false, true]);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('shared modal owns keyboard/focus behavior and editor styles cannot leak outside their feature', async ({ page }) => {
+  const api = await setup(page);
+  await page.goto('/');
+  await loadHistory(page, 'A');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await expect(page.locator('.editor-tab .header-title')).toHaveCSS('display', 'flex');
+  await page.evaluate(() => { const probe = document.createElement('div'); probe.className = 'header-title'; probe.id = 'style-probe'; document.body.append(probe); });
+  await expect(page.locator('#style-probe')).toHaveCSS('display', 'block');
+  await page.getByRole('button', { name: 'Analysis Results', exact: true }).click();
+  await page.getByRole('button', { name: 'Export CV', exact: false }).click();
+  const modal = page.getByRole('dialog', { name: 'Export & Download', exact: true });
+  await expect(modal).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(modal.getByRole('button', { name: 'Close Export & Download', exact: true })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(modal.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(modal).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CV', exact: false })).toBeFocused();
+  expect(api.unexpected).toEqual([]);
+});

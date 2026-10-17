@@ -124,13 +124,13 @@ test('visual editor saves statements, alternatives, bullets and template choices
   const api = await isolatedAPI(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
-  await page.locator('.personal-statement-group .item-edit-card').first().click();
+  await page.getByRole('button', { name: 'Edit master statement', exact: true }).click();
   await page.locator('.edit-textarea').fill('Visual statement edit');
   await page.getByRole('button', { name: 'Apply Edit', exact: true }).click();
-  await page.locator('.alternatives-list .item-edit-card').first().click();
+  await page.getByRole('button', { name: 'Edit alternative 1', exact: true }).click();
   await page.locator('.edit-textarea').fill('Visual alternative edit');
   await page.getByRole('button', { name: 'Apply Edit', exact: true }).click();
-  await page.locator('.items-list .item-edit-card').first().click();
+  await page.getByRole('button', { name: 'Edit source bullet 1 in section 1', exact: true }).click();
   await page.locator('.edit-textarea').fill('Visual experience edit');
   await page.getByRole('button', { name: 'Apply Edit', exact: true }).click();
   await page.locator('.sections-panel select').first().selectOption('template2');

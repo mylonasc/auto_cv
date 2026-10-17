@@ -1,4 +1,5 @@
-/* // ConfigurationPanel styles - reuse modal styles from ExportDialog */
+/* Modal layout belongs to Primitives.css; these controls are feature-local. */
+@scope (.configuration-panel) {
 .config-section {
   margin-bottom: 24px;
   
@@ -87,4 +88,5 @@
   input[type="checkbox"] {
     cursor: pointer;
   }
+}
 }

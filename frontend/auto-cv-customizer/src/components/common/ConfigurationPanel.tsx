@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppState, type BackendConfig, type ModelConfig, type RewritePolicy, type OutputsConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
+import { Modal } from './Primitives';
 import './ConfigurationPanel.css';
 
 interface ConfigurationPanelProps {
@@ -138,14 +139,8 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Backend Configuration</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        
-        <div className="modal-body">
+    <Modal title="Backend Configuration" onClose={onClose} className="configuration-panel">
+        <div className="cv-modal-body">
           <div className="config-section">
             <h3>LLM Models</h3>
             
@@ -255,7 +250,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
           </div>
         </div>
 
-        <div className="modal-footer">
+        <div className="cv-modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
             Cancel
           </button>
@@ -263,8 +258,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
             Save Configuration
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

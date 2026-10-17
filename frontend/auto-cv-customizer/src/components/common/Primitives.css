@@ -1,0 +1,26 @@
+.btn { padding: 10px 20px; border: none; border-radius: var(--radius-sm); font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: background-color .2s; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.btn-secondary { background: var(--surface-color); color: var(--text-primary); border: 1px solid var(--border-color); }
+.btn-secondary:hover:not(:disabled) { background: var(--background-color); }
+.btn-danger { background: var(--error-color); color: white; }
+.btn-success { background: var(--success-color); color: white; }
+.btn-sm { padding: 6px 16px; font-size: 13px; }
+.btn-xs { padding: 4px 8px; font-size: 12px; }
+.btn-lg { padding: 12px 24px; font-size: 16px; }
+.cv-status { display: inline-block; border-radius: 12px; padding: 3px 10px; font-size: 12px; background: #eee; color: #555; }
+.cv-status-queued { background: #fff1d6; color: #805000; }
+.cv-status-processing { background: #e6f1ff; color: #1557b0; }
+.cv-status-succeeded { background: #e4f4e8; color: #206d34; }
+.cv-status-failed { background: #fce5e3; color: #a32117; }
+.cv-modal-overlay { position: fixed; inset: 0; z-index: 1100; background: #0008; display: flex;
+  align-items: center; justify-content: center; padding: 16px; }
+.cv-modal { background: var(--surface-color); width: min(100%, 700px); max-height: 90vh; overflow: auto;
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md); display: flex; flex-direction: column; }
+.cv-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
+.cv-modal-header h2 { font-size: 18px; }
+.cv-modal-body { padding: 24px; overflow: auto; }
+.cv-modal-footer { padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); }
