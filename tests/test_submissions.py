@@ -1,16 +1,9 @@
 """Tests for the CV Submissions tracking system."""
 
 import os
-import sys
 import json
-import uuid
-from datetime import datetime
 
 import pytest
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "server_application", "backend")))
-
 
 class TestSubmissionModels:
     def test_submission_create_request(self):
@@ -74,27 +67,6 @@ class TestSubmissionModels:
 
 
 class TestSubmissionEndpoints:
-    @pytest.fixture(autouse=True)
-    def setup_teardown(self):
-        """Ensure clean submissions dir."""
-        from core.paths import SUBMISSIONS_DIR, ensure_data_dirs
-        ensure_data_dirs()
-        # Clean up test submissions
-        if os.path.exists(SUBMISSIONS_DIR):
-            for f in os.listdir(SUBMISSIONS_DIR):
-                if f.endswith(".json"):
-                    os.remove(os.path.join(SUBMISSIONS_DIR, f))
-
-    @pytest.fixture
-    def client(self):
-        from fastapi.testclient import TestClient
-        from api.submissions import router
-        from fastapi import FastAPI
-
-        app = FastAPI()
-        app.include_router(router)
-        return TestClient(app)
-
     def test_create_submission_no_job(self, client):
         payload = {"job_id": "nonexistent"}
         response = client.post("/v1/submissions/", json=payload)
