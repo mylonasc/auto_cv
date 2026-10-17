@@ -7,8 +7,9 @@ from importlib.metadata import version, PackageNotFoundError
 from .config import BackendConfig, build_model, public_config
 from .domain import CVData
 from .template_registry import resolve_cv_templates
-from .utils import JobPostAnalysis, FullCVDocument, DocSection, DocSectionItem
-from .utils_cross_analysis import CVCrossAnalyzer, BulletAnalysis, section_experience_analysis_prompt
+from .posting import JobPostAnalysis
+from .documents import FullCVDocument, DocSection, DocSectionItem
+from .scoring import CVCrossAnalyzer, BulletAnalysis, section_experience_analysis_prompt
 from langchain_core.prompts import ChatPromptTemplate
 
 

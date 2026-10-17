@@ -1,5 +1,5 @@
 from fastapi import Request
-from services.application import ApplicationServices
+from ..services.application import ApplicationServices
 
 
 def get_services(request: Request) -> ApplicationServices:

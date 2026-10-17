@@ -17,7 +17,7 @@ from pydantic import ValidationError
     {"sections": [], "overall_score": float("nan")},
 ])
 def test_invalid_new_results_do_not_change_job_or_disk(result, job_manager):
-    from models.api_models import JobStatus
+    from server_application.backend.models.api_models import JobStatus
 
     job = job_manager.create_job()
     path = Path(job_manager.storage_dir) / f"{job.id}.json"
@@ -30,8 +30,8 @@ def test_invalid_new_results_do_not_change_job_or_disk(result, job_manager):
 
 
 def test_legacy_artifacts_normalize_once_without_rewriting_source(tmp_path):
-    from jobs.job_manager import JobManager
-    from models.api_models import CVJobResult
+    from server_application.backend.jobs.job_manager import JobManager
+    from server_application.backend.models.api_models import CVJobResult
 
     directory = tmp_path / "legacy-jobs"
     manager = JobManager(str(directory))
@@ -53,7 +53,7 @@ def test_legacy_artifacts_normalize_once_without_rewriting_source(tmp_path):
 
 
 def test_conflicting_legacy_artifacts_are_not_silently_resolved():
-    from models.legacy import normalize_artifact
+    from server_application.backend.models.legacy import normalize_artifact
 
     payload = {"id": "a", "kind": "pdf", "type": "latex", "filename": "cv.pdf"}
     before = copy.deepcopy(payload)
@@ -71,7 +71,7 @@ def test_artifact_resolution_does_not_fall_back_to_the_wrong_kind(isolated_runti
 
 
 def test_job_analysis_only_has_the_declared_response(client):
-    from models.api_models import JobAnalysisResponse
+    from server_application.backend.models.api_models import JobAnalysisResponse
 
     response = client.post("/v1/cv-jobs/job-analysis", json={"job_description": "Python engineer"})
     assert response.status_code == 200
@@ -81,7 +81,7 @@ def test_job_analysis_only_has_the_declared_response(client):
 
 @pytest.mark.parametrize("status,error", [("failed", "model unavailable"), ("cancelled", None)])
 def test_terminal_sse_payload_is_exactly_the_http_snapshot(client, status, error, job_manager):
-    from models.api_models import CVJobResponse
+    from server_application.backend.models.api_models import CVJobResponse
 
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, status, error=error,
@@ -96,7 +96,7 @@ def test_terminal_sse_payload_is_exactly_the_http_snapshot(client, status, error
 
 
 def test_successful_job_contract_retains_section_and_bullet_evidence(client, job_manager):
-    from models.api_models import JobStatus
+    from server_application.backend.models.api_models import JobStatus
 
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": [{
@@ -110,7 +110,7 @@ def test_successful_job_contract_retains_section_and_bullet_evidence(client, job
 
 
 def test_shared_frontend_fixture_is_the_real_http_and_sse_contract(client, job_manager):
-    from models.api_models import CVJobResponse
+    from server_application.backend.models.api_models import CVJobResponse
 
     fixture = json.loads((Path(__file__).parent / "fixtures/job-contract.json").read_text())
     job = CVJobResponse.model_validate(fixture)

@@ -6,8 +6,9 @@ from pydantic import ValidationError
 
 from src.analysis import (Assessment, AnalyzedBullet, AnalyzedRole, AnalysisSnapshot,
                           SelectionPolicy, select_bullets, aggregate_metrics)
-from src.utils import DocSection, DocSectionItem, FullCVDocument, JobPostAnalysis
-from src.utils_cross_analysis import CVCrossAnalyzer
+from src.documents import DocSection, DocSectionItem, FullCVDocument
+from src.posting import JobPostAnalysis
+from src.scoring import CVCrossAnalyzer
 
 
 def bullet(id, score):
@@ -134,7 +135,7 @@ def test_legacy_working_copy_ids_are_stable_without_rewriting(services, isolated
 
 
 def test_rescore_records_the_exact_scored_text_and_preserves_identity(client, job_manager, services):
-    from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
+    from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
 
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})
@@ -153,7 +154,7 @@ def test_rescore_records_the_exact_scored_text_and_preserves_identity(client, jo
 
 
 def test_working_copy_comment_options_do_not_publish_stale_bullet_scores(client, pdf_calls, job_manager):
-    from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
+    from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
 
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 from typing import Dict
 
 from .domain import CVData
+from .paths import project_root
 
 
 def _repo_root() -> str:
-    return os.getenv("CV_CUSTOMIZER_ROOT", str(Path(__file__).resolve().parent.parent))
+    return str(project_root())
 
 
 def _registry_path() -> str:

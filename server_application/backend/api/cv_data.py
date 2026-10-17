@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 from src.domain import CVData
 from src.template_registry import load_template_registry
-from services.application import ApplicationServices, OperationError
+from ..services.application import ApplicationServices, OperationError
 from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/cv-data", tags=["CV Data"])

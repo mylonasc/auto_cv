@@ -2,12 +2,12 @@
 
 from datetime import datetime
 
-from models.api_models import WorkingCopy
-from models.legacy import normalize_working_copy
+from ..models.api_models import WorkingCopy
+from ..models.legacy import normalize_working_copy
 from src.analysis import SelectionPolicy, select_scored_ids, score_comment
 from src.domain import CVTemplateData
 from src.template_registry import resolve_template_path
-from src.utils import FullCVDocument, DocSection, DocSectionItem
+from src.documents import FullCVDocument, DocSection, DocSectionItem
 
 
 def create_working_copy(job):

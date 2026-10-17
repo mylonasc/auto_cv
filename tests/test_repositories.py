@@ -60,7 +60,7 @@ def test_concurrent_artifact_publication_does_not_lose_updates(job_manager):
 
 
 def test_repository_read_modify_write_is_serialized(services):
-    from models.api_models import WorkingCopy
+    from server_application.backend.models.api_models import WorkingCopy
 
     services.working.save(WorkingCopy(job_id="test"))
 

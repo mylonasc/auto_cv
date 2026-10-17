@@ -7,6 +7,7 @@ This code also implements tools to query available models etc where applicable
 from typing import Optional
 import os
 from .config import PROVIDER_DEFAULTS
+from .paths import project_root
 
 MODEL_PROVIDERS = [
     'ollama',
@@ -23,28 +24,13 @@ MODELS_DEFAULT_CONFIG = {
 }
 
 def _log_msg(msg):
-    """ log msg.
-
-    Args:
-        msg: TODO: describe.
-
-    Returns:
-        TODO: describe return value.
-    """
+    """Report explicit legacy provider/default selection."""
     print(msg)
 
 class OllamaModelWrapper:
     """OllamaModelWrapper model."""
     def __init__(self, model_string, config = None):
-        """  init  .
-
-        Args:
-            model_string: TODO: describe.
-            config: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Resolve the requested local model against the configured Ollama server."""
         print(model_string)
         self._model_string, self._config = model_string, config
         if self._model_string is None:
@@ -61,11 +47,7 @@ class OllamaModelWrapper:
                 raise Exception(f"The model you requested ({self._model_string}) is not locally available on {self.ollama_host}. List of available models: \n {_avail_models} \n\n \n Please see ollama documentation (https://github.com/ollama/ollama/blob/main/README.md#quickstart) on how to download it.")
         
     def get_llm_model(self):
-        """Get llm model.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Construct ChatOllama with the resolved model/host and caller options."""
         from langchain_ollama import ChatOllama
         params = (self._config or {}).copy()
         params['model'] = self._model_string
@@ -92,13 +74,15 @@ def _gemini_api_key_setup(set_environ = False):
     """
     from pathlib import Path
     import yaml
-    _here = Path(__file__).resolve().parent.parent
+    _here = project_root()
     
     if 'GEMINI_API_KEY' not in os.environ:
         with open(os.path.join(_here, 'config/google_config.yaml'),'r') as f:
             res = yaml.safe_load(f)
-        print(res)
-        with open(res['gemini_api_key_path'] ,'r') as f:
+        key_path = Path(res['gemini_api_key_path']).expanduser()
+        if not key_path.is_absolute():
+            key_path = _here / key_path
+        with open(key_path, 'r') as f:
             gemini_api_key = f.read().rstrip(' ').rstrip('\n')
         if set_environ:
             os.environ['GEMINI_API_KEY'] = gemini_api_key
@@ -153,14 +137,7 @@ class GoogleModelWrapper:
     
     def get_llm_model(self, check_avail = False):
         
-        """Get llm model.
-
-        Args:
-            check_avail: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Construct the Gemini chat client, optionally checking model availability."""
         if check_avail:
             self.check_model_avail()
         
@@ -177,14 +154,7 @@ class GoogleModelWrapper:
             return ChatGoogleGenerativeAI(model = self._model_string, api_key = self._api_key)
         
     def list_models(self, return_string = True):
-        """List models.
-
-        Args:
-            return_string: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Return provider model names, or raw model descriptions when requested."""
         from google import genai
         from google.genai import types
         client = genai.Client(
@@ -217,16 +187,7 @@ class ModelFactory:
     MODEL_DEFAULTS = MODEL_DEFAULTS
     
     def __init__(self, model_provider : Optional[str] = None, model_str : Optional[str] = None, config : Optional[dict] = None):        
-        """  init  .
-
-        Args:
-            model_provider: TODO: describe.
-            model_str: TODO: describe.
-            config: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Retain explicit provider/model/options; construction performs no network call."""
         self._model_provider = model_provider
         self._model_str = model_str
         self._config = config
@@ -240,26 +201,12 @@ class ModelFactory:
             _log_msg(f"selecting default model for {self._model_provider}: '{self._model_str}'")
             
     def get_model_wrapper(self):
-        """Get model wrapper.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Initialize the selected provider wrapper when execution requests it."""
         def _make_ollama():
-            """ make ollama.
-
-            Returns:
-                TODO: describe return value.
-            """
             model_wrapper = OllamaModelWrapper(self._model_str, self._config)
             return model_wrapper
         
         def _make_google():
-            """ make google.
-
-            Returns:
-                TODO: describe return value.
-            """
             model_wrapper = GoogleModelWrapper(self._model_str, self._config)
             return model_wrapper
         
@@ -271,10 +218,6 @@ class ModelFactory:
         return _make_model_options[self._model_provider]()
             
     def get_llm_model(self):
-        """Get llm model.
-
-        Returns:
-            TODO: describe return value.
-        """
+        """Build the selected provider's chat model; live setup is explicit execution."""
         self.model_wrapper = self.get_model_wrapper()
         return self.model_wrapper.get_llm_model()

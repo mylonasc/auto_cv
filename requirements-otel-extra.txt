@@ -1,0 +1,5 @@
+opentelemetry-distro[otlp]
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-logging
+opentelemetry-instrumentation-langchain
+opentelemetry-instrumentation-ollama

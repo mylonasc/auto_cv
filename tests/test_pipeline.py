@@ -173,8 +173,8 @@ def test_persisted_effective_configuration_excludes_credentials(job_manager):
 
 
 @pytest.mark.parametrize("fails", [False, True])
-def test_telemetry_wraps_the_cli_and_always_flushes_without_import_time_exporters(fails):
-    module = runpy.run_path(str(Path(__file__).resolve().parents[1] / "tools/autocv-otel.py"))
+def test_telemetry_wraps_the_cli_and_always_flushes_without_import_time_exporters(fails, monkeypatch):
+    from tools import autocv_otel as module
     calls = []
 
     class Provider:
@@ -186,10 +186,11 @@ def test_telemetry_wraps_the_cli_and_always_flushes_without_import_time_exporter
         if fails:
             raise RuntimeError("CLI failure")
 
-    module["main"].__globals__.update(initialize_tracing=lambda: Provider(), cli_main=cli)
+    monkeypatch.setattr(module, "initialize_tracing", lambda: Provider())
+    monkeypatch.setattr(module, "cli_main", cli)
     if fails:
         with pytest.raises(RuntimeError, match="CLI failure"):
-            module["main"]()
+            module.main()
     else:
-        module["main"]()
+        module.main()
     assert calls == ["cli", "flush", "shutdown"]

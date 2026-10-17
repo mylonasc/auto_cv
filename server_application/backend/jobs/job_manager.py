@@ -7,8 +7,8 @@ from pathlib import Path
 from threading import RLock
 from uuid import uuid4
 
-from models.api_models import CVJobResponse, JobStatus
-from models.legacy import normalize_persisted_job
+from ..models.api_models import CVJobResponse, JobStatus
+from ..models.legacy import normalize_persisted_job
 from src.config import public_config
 from src.storage import atomic_write_json
 

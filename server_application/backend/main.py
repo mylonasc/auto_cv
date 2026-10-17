@@ -1,14 +1,14 @@
-"""Compatibility Uvicorn entry point. Runtime initialization belongs to lifespan."""
+"""Canonical ASGI app and installed server command; imports have no store effects."""
 
-from core.paths import ensure_project_root_on_path, ensure_backend_root_on_path
-
-ensure_project_root_on_path()
-ensure_backend_root_on_path()
-
-from application import create_app
+from .application import create_app
 
 app = create_app()
 
-if __name__ == "__main__":
+
+def main():
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    uvicorn.run("server_application.backend.main:app", host="0.0.0.0", port=8005)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,10 +1,15 @@
-
+# Canonical runtime dependencies, also consumed by pyproject.toml.
+fastapi
+uvicorn
+pydantic>=2,<3
 langchain
-langchain_ollama
+langchain-ollama
 langchain-google-genai
+langchain-community
 google-genai
-langchain_community
-tqdm
+ollama
+pyyaml
 pandas
-bs4
-
+beautifulsoup4
+tqdm
+typing-extensions

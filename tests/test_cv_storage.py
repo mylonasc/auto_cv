@@ -202,7 +202,7 @@ def test_template_resolution_is_render_time_only_and_honors_overrides(flat_cv):
 def test_supported_cv_loads_and_expands_each_template(tmp_path, template_id, pdf_calls):
     from pathlib import Path
     from src.template_registry import resolve_cv_templates
-    from src.utils import FullCVDocument, DocSection, DocSectionItem
+    from src.documents import FullCVDocument, DocSection, DocSectionItem
 
     repo = Path(__file__).resolve().parents[1]
     # Use the tracked supported CV, not an application store written by the test.

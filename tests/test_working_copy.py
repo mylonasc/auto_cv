@@ -10,7 +10,7 @@ import pytest
 
 class TestWorkingCopyModels:
     def test_section_filter_config_defaults(self):
-        from models.api_models import SectionFilterConfig
+        from server_application.backend.models.api_models import SectionFilterConfig
 
         cfg = SectionFilterConfig()
         assert cfg.min_relevance_score == 3
@@ -18,7 +18,7 @@ class TestWorkingCopyModels:
         assert cfg.max_items_keep == 6
 
     def test_section_filter_config_custom(self):
-        from models.api_models import SectionFilterConfig
+        from server_application.backend.models.api_models import SectionFilterConfig
 
         cfg = SectionFilterConfig(min_relevance_score=5, min_items_keep=2, max_items_keep=4)
         assert cfg.min_relevance_score == 5
@@ -26,7 +26,7 @@ class TestWorkingCopyModels:
         assert cfg.max_items_keep == 4
 
     def test_working_copy_item_defaults(self):
-        from models.api_models import WorkingCopyItem
+        from server_application.backend.models.api_models import WorkingCopyItem
 
         item = WorkingCopyItem(text="Built stuff")
         assert item.text == "Built stuff"
@@ -35,7 +35,7 @@ class TestWorkingCopyModels:
         assert item.kept is True
 
     def test_working_copy_section_defaults(self):
-        from models.api_models import WorkingCopySection, WorkingCopyItem
+        from server_application.backend.models.api_models import WorkingCopySection, WorkingCopyItem
 
         section = WorkingCopySection(
             company="Acme",
@@ -50,7 +50,7 @@ class TestWorkingCopyModels:
         assert section.items[0].relevance_score == 8.0
 
     def test_working_copy_roundtrip_json(self):
-        from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
+        from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
 
         wc = WorkingCopy(
             job_id="job_001",
@@ -94,7 +94,7 @@ class TestWorkingCopyModels:
         assert restored.sections[0].section_score == 8.5
 
     def test_rescore_request(self):
-        from models.api_models import RescoreRequest, RescoreItem
+        from server_application.backend.models.api_models import RescoreRequest, RescoreItem
 
         req = RescoreRequest(
             section_index=0,
@@ -107,7 +107,7 @@ class TestWorkingCopyModels:
         assert req.items[1].text is None
 
     def test_rescore_response(self):
-        from models.api_models import RescoreResponse, RescoredItemResult
+        from server_application.backend.models.api_models import RescoreResponse, RescoredItemResult
 
         resp = RescoreResponse(
             section_index=1,
@@ -119,7 +119,7 @@ class TestWorkingCopyModels:
         assert resp.items[0].relevance_score == 9.5
 
     def test_render_cv_request_with_working_copy(self):
-        from models.api_models import RenderCVRequest, WorkingCopy
+        from server_application.backend.models.api_models import RenderCVRequest, WorkingCopy
 
         wc = WorkingCopy(job_id="job_001", personal_statement="Test")
         req = RenderCVRequest(working_copy=wc)
@@ -135,7 +135,7 @@ class TestWorkingCopyModels:
 
 class TestCreateWorkingCopyFromJob:
     def test_from_job_with_result(self):
-        from models.api_models import WorkingCopy
+        from server_application.backend.models.api_models import WorkingCopy
 
         # Simulate a job with a result dict
         class FakeResult:
@@ -160,7 +160,7 @@ class TestCreateWorkingCopyFromJob:
             id = "job_123"
             result = FakeResult()
 
-        from services.working_copy import create_working_copy
+        from server_application.backend.services.working_copy import create_working_copy
 
         wc = create_working_copy(FakeJob())
 
@@ -179,7 +179,7 @@ class TestCreateWorkingCopyFromJob:
         assert wc.updated_at is not None
 
     def test_from_job_without_sections(self):
-        from models.api_models import WorkingCopy
+        from server_application.backend.models.api_models import WorkingCopy
 
         class FakeEmptyResult:
             def model_dump(self):
@@ -189,7 +189,7 @@ class TestCreateWorkingCopyFromJob:
             id = "job_empty"
             result = FakeEmptyResult()
 
-        from services.working_copy import create_working_copy
+        from server_application.backend.services.working_copy import create_working_copy
 
         wc = create_working_copy(FakeJob())
         assert wc.personal_statement == "Just a statement"
@@ -198,7 +198,7 @@ class TestCreateWorkingCopyFromJob:
 
 class TestWorkingCopyDiskPersistence:
     def test_save_and_load(self, services):
-        from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
+        from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem
 
         wc = WorkingCopy(
             job_id="disk_test",
@@ -228,8 +228,8 @@ class TestWorkingCopyDiskPersistence:
 
 class TestRenderFromWorkingCopy:
     def test_render_uses_only_kept_content(self, pdf_calls, client, job_manager):
-        from models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, RenderCVRequest
-        from models.api_models import JobStatus
+        from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, RenderCVRequest
+        from server_application.backend.models.api_models import JobStatus
         job = job_manager.create_job()
         job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})
 
@@ -305,8 +305,8 @@ class TestArtifactSourceTagging:
 
     @pytest.mark.parametrize("render_pdf,include_latex", [(True, False), (False, True), (True, True)])
     def test_actual_render_artifacts_survive_job_persistence(self, render_pdf, include_latex, client, job_manager):
-        from jobs.job_manager import JobManager
-        from models.api_models import WorkingCopy, RenderCVRequest, JobStatus
+        from server_application.backend.jobs.job_manager import JobManager
+        from server_application.backend.models.api_models import WorkingCopy, RenderCVRequest, JobStatus
 
         job = job_manager.create_job()
         job_manager.update_job_status(job.id, JobStatus.SUCCEEDED, result={"sections": []})

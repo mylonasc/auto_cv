@@ -1,7 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends
-from models.api_models import Submission, SubmissionCreateRequest, SubmissionUpdateRequest
-from services.application import ApplicationServices, OperationError
+from ..models.api_models import Submission, SubmissionCreateRequest, SubmissionUpdateRequest
+from ..services.application import ApplicationServices, OperationError
 from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/submissions", tags=["Submissions"])

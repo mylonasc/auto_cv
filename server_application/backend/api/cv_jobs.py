@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import FileResponse, StreamingResponse
 
-from models.api_models import (CreateJobRequest, CVJobResponse, CVJobResult, JobAnalysisRequest,
+from ..models.api_models import (CreateJobRequest, CVJobResponse, CVJobResult, JobAnalysisRequest,
     JobAnalysisResponse, WorkingCopy, RenderCVRequest, RescoreRequest, RescoreResponse)
-from services.application import ApplicationServices, OperationError
-from utils.sse import job_status_stream
+from ..services.application import ApplicationServices, OperationError
+from ..utils.sse import job_status_stream
 from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/cv-jobs", tags=["CV Jobs"])

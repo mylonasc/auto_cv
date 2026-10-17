@@ -1,4 +1,4 @@
-from src.utils import JobPostAnalysis
+from src.posting import JobPostAnalysis
 import pytest
 
 

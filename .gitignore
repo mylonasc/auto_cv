@@ -88,7 +88,7 @@ data/cv_section_data/
 data/archive/
 server_application/backend/cache/*.tmp
 server_application/backend/artifacts/
-server_application/backend/jobs/
+server_application/backend/jobs/*.json
 
 # Frontend generated outputs
 frontend/auto-cv-customizer/dist/

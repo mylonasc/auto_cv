@@ -7,11 +7,11 @@ import subprocess
 import pytest
 from langchain_core.runnables import RunnableLambda
 
-from src import utils
+from src import rendering
 from src.outcomes import StageFailure, gather_owned
 from tests.helpers import wait_for_job
 
-_COMPILE_LATEX = utils._latex_to_pdf
+_COMPILE_LATEX = rendering.latex_to_pdf
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def test_pdf_failure_during_rerender_does_not_append_artifacts(client, job_manag
     def fail(*args, **kwargs):
         raise subprocess.CalledProcessError(1, ['xelatex'])
 
-    monkeypatch.setattr(utils, '_latex_to_pdf', fail)
+    monkeypatch.setattr(rendering, 'latex_to_pdf', fail)
     response = client.post(f'/v1/cv-jobs/{job.id}/render', json={})
     assert response.status_code == 502
     assert job_manager.get_job(job.id).result.artifacts == []
@@ -125,7 +125,7 @@ def test_initial_pdf_failure_is_a_failed_job_without_published_outputs(client, c
     def fail(*args, **kwargs):
         raise subprocess.CalledProcessError(1, ['xelatex'])
 
-    monkeypatch.setattr(utils, '_latex_to_pdf', fail)
+    monkeypatch.setattr(rendering, 'latex_to_pdf', fail)
     created = client.post('/v1/cv-jobs/', json={'candidate': 'test', 'job_description': 'Python engineer'}).json()
     job = wait_for_job(client, created['id'])
     assert job['status'] == 'failed' and 'pdf_render' in job['error']
@@ -144,7 +144,7 @@ def test_existing_output_cannot_masquerade_as_new_success(tmp_path):
 
 
 def test_later_output_failure_cannot_publish_partial_success(client, job_manager, monkeypatch):
-    from src.utils import FullCVDocument
+    from src.documents import FullCVDocument
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, 'succeeded', result={'sections': []})
     original = FullCVDocument.make_latex

@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from core.paths import StoragePaths
-from services.application import ApplicationServices, OperationError
-from api import cv_jobs, config, models, cv_data, submissions
+from .core.paths import StoragePaths
+from .services.application import ApplicationServices, OperationError
+from .api import cv_jobs, config, models, cv_data, submissions
 from src.outcomes import StageFailure
 
 

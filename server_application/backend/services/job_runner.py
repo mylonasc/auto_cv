@@ -2,8 +2,8 @@
 
 import asyncio
 
-from models.api_models import JobStatus
-from jobs.job_manager import TERMINAL
+from ..models.api_models import JobStatus
+from ..jobs.job_manager import TERMINAL
 
 
 class JobRunner:

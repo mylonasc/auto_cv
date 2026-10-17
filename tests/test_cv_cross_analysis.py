@@ -1,7 +1,8 @@
 import pytest
 
-from src.utils import JobPostAnalysis, FullCVDocument, DocSection, DocSectionItem
-from src.utils_cross_analysis import CVCrossAnalyzer
+from src.posting import JobPostAnalysis
+from src.documents import FullCVDocument, DocSection, DocSectionItem
+from src.scoring import CVCrossAnalyzer
 
 
 @pytest.mark.asyncio

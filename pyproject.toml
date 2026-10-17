@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-cv"
+version = "1.0.0"
+description = "Single-CV analysis, selection, editing and rendering application"
+requires-python = ">=3.12"
+dynamic = ["dependencies", "optional-dependencies"]
+
+[project.scripts]
+auto-cv = "tools.autocv:main"
+auto-cv-otel = "tools.autocv_otel:main"
+auto-cv-api = "server_application.backend.main:main"
+auto-cv-types = "tools.generate_api_types:main"
+
+[tool.setuptools.packages.find]
+include = ["src*", "server_application.backend*", "server_application", "tools"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies.test = {file = ["requirements-test-extra.txt"]}
+optional-dependencies.telemetry = {file = ["requirements-otel-extra.txt"]}

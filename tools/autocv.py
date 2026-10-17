@@ -6,20 +6,15 @@ from datetime import datetime
 import json
 from pathlib import Path
 import shutil
-import sys
 import tempfile
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from src.config import BackendConfig, ModelConfig, PROVIDER_DEFAULTS, build_model, public_config
 from src.cv_storage import load_cv_file
 from src.template_registry import resolve_cv_templates
 from src.pipeline import analyze_cv
 from src.artifacts import render_artifacts
-from src.utils import CoverLetterModel
-from src.utils_cross_analysis import CoverLetterDrafter
+from src.paths import project_root
+from src.cover_letter import CoverLetterModel, CoverLetterDrafter
 
 
 def _make_parser():
@@ -96,9 +91,9 @@ async def run_pipeline(args):
         (folder / "metrics_summary.txt").write_text(json.dumps(run.analyzer.get_section_aggregate_metrics()[0]))
         (folder / "effective_config.json").write_text(public_config(config).model_dump_json(indent=2))
         (folder / "job_post.txt").write_text(text, encoding="utf-8")
-        for cls in (REPO_ROOT / "assets").glob("resume*.cls"):
+        for cls in (project_root() / "assets").glob("resume*.cls"):
             shutil.copy(cls, latex)
-        picture = REPO_ROOT / "assets/images/my_pic.jpeg"
+        picture = project_root() / "assets/images/my_pic.jpeg"
         if picture.exists():
             shutil.copy(picture, latex)
         output.parent.mkdir(parents=True, exist_ok=True)

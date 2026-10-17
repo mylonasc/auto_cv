@@ -12,8 +12,8 @@ from threading import RLock
 
 from src.cv_storage import cv_version_path, find_cv_file, load_cv_file, normalize_cv_data, save_cv_file
 from src.storage import atomic_write_json
-from models.api_models import WorkingCopy, Submission, RenderRecord
-from models.legacy import normalize_working_copy, normalize_persisted_submission
+from .models.api_models import WorkingCopy, Submission, RenderRecord
+from .models.legacy import normalize_working_copy, normalize_persisted_submission
 
 logger = logging.getLogger(__name__)
 

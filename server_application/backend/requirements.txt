@@ -1,13 +1,2 @@
-fastapi
-uvicorn
-pydantic
-langchain
-langchain_ollama
-langchain-google-genai
-google-genai
-langchain_community
-tqdm
-pandas
-bs4
-python-multipart
-websockets
+# Compatibility requirements entry; install from the checkout root.
+-r ../../requirements.txt

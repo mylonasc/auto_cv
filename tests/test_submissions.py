@@ -5,7 +5,7 @@ import json
 
 class TestSubmissionModels:
     def test_submission_create_request(self):
-        from models.api_models import SubmissionCreateRequest
+        from server_application.backend.models.api_models import SubmissionCreateRequest
 
         req = SubmissionCreateRequest(job_id="job_001", artifact_ids=["pdf_1"])
         assert req.job_id == "job_001"
@@ -13,14 +13,14 @@ class TestSubmissionModels:
         assert req.notes is None
 
     def test_submission_update_request(self):
-        from models.api_models import SubmissionUpdateRequest
+        from server_application.backend.models.api_models import SubmissionUpdateRequest
 
         req = SubmissionUpdateRequest(result="INTERVIEW", notes="Phone screen scheduled")
         assert req.result == "INTERVIEW"
         assert req.notes == "Phone screen scheduled"
 
     def test_submission_full(self):
-        from models.api_models import Submission
+        from server_application.backend.models.api_models import Submission
 
         sub = Submission(
             id="sub_001",
@@ -42,7 +42,7 @@ class TestSubmissionModels:
         assert sub.artifacts[0]["filename"] == "cv.pdf"
 
     def test_submission_roundtrip_json(self):
-        from models.api_models import Submission
+        from server_application.backend.models.api_models import Submission
 
         sub = Submission(
             id="sub_002",
@@ -85,7 +85,7 @@ class TestSubmissionEndpoints:
 
     def test_submission_crud_cycle(self, client, services):
         # Create a submission by directly saving one
-        from models.api_models import Submission
+        from server_application.backend.models.api_models import Submission
 
         sub = Submission(
             id="crud_test",

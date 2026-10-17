@@ -3,7 +3,7 @@
 import asyncio
 from typing import AsyncGenerator
 
-from models.api_models import JobStatus, StreamError
+from ..models.api_models import JobStatus, StreamError
 
 
 async def job_status_stream(job_id: str, job_manager) -> AsyncGenerator[str, None]:

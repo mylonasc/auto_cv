@@ -9,14 +9,11 @@ Input aliases retain each request model's actual required/default distinction.
 import argparse
 import json
 from pathlib import Path
-import sys
 
 from pydantic import BaseModel, create_model
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "server_application/backend"))
-from models import api_models as api
+from server_application.backend.models import api_models as api
 from src import domain
 
 OUTPUT = ROOT / "frontend/auto-cv-customizer/src/types/api.generated.ts"

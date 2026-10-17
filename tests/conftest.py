@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import socket
 import subprocess
-import sys
 import tempfile
 
 import pytest
@@ -28,7 +27,6 @@ def pytest_configure(config):
         LANGCHAIN_TRACING_V2="false",
         LANGSMITH_TRACING="false",
     )
-    sys.path.insert(0, str(REPO_ROOT / "server_application" / "backend"))
 
 
 def pytest_unconfigure(config):
@@ -51,8 +49,8 @@ def isolated_runtime(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def services(isolated_runtime):
-    from core.paths import StoragePaths
-    from services.application import ApplicationServices
+    from server_application.backend.core.paths import StoragePaths
+    from server_application.backend.services.application import ApplicationServices
     return ApplicationServices(StoragePaths(isolated_runtime))
 
 
@@ -74,7 +72,7 @@ def pdf_calls():
 @pytest.fixture(autouse=True)
 def offline_dependencies(monkeypatch, fake_model, pdf_calls):
     from src.models import ModelFactory
-    from src import utils
+    from src import rendering
 
     def forbidden(*args, **kwargs):
         raise AssertionError("Offline tests must not open network connections or processes")
@@ -90,12 +88,12 @@ def offline_dependencies(monkeypatch, fake_model, pdf_calls):
         pdf_calls.append(PDFCall(latex, output))
         output.write_bytes(b"%PDF-1.4\n% offline test placeholder; not a real rendered document\n")
 
-    monkeypatch.setattr(utils, "_latex_to_pdf", fake_pdf)
+    monkeypatch.setattr(rendering, "latex_to_pdf", fake_pdf)
 
 
 @pytest.fixture
 def client(services, offline_dependencies):
-    from application import create_app
+    from server_application.backend.application import create_app
     from fastapi.testclient import TestClient
     with TestClient(create_app(services=services)) as test_client:
         yield test_client

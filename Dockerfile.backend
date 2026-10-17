@@ -23,19 +23,17 @@ RUN curl -fsSL https://ollama.com/install.sh | sh || echo "Warning: Ollama insta
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-COPY server_application/backend/requirements.txt ./backend_requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r backend_requirements.txt && \
-    pip install --no-cache-dir ollama pyyaml uvicorn
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire project
 COPY . .
 
-# Set the working directory to the backend folder
-WORKDIR /app/server_application/backend
+# Install canonical package/commands; assets stay in the explicitly retained checkout.
+RUN pip install --no-cache-dir --no-deps -e .
+ENV CV_CUSTOMIZER_ROOT=/app AUTO_CV_DATA_ROOT=/app/data
 
 EXPOSE 8005
 
 # Use python -m uvicorn instead of direct uvicorn command
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD ["python3", "-m", "uvicorn", "server_application.backend.main:app", "--host", "0.0.0.0", "--port", "8005"]

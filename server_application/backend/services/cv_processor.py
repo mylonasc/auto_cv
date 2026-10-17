@@ -4,7 +4,7 @@ from uuid import uuid4
 from src.config import BackendConfig
 from src.pipeline import analyze_cv
 from src.artifacts import render_artifacts
-from models.api_models import CVJobResult, JobStatus, ProcessingOutput
+from ..models.api_models import CVJobResult, JobStatus, ProcessingOutput
 
 
 class CVProcessor:

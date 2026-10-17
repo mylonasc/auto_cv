@@ -4,14 +4,14 @@ import asyncio
 from datetime import datetime
 from uuid import uuid4
 
-from jobs.job_manager import JobManager
-from repositories import CVRepository, WorkingCopyRepository, SubmissionRepository, ArtifactRepository
-from models.api_models import (JobStatus, WorkingCopy, RenderRecord, Submission, RescoreResponse, RescoredItemResult)
+from ..jobs.job_manager import JobManager
+from ..repositories import CVRepository, WorkingCopyRepository, SubmissionRepository, ArtifactRepository
+from ..models.api_models import (JobStatus, WorkingCopy, RenderRecord, Submission, RescoreResponse, RescoredItemResult)
 from src.artifacts import render_artifacts
 from src.config import BackendConfig
 from src.domain import CVData, CandidateMetadata, ExperienceSectionData
 from src.pipeline import analyze_posting, bullet_scoring_chain
-from src.utils_cross_analysis import AnalysisResultCache
+from src.cache import AnalysisResultCache
 from src.analysis import Assessment
 from src.outcomes import StageFailure
 from .cv_processor import CVProcessor

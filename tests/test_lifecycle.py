@@ -9,9 +9,9 @@ import threading
 
 import pytest
 
-from core.paths import StoragePaths
-from application import create_app
-from models.api_models import CreateJobRequest, CVJobResult, ProcessingOutput
+from server_application.backend.core.paths import StoragePaths
+from server_application.backend.application import create_app
+from server_application.backend.models.api_models import CreateJobRequest, CVJobResult, ProcessingOutput
 from src.domain import CVData, CandidateMetadata, ExperienceSectionData
 from tests.helpers import wait_for_job
 
@@ -66,16 +66,17 @@ def audit(event, args):
             raise AssertionError('Import enumerated runtime store')
 sys.addaudithook(audit)
 import server_application.backend
-import repositories, services.application, services.cv_processor, services.job_runner
+from server_application.backend import repositories
+from server_application.backend.services import application, cv_processor, job_runner
 import src.analysis, src.pipeline, src.utils_cross_analysis
-from application import create_app
+from server_application.backend.application import create_app
 app = create_app()
 app.openapi()
 assert not hasattr(app.state, 'services')
 print('import/factory probe passed')
 '''
     env = {"PATH": os.environ.get("PATH", ""), "HOME": str(tmp_path / "home"),
-           "PYTHONPATH": os.pathsep.join((str(repo), str(repo / "server_application/backend"))),
+           "PYTHONPATH": str(repo),
            "CV_CUSTOMIZER_ROOT": str(repo), "AUTO_CV_DATA_ROOT": str(runtime),
            "PYTHONDONTWRITEBYTECODE": "1", "LANGCHAIN_TRACING_V2": "false", "LANGSMITH_TRACING": "false"}
     with _IMPORT_PROBE_POPEN([sys.executable, "-B", "-c", code], cwd=repo, env=env,
@@ -102,7 +103,7 @@ def test_two_apps_have_independent_repositories_and_configuration(tmp_path):
 
 
 def test_application_accepts_injected_runner_factory(services):
-    from services.application import ApplicationServices
+    from server_application.backend.services.application import ApplicationServices
     runner = object()
     observed = []
 

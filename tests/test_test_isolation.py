@@ -20,7 +20,7 @@ def test_application_stores_are_empty_and_inside_test_runtime(isolated_runtime, 
 
 
 def test_working_copy_write_does_not_touch_neighboring_user_data(tmp_path, isolated_runtime, services):
-    from models.api_models import WorkingCopy
+    from server_application.backend.models.api_models import WorkingCopy
 
     # This sentinel is outside the runtime root, as a real user's data would be.
     sentinel = tmp_path / "user-data" / "working_cvs" / "same-id.json"
@@ -43,7 +43,7 @@ def test_external_process_execution_is_blocked():
 
 
 def test_pdf_boundary_is_fake_but_latex_generation_is_real(tmp_path, pdf_calls):
-    from src.utils import FullCVDocument, DocSection, DocSectionItem
+    from src.documents import FullCVDocument, DocSection, DocSectionItem
 
     document = FullCVDocument("Test statement", DocSection("Work Experience", [
         DocSectionItem("Test company", "2020", "Engineer", ["Test bullet"]),

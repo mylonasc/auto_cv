@@ -5,13 +5,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.utils import FullCVDocument, DocSection, DocSectionItem
-from src.utils_cross_analysis import AnalysisResultCache, CVCrossAnalyzer
+from src.documents import FullCVDocument, DocSection, DocSectionItem
+from src.cache import AnalysisResultCache
+from src.scoring import CVCrossAnalyzer
 
 
 @pytest.mark.asyncio
 async def test_identical_effective_analysis_reuses_cache_but_changed_inputs_do_not(tmp_path, fake_model, monkeypatch):
-    import src.utils_cross_analysis as module
+    import src.scoring as module
+    import src.cache as cache_module
     cache = AnalysisResultCache(str(tmp_path / 'cache.json'))
 
     async def analyze(*, text='Python delivery', posting='Python required', skills='Python',
@@ -50,7 +52,7 @@ async def test_identical_effective_analysis_reuses_cache_but_changed_inputs_do_n
     await analyze()
     assert len(fake_model.calls) == count + 1
     count = len(fake_model.calls)
-    monkeypatch.setattr(module, 'CACHE_FORMAT', 3)
+    monkeypatch.setattr(cache_module, 'CACHE_FORMAT', 3)
     await analyze()
     assert len(fake_model.calls) == count + 2
 
@@ -76,7 +78,7 @@ def test_invalid_v2_assessment_is_a_warned_miss(tmp_path):
 
 
 def test_cache_write_failure_is_visible_but_not_analysis_failure(tmp_path, monkeypatch):
-    import src.utils_cross_analysis as module
+    import src.cache as module
     cache = AnalysisResultCache(str(tmp_path / 'cache.json'))
 
     def fail(*args):
