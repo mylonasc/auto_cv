@@ -542,6 +542,7 @@ const ProcessingTab: React.FC = () => {
           <label>
             CV template
             <select
+              aria-label="CV template"
               value={selectedTemplateId}
               onChange={(e) => setSelectedTemplateId(e.target.value)}
             >

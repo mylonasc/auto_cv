@@ -47,6 +47,11 @@ An installed Playwright Chromium browser is required (explicit setup if needed:
 `npx playwright install chromium`). The separate legacy `test:e2e` suite is not
 API-isolated and is not part of this offline validation command.
 
+The same isolated command includes `workflow.spec.ts`: fake SSE, tab/template
+navigation, active versus viewed jobs, posting previews, job-specific drafts,
+late load/save responses, save-error rendering prevention and explicit export
+identity. Pure reducer/monitor coverage runs with `npm run test:unit`.
+
 ## Transport and mapping contracts
 
 Run `.venv/bin/python -B tools/generate_api_types.py --check` from the root to

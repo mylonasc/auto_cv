@@ -20,7 +20,7 @@ export function monitorJob(id: string, dependencies: {
   let fetching = false;
   let stopPolling: (() => void) | undefined;
   let stream: Stream | undefined;
-  const stop = () => { stopped = true; stream?.close(); stopPolling?.(); };
+  const stop = () => { if (stopped) return; stopped = true; stream?.close(); stopPolling?.(); };
   const accept = (job: ProcessingState) => {
     if (stopped || job.jobId !== id) return;
     if (!['queued', 'processing', 'succeeded', 'failed', 'cancelled'].includes(job.status)) throw new Error('Invalid job status');

@@ -581,15 +581,30 @@ and editable draft. Own monitoring above conditional tab components.
 
 Acceptance criteria:
 
-- [ ] Leaving/reopening tabs during execution neither loses monitoring nor
+- [x] Leaving/reopening tabs during execution neither loses monitoring nor
   changes the active job identity; stream cleanup/reconnection rules are tested.
-- [ ] Switching between jobs never displays or saves another job's draft.
-- [ ] One authoritative draft per job has explicit dirty/save/reset semantics;
+- [x] Switching between jobs never displays or saves another job's draft.
+- [x] One authoritative draft per job has explicit dirty/save/reset semantics;
   save failure is propagated and cannot be mistaken for successful persistence.
-- [ ] Posting-only analysis and viewed completed results do not overwrite active
+- [x] Posting-only analysis and viewed completed results do not overwrite active
   execution identity; rendering/export do not guess the latest successful job.
-- [ ] Editing a source CV versus editing a result's working copy is explicit in
+- [x] Editing a source CV versus editing a result's working copy is explicit in
   navigation and actions. Frontend reducer/hook tests cover these transitions.
+
+Delivery evidence:
+
+- `4e49b00`: pure workflow reducer and provider-owned commands/monitoring separate
+  running execution, viewed analysis, posting preview and export identities.
+- Per-job baseline/draft revisions protect edits from delayed load/save/rescore
+  responses; failed saves remain dirty and abort rendering. Result edit actions
+  no longer route to the source CV editor.
+- See [FRONTEND_WORKFLOW.md](docs/FRONTEND_WORKFLOW.md) for SSE reconnect/polling,
+  cleanup, save/reset semantics and full-page reload boundaries.
+- Verification: **178 backend tests**, **20 typed frontend unit tests**, and
+  **nine isolated Chromium checks** passed, plus build, source/test ESLint,
+  generated-schema drift and diff checks. A safety rerun preserved five external
+  sentinels and hashes of all 697 existing data/assets files. The new browser
+  checks include failed saves and delayed load/save responses, not live providers.
 
 ### RFK-09 — Focused frontend components and presentation
 
