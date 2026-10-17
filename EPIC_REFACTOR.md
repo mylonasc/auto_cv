@@ -646,6 +646,13 @@ Delivery evidence:
 Finish the structural cleanup only after the new boundaries are established.
 Inventory legacy assets and runtime data before removing anything.
 
+RFK-10 is now dependency-unblocked. The initial read-only inventory is recorded
+in [LEGACY_INVENTORY.md](docs/LEGACY_INVENTORY.md): all 697 data/assets files and
+the historical frontend scaffold are retained. Package/import cleanup, focused
+Python module extraction, dependency/startup alignment and final epic-wide
+verification are still implementation work; #15 and the parent epic stay open.
+The former Vite lint errors were already resolved by RFK-09.
+
 Acceptance criteria:
 
 - [ ] Python modules are grouped by responsibility rather than catch-all utils;
