@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import type { CVData } from '../src/types/cv';
+import type { BackendConfig } from '../src/types/api.generated';
 
 const initial: CVData = {
   schema_version: 1,
@@ -55,7 +56,14 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
         motivation_letter_templates: { default_motivation_letter: 'assets/cover_letter/CoverLetter_Template.tex' },
       };
     } else if (url.pathname.replace(/\/$/, '') === '/api/v1/config') {
-      json = {};
+      const model = { provider: 'ollama' as const, model: 'offline-test', config: null };
+      json = {
+        analysis_model: model, statement_editor_model: model, cover_letter_editor_model: model,
+        rewrite_policy: { min_section_items_keep: 1, max_section_items_keep: 5, min_relevance_score: 4 },
+        analysis_policy: { max_section_parse_retries: 3 },
+        outputs: { render_pdf: true, include_latex: true, include_cover_letter: false, include_scoring_comments: true },
+        concurrency_limit: 5,
+      } satisfies BackendConfig;
     } else if (url.pathname === '/api/v1/health') {
       json = { status: 'healthy' };
     } else {

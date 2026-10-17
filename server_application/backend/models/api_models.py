@@ -66,7 +66,7 @@ class JobStatus(str, Enum):
 
 class ModelConfig(APIModel):
     """ModelConfig model."""
-    provider: str = "ollama"
+    provider: Literal["ollama", "google"] = "ollama"
     model: str = "gemma4:31b"
     config: Optional[Dict[str, Any]] = None
 

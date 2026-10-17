@@ -43,6 +43,14 @@ An installed Playwright Chromium browser is required (explicit setup if needed:
 `npx playwright install chromium`). The separate legacy `test:e2e` suite is not
 API-isolated and is not part of this offline validation command.
 
+## Transport and mapping contracts
+
+Run `.venv/bin/python -B tools/generate_api_types.py --check` from the root to
+check that frontend transport types match the authoritative backend schemas.
+`npm run test:unit` from the frontend type-checks and runs pure mapping tests
+with Node's built-in runner (verified with Node 24). Shared fixtures are also
+validated by the real backend HTTP/SSE serializers. See `docs/API_CONTRACTS.md`.
+
 ## Opt-in live integration smoke check
 
 Live provider/LaTeX checks are **not** part of the pytest suite. After explicitly

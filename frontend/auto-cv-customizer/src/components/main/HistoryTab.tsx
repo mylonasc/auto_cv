@@ -26,7 +26,7 @@ const HistoryTab: React.FC = () => {
     job?.job_analysis?.industry_and_position_analysis?.company_name || '';
 
   const getCreatedTimestamp = (job: BackendJob): number =>
-    new Date(job.created_at || job.createdAt || 0).getTime();
+    new Date(job.created_at).getTime();
 
   const getOverallScore = (job: BackendJob): number => {
     const score = job?.result?.overall_score;
@@ -247,8 +247,8 @@ const HistoryTab: React.FC = () => {
               {visibleJobs.map((job) => (
                 <tr key={job.id} className={`history-row ${job.archived ? 'archived' : ''}`}>
                   <td className="job-date">
-                    {job.created_at || job.createdAt
-                      ? new Date((job.created_at || job.createdAt) as string).toLocaleString()
+                    {job.created_at
+                      ? new Date(job.created_at).toLocaleString()
                       : '-'}
                   </td>
                   <td className="job-company">{getCompanyName(job) || '-'}</td>

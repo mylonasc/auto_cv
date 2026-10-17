@@ -1,4 +1,11 @@
 import React, { createContext, useContext, useEffect, useReducer, type Dispatch } from 'react';
+import type { BackendConfig, ProcessingState, WorkingCopy } from '../types/view';
+export type {
+  BackendConfig, ProcessingState, WorkingCopy, ModelConfig, RewritePolicy,
+  AnalysisPolicy, OutputsConfig, SummaryMetrics, CVResultItem, CVResultSection,
+  Artifact, Submission, JobAnalysis, BackendJob, CVJobResult, SectionFilterConfig,
+  WorkingCopyItem, WorkingCopySection,
+} from '../types/view';
 
 // Define the state shape
 export interface AppState {
@@ -51,140 +58,6 @@ export type {
   CVData, CandidateMeta, CVTemplateMeta, MotivationLetterTemplateMeta, ExperienceSection,
 } from '../types/cv';
 
-export interface BackendConfig {
-  // LLM settings
-  analysisModel: ModelConfig;
-  statementEditorModel: ModelConfig;
-  coverLetterEditorModel: ModelConfig;
-  // Processing policies
-  rewritePolicy: RewritePolicy;
-  analysisPolicy: AnalysisPolicy;
-  // Outputs
-  outputs: OutputsConfig;
-  concurrency_limit: number;
-}
-
-export interface ModelConfig {
-  provider: 'ollama' | 'google';
-  model: string;
-  config: Record<string, unknown>;
-}
-
-export interface SummaryMetrics {
-  mean_section_relevance?: number;
-  weighted_mean_section_relevance?: number;
-  conciseness_relevance_metric?: number;
-  overall_score?: number;
-  sections_count?: number;
-  [key: string]: unknown;
-}
-
-export interface CVResultItem {
-  text: string;
-  relevance_score?: number;
-  explanation?: string;
-  posting_evidence?: string;
-  kept?: boolean;
-}
-
-export interface CVResultSection {
-  section_title: string;
-  company?: string;
-  position?: string;
-  duration?: string;
-  section_score?: number;
-  explanation?: string;
-  items: CVResultItem[];
-}
-
-export interface Artifact {
-  id: string;
-  kind: string;
-  filename: string;
-  path?: string;
-  source?: string;
-}
-
-export interface Submission {
-  id: string;
-  job_id: string;
-  company: string;
-  job_title: string;
-  overall_score?: number | null;
-  job_entered_at?: string | null;
-  submitted_at?: string | null;
-  result?: string | null;
-  notes?: string | null;
-  cv_snapshot?: Record<string, unknown> | null;
-  scoring_snapshot?: Record<string, unknown> | null;
-  artifacts?: Artifact[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface JobAnalysis {
-  basic_analysis?: {
-    skills?: string;
-    qualifications?: string;
-    preferred_qualifications?: string;
-  };
-  industry_and_position_analysis?: {
-    job_title?: string;
-    company_name?: string;
-    industry?: string;
-    hands_on_skills?: number;
-    business_skills?: number;
-  };
-  [key: string]: unknown;
-}
-
-export interface BackendJob {
-  id: string;
-  status: ProcessingState['status'];
-  archived?: boolean;
-  job_description?: string;
-  progress?: string;
-  message?: string;
-  result?: {
-    overall_score?: number;
-    artifacts?: Artifact[];
-    [key: string]: unknown;
-  };
-  job_analysis?: JobAnalysis;
-  error?: string;
-  updated_at?: string;
-  created_at?: string;
-  createdAt?: string;
-}
-
-export interface RewritePolicy {
-  maxSectionItemsKeep: number;
-  minSectionItemsKeep: number;
-  minRelevanceScore: number;
-}
-
-export interface AnalysisPolicy {
-  maxSectionParseRetries: number;
-}
-
-export interface OutputsConfig {
-  includeCoverLetter: boolean;
-  renderPDF: boolean;
-  includeLaTeX: boolean;
-  includeScoringComments: boolean;
-}
-
-export interface ProcessingState {
-  jobId: string | null;
-  status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'cancelled';
-  progress: string | null;
-  message: string | null;
-  result: CVJobResult | null;
-  jobAnalysis: JobAnalysis | null;
-  error: string | null;
-  lastSuccessfulJobId?: string | null;
-}
-
 export interface UIState {
   sidebarCollapsed: boolean;
   activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history' | 'submissions';
@@ -194,50 +67,6 @@ export interface UIState {
   showExportDialog: boolean;
   // Others
   isLoading: boolean;
-}
-
-export interface CVJobResult {
-  job_id: string;
-  status: string;
-  summary_metrics: SummaryMetrics;
-  experience_analysis: CVResultSection[];
-  artifacts: Artifact[];
-}
-
-// ── Working Copy Types ──
-
-export interface SectionFilterConfig {
-  minRelevanceScore: number;
-  minItemsKeep: number;
-  maxItemsKeep: number;
-}
-
-export interface WorkingCopyItem {
-  text: string;
-  originalText: string;
-  relevanceScore: number | null;
-  explanation: string | null;
-  postingEvidence: string | null;
-  kept: boolean;
-}
-
-export interface WorkingCopySection {
-  company: string;
-  position: string;
-  duration: string;
-  sectionScore: number | null;
-  sectionExplanation: string | null;
-  sectionPostingEvidence: string | null;
-  filterConfig: SectionFilterConfig;
-  items: WorkingCopyItem[];
-}
-
-export interface WorkingCopy {
-  jobId: string;
-  personalStatement: string;
-  sections: WorkingCopySection[];
-  createdAt: string | null;
-  updatedAt: string | null;
 }
 
 const JOB_STORAGE_KEY = 'auto_cv_saved_jobs_v1';

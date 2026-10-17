@@ -403,17 +403,35 @@ with explicit schemas and frontend transport types outside React context.
 
 Acceptance criteria:
 
-- [ ] Request/response types match real service return values, including the
+- [x] Request/response types match real service return values, including the
   processor's result and posting-analysis output.
-- [ ] SSE progress/completion events have a declared schema; frontend consumption
+- [x] SSE progress/completion events have a declared schema; frontend consumption
   preserves job identity, terminal status, result, errors, and posting analysis.
-- [ ] Section and bullet evidence survive validation, persistence, HTTP, and
+- [x] Section and bullet evidence survive validation, persistence, HTTP, and
   frontend mapping.
-- [ ] Artifact fields use one convention; older records are normalized at a
+- [x] Artifact fields use one convention; older records are normalized at a
   boundary, not guessed by each consumer.
-- [ ] Malformed new results fail validation instead of being retained as an
+- [x] Malformed new results fail validation instead of being retained as an
   arbitrary dictionary. Frontend mappings are typed and contract-tested;
   OpenAPI-derived types are preferred if practical.
+
+Delivery evidence (epic branch, not yet merged):
+
+- SSE updates/completion serialize the same validated model as HTTP. Section
+  evidence is retained; malformed updates cannot partially change memory/disk.
+  Four RFK-03 expected failures are fixed and unmarked.
+- Artifact aliases normalize only on persisted-record reads, without rewriting
+  source files. Wrong-kind wildcard download fallback is removed.
+- Frontend transport types are generated directly from the Pydantic JSON Schemas
+  underlying FastAPI, with a committed-type drift test. UI models/mappings no
+  longer depend on React context or arbitrary record casts.
+- **104 backend tests passed; two strict expected failures remain** for RFK-04
+  and RFK-06. **Five typed frontend mapping tests and four isolated Chromium
+  tests passed**; build, scoped lint, schema-generation check and diff check pass.
+- A shared JSON fixture is validated against real HTTP/SSE serializers and
+  consumed by frontend mappings, including evidence, zero/null scores, terminal
+  errors, job identity and working-copy round trips.
+- Contract/compatibility details: [`docs/API_CONTRACTS.md`](docs/API_CONTRACTS.md).
 
 ### RFK-04 — Separate analysis, selection, editing, and rendering
 

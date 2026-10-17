@@ -164,8 +164,8 @@ const ProcessingTab: React.FC = () => {
         const latestSucceeded = [...jobs]
           .filter((j: BackendJob) => j.status === 'succeeded')
           .sort((a: BackendJob, b: BackendJob) => {
-            const ta = new Date((a.updated_at || a.created_at || a.createdAt || 0) as string | number).getTime();
-            const tb = new Date((b.updated_at || b.created_at || b.createdAt || 0) as string | number).getTime();
+            const ta = new Date(a.updated_at).getTime();
+            const tb = new Date(b.updated_at).getTime();
             return tb - ta;
           })[0];
 
@@ -211,7 +211,7 @@ const ProcessingTab: React.FC = () => {
     try {
       setIsLoadingWorkingCopy(true);
       const data = await apiService.getWorkingCopy(jobId);
-      const wc = apiService.transformWorkingCopyFromBackend(data as Record<string, unknown>);
+      const wc = apiService.transformWorkingCopyFromBackend(data);
       setLocalWorkingCopy(wc);
       dispatch({ type: 'SET_WORKING_COPY', payload: wc });
     } catch (err) {
@@ -418,7 +418,7 @@ const ProcessingTab: React.FC = () => {
         cv_template_path: templateRegistry.cv_templates[selectedTemplateId],
         include_latex: state.backendConfig.outputs.includeLaTeX,
         render_pdf: state.backendConfig.outputs.renderPDF,
-        working_copy: backendWC as Record<string, unknown>,
+        working_copy: backendWC,
       });
       dispatch({ type: 'SET_PROCESSING_STATE', payload: nextState });
       dispatch({ type: 'SET_UI_STATE', payload: { showExportDialog: true } });
@@ -444,10 +444,7 @@ const ProcessingTab: React.FC = () => {
         const processingState = apiService.transformJobToProcessingState(data);
         dispatch({ 
           type: 'SET_PROCESSING_STATE', 
-          payload: { 
-            ...processingState,
-            result: state.processingState?.result || processingState.result
-          } 
+          payload: processingState
         });
       } catch (e) {
         console.error('Error parsing job_update:', e);

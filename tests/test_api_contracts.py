@@ -111,3 +111,23 @@ def test_successful_job_contract_retains_section_and_bullet_evidence(client):
     payload = client.get(f"/v1/cv-jobs/{job.id}").json()
     assert payload["result"]["sections"][0]["posting_evidence"] == "Role evidence"
     assert payload["result"]["sections"][0]["items"][0]["posting_evidence"] == "Bullet evidence"
+
+
+def test_shared_frontend_fixture_is_the_real_http_and_sse_contract(client):
+    from jobs.job_manager import job_manager
+    from models.api_models import CVJobResponse
+
+    fixture = json.loads((Path(__file__).parent / "fixtures/job-contract.json").read_text())
+    job = CVJobResponse.model_validate(fixture)
+    job_manager._jobs[job.id] = job
+    job_manager._save_job(job)
+    assert client.get(f"/v1/cv-jobs/{job.id}").json() == fixture
+    stream = client.get(f"/v1/cv-jobs/{job.id}/stream").text
+    for frame in stream.strip().split("\n\n"):
+        assert json.loads(frame.splitlines()[1].removeprefix("data: ")) == fixture
+
+
+def test_committed_frontend_types_match_backend_schemas():
+    from tools.generate_api_types import OUTPUT, generate
+
+    assert OUTPUT.read_text() == generate()

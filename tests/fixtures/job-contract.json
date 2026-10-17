@@ -1,0 +1,26 @@
+{
+  "id": "contract-job",
+  "status": "succeeded",
+  "archived": false,
+  "job_description": "Python engineer",
+  "progress": "Processing complete",
+  "message": "Complete",
+  "result": {
+    "personal_statement": "Experienced engineer",
+    "sections": [{
+      "title": "Experience", "company": "Example", "position": "Engineer", "duration": "2020",
+      "section_score": 0, "explanation": "Role explanation", "posting_evidence": "Role evidence",
+      "items": [{"text": "Built Python software", "relevance_score": 0,
+        "explanation": "Bullet explanation", "posting_evidence": "Bullet evidence", "kept": false}],
+      "aggregate_score": null
+    }],
+    "overall_score": 0,
+    "summary_metrics": {"weighted_mean_section_relevance": 0},
+    "artifacts": [{"id": "pdf-contract", "kind": "pdf", "filename": "cv.pdf", "path": null, "source": "working_copy"}]
+  },
+  "job_analysis": {"basic_analysis": {"skills": "Python", "qualifications": "Delivery experience", "preferred_qualifications": null},
+    "industry_and_position_analysis": {"job_title": "Engineer", "company_name": "Example", "industry": null}},
+  "error": null,
+  "created_at": "2026-10-17T12:00:00",
+  "updated_at": "2026-10-17T12:00:01"
+}
