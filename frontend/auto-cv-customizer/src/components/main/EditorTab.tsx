@@ -49,10 +49,6 @@ const EditorTab: React.FC = () => {
     try {
       setIsLoading(true);
       const data = await apiService.getCVVersion(versionId);
-      // Ensure alternative_statements exists
-      if (!data.alternative_statements) {
-        data.alternative_statements = [];
-      }
       setCvData(data);
       setJsonContent(JSON.stringify(data, null, 4));
       setIsDirty(false);

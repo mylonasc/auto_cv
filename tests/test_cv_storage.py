@@ -114,3 +114,130 @@ def test_failed_replacement_retains_original_and_backup(tmp_path, flat_cv, monke
     backups = list(tmp_path.glob("*.bak"))
     assert len(backups) == 1 and backups[0].read_bytes() == original
     assert not list(tmp_path.glob(".master.json.*"))
+
+
+@pytest.mark.parametrize("shape", ["flat", "nested", "duplicated", "list"])
+def test_api_and_processor_use_same_adapter_without_rewriting_source(client, isolated_runtime, flat_cv, shape):
+    from services.cv_processor import CVProcessor
+
+    if shape == "nested":
+        payload = {"candidate": {k: v for k, v in flat_cv.items() if k != "cv_template"},
+                   "cv_template": flat_cv["cv_template"]}
+    elif shape == "duplicated":
+        payload = dict(flat_cv, candidate={k: v for k, v in flat_cv.items() if k != "cv_template"})
+    elif shape == "list":
+        payload = flat_cv["experience_sections"]
+    else:
+        payload = flat_cv
+    path = isolated_runtime / "cv_section_data" / "test" / "master.json"
+    path.parent.mkdir()
+    original = json.dumps(payload).encode()
+    path.write_bytes(original)
+    response = client.get("/v1/cv-data/test/versions/master")
+    assert response.status_code == 200
+    canonical = response.json()
+    assert canonical == CVProcessor(candidate="test")._load_cv_data().model_dump(mode="json")
+    assert canonical["schema_version"] == 1
+    assert set(canonical["candidate"]) == {"candidate_id", "full_name", "profile"}
+    assert path.read_bytes() == original
+    assert not list(path.parent.glob("*.bak"))
+    assert client.put("/v1/cv-data/test/versions/master", json=canonical).status_code == 200
+    assert json.loads(path.read_text()) == canonical
+    assert next(path.parent.glob("*.bak")).read_bytes() == original
+
+
+@pytest.mark.parametrize("location", ["cv_section_data", "."])
+def test_legacy_master_filename_is_read_only_fallback(client, isolated_runtime, flat_cv, location):
+    from services.cv_processor import CVProcessor
+
+    source = isolated_runtime / location / "test_cv_data.json"
+    original = json.dumps(flat_cv).encode()
+    source.write_bytes(original)
+    response = client.get("/v1/cv-data/test")
+    assert response.status_code == 200
+    assert response.json() == CVProcessor(candidate="test")._load_cv_data().model_dump(mode="json")
+    assert client.get("/v1/cv-data/test/versions").json()[0]["id"] == "master"
+    destination = isolated_runtime / "cv_section_data" / "test" / "master.json"
+    assert not destination.exists()
+    assert client.put("/v1/cv-data/test", json=response.json()).status_code == 200
+    assert destination.exists()
+    assert source.read_bytes() == original
+
+
+def test_api_rejects_conflicting_stored_data_without_overwriting(client, isolated_runtime, flat_cv):
+    path = isolated_runtime / "cv_section_data" / "test" / "master.json"
+    path.parent.mkdir()
+    flat_cv["candidate"] = {"personal_statement": "Conflicting"}
+    original = json.dumps(flat_cv).encode()
+    path.write_bytes(original)
+    response = client.get("/v1/cv-data/test/versions/master")
+    assert response.status_code == 409
+    assert "personal_statement" in response.json()["detail"]
+    assert path.read_bytes() == original
+
+
+def test_api_rejects_competing_payload_fields_and_wrong_identity(client, flat_cv):
+    payload = normalize_cv_data(flat_cv, "test").model_dump(mode="json")
+    payload["candidate"]["personal_statement"] = "Duplicate"
+    assert client.post("/v1/cv-data/test/versions/master", json=payload).status_code == 422
+    del payload["candidate"]["personal_statement"]
+    payload["candidate"]["candidate_id"] = "someone-else"
+    assert client.post("/v1/cv-data/test/versions/master", json=payload).status_code == 422
+    assert client.get("/v1/cv-data/test/versions").json() == []
+
+
+def test_template_resolution_is_render_time_only_and_honors_overrides(flat_cv):
+    from src.template_registry import resolve_cv_templates
+
+    cv = normalize_cv_data(flat_cv, "test")
+    assert cv.cv_template.template_path is None
+    resolved = resolve_cv_templates(cv)
+    assert resolved.cv_template.template_path.endswith("latex_cv_template_v2.tex")
+    assert cv.cv_template.template_path is None
+    overridden = resolve_cv_templates(cv, cv_template_id="default_cv")
+    assert overridden.cv_template.template_path.endswith("latex_cv_template_v0.tex")
+    explicit = resolve_cv_templates(cv, cv_template_id="template2", cv_template_path="custom.tex")
+    assert explicit.cv_template.template_path.endswith("custom.tex")
+
+
+@pytest.mark.parametrize("template_id", ["default_cv", "template2"])
+def test_supported_cv_loads_and_expands_each_template(tmp_path, template_id, pdf_calls):
+    from pathlib import Path
+    from src.template_registry import resolve_cv_templates
+    from src.utils import FullCVDocument, DocSection, DocSectionItem
+
+    repo = Path(__file__).resolve().parents[1]
+    # Use the tracked supported CV, not an application store written by the test.
+    source = repo / "server_application/backend/cv_section_data/charilaos_mylonas/master.json"
+    original = source.read_bytes()
+    cv = resolve_cv_templates(load_cv_file(source, "charilaos_mylonas"), cv_template_id=template_id)
+    document = FullCVDocument(cv.personal_statement,
+                             DocSection(cv.cv_template.experience_section_title, [
+                                 DocSectionItem(**section.model_dump()) for section in cv.experience_sections
+                             ]), cv_template=cv.cv_template)
+    document.render_pdf(str(tmp_path / "cv.pdf"))
+    assert cv.personal_statement in pdf_calls[0].latex
+    assert cv.experience_sections[0].text_items[0] in pdf_calls[0].latex
+    assert "<statement>" not in pdf_calls[0].latex
+    assert "<experience_section>" not in pdf_calls[0].latex
+    assert source.read_bytes() == original
+
+
+@pytest.mark.asyncio
+async def test_cli_consumes_canonical_cv_and_preserves_template_choice(tmp_path, flat_cv, pdf_calls):
+    from tools.autocv import _make_parser, run_pipeline
+
+    source = tmp_path / "input.json"
+    save_cv_file(source, normalize_cv_data(flat_cv, "test"))
+    original = source.read_bytes()
+    posting = tmp_path / "job.txt"
+    posting.write_text("Python engineer needed")
+    args = _make_parser().parse_args([
+        "--candidate-json", str(source), "--candidate-id", "test",
+        "--job-posting", str(posting), "--output-dir", str(tmp_path / "output"),
+        "--skip-cover-letter",
+    ])
+    await run_pipeline(args)
+    assert len(pdf_calls) == 3
+    assert all("resume_v2" in call.latex for call in pdf_calls)
+    assert source.read_bytes() == original

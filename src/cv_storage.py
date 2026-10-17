@@ -20,6 +20,25 @@ class CVDataConflict(ValueError):
     """Legacy copies disagree; choosing a winner could silently lose edits."""
 
 
+def cv_version_path(data_dir: str | Path, candidate_id: str, version_id: str) -> Path:
+    """Canonical destination for a version, matching historical filename rules."""
+    filename = Path(version_id).name
+    if not filename.endswith(".json"):
+        filename += ".json"
+    return Path(data_dir) / candidate_id / filename
+
+
+def find_cv_file(data_dir: str | Path, candidate_id: str, version_id: str) -> Path:
+    """Prefer versioned storage; legacy master locations are read-only fallbacks."""
+    path = cv_version_path(data_dir, candidate_id, version_id)
+    if not path.exists() and path.name == "master.json":
+        for directory in (Path(data_dir), Path(data_dir).parent):
+            legacy = directory / f"{candidate_id}_cv_data.json"
+            if legacy.exists():
+                return legacy
+    return path
+
+
 def normalize_cv_data(data: Any, candidate_id: str) -> CVData:
     """Adapt flat, nested, duplicated, or experience-list legacy payloads.
 

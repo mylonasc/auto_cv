@@ -194,8 +194,8 @@ Nice to have:
     
     try {
       setIsSavingCV(true);
-      await apiService.updateCVVersion(state.currentCVVersionId || 'master', updated);
-      setCvData(updated);
+      const saved = await apiService.updateCVVersion(state.currentCVVersionId || 'master', updated);
+      setCvData(saved);
       setEditingItemId(null);
     } catch (error) {
       console.error('Failed to save CV edit:', error);

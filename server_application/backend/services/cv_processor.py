@@ -2,9 +2,7 @@
 CV Processing service that wraps the existing CV customization logic.
 """
 import os
-import json
 import asyncio
-import shutil
 from typing import Optional, Dict, Any
 
 from core.paths import CV_DATA_DIR, ARTIFACTS_DIR, ensure_data_dirs, ensure_project_root_on_path
@@ -15,7 +13,9 @@ ensure_data_dirs()
 from src.utils import JobPostAnalysis, FullCVDocument, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer
 from src.models import ModelFactory
-from src.domain import candidate_bundle_from_legacy
+from src.cv_storage import find_cv_file, load_cv_file
+from src.domain import CVData
+from src.template_registry import resolve_cv_templates
 
 from models.api_models import (
     CVJobResult, BackendConfig, JobStatus
@@ -40,36 +40,10 @@ class CVProcessor:
         self.config = config or BackendConfig()
         self.cv_version_id = cv_version_id
         
-    def _load_cv_data(self) -> Dict[str, Any]:
+    def _load_cv_data(self) -> CVData:
         """Load the candidate's CV data from the versioned storage."""
-        candidate_dir = os.path.join(
-            CV_DATA_DIR,
-            self.candidate
-        )
-        # Ensure dir exists (it will be created by the API, but let's be safe)
-        if not os.path.exists(candidate_dir):
-            os.makedirs(candidate_dir, exist_ok=True)
-            
-        path = os.path.join(candidate_dir, f'{self.cv_version_id}.json')
-        
-        # Fallback to legacy path if master doesn't exist
-        if not os.path.exists(path) and self.cv_version_id == "master":
-            legacy_paths = [
-                os.path.join(CV_DATA_DIR, f'{self.candidate}_cv_data.json'),
-                os.path.join(os.path.dirname(CV_DATA_DIR), f'{self.candidate}_cv_data.json'),
-            ]
-            legacy_path = next((p for p in legacy_paths if os.path.exists(p)), None)
-            if legacy_path:
-                # Migrate to new location
-                shutil.copy(legacy_path, path)
-            else:
-                raise FileNotFoundError(f"CV data not found for candidate {self.candidate}")
-        
-        if not os.path.exists(path):
-             raise FileNotFoundError(f"CV version '{self.cv_version_id}' not found for candidate {self.candidate}")
-
-        with open(path, 'r') as f:
-            return json.load(f)
+        path = find_cv_file(CV_DATA_DIR, self.candidate, self.cv_version_id)
+        return load_cv_file(path, self.candidate)
     
     def _create_model_factory(self, model_config) -> ModelFactory:
         """Create a ModelFactory from config."""
@@ -107,26 +81,18 @@ class CVProcessor:
             if status_callback:
                 await status_callback(job_id, JobStatus.PROCESSING, "Loading CV data...")
             
-            cv_data = self._load_cv_data()
-            bundle = candidate_bundle_from_legacy(
-                cv_data,
-                candidate_id=self.candidate,
-                cv_template_id=cv_data.get("cv_template", {}).get("template_id", "default_cv"),
-                cv_template_path=cv_data.get("cv_template", {}).get("template_path"),
-                motivation_template_id=cv_data.get("motivation_letter_template", {}).get("template_id", "default_motivation_letter"),
-                motivation_template_path=cv_data.get("motivation_letter_template", {}).get("template_path"),
-            )
+            cv_data = resolve_cv_templates(self._load_cv_data())
             
             # Create document sections
-            experience_fields = [i.model_dump() for i in bundle.candidate.experience_sections]
-            master_personal_statement = bundle.candidate.personal_statement
-            alternative_statements = bundle.candidate.alternative_statements
+            experience_fields = [i.model_dump() for i in cv_data.experience_sections]
+            master_personal_statement = cv_data.personal_statement
+            alternative_statements = cv_data.alternative_statements
             
             doc_section_items = [DocSectionItem(**_d) for _d in experience_fields]
-            doc_section = DocSection('Work Experience', doc_section_items)
+            doc_section = DocSection(cv_data.cv_template.experience_section_title, doc_section_items)
             
             # Initial full CV document with master statement
-            fcv = FullCVDocument(master_personal_statement, doc_section, cv_template=bundle.cv_template)
+            fcv = FullCVDocument(master_personal_statement, doc_section, cv_template=cv_data.cv_template)
             
             # Perform cross-analysis
             cvca = CVCrossAnalyzer(jpa, fcv)

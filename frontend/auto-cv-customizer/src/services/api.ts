@@ -8,13 +8,13 @@ import type {
   ProcessingState, CVJobResult,
   BackendConfig,
   BackendJob,
-  CVData,
   CVVersionInfo,
   Artifact,
   CVResultSection,
   SummaryMetrics,
   JobAnalysis,
 } from '../contexts/AppStateContext';
+import type { CVData } from '../types/cv';
 
 export interface TemplateRegistryResponse {
   cv_templates: Record<string, string>;

@@ -250,6 +250,11 @@ Additional endpoints:
 - `GET /v1/models/available` - model availability
 - `GET/PUT /v1/cv-data/{candidate}` and versioned variants under `/v1/cv-data/{candidate}/versions`
 
+CV payloads use a single versioned schema: candidate metadata is nested, while
+statements and experience have one top-level location. Legacy files are adapted
+on read without being rewritten; explicit saves preserve recovery backups.
+See [CV schema and migration/recovery rules](docs/CV_SCHEMA.md).
+
 ## System Dependencies
 
 For PDF rendering, the following LaTeX packages are needed:

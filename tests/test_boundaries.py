@@ -47,7 +47,6 @@ def test_cv_read_round_trip_preserves_content_and_metadata(client, cv_payload, p
 
 @pytest.mark.parametrize("path", ["/v1/cv-data/test", "/v1/cv-data/test/versions/master"])
 @pytest.mark.parametrize("field", ["personal_statement", "alternative_statements", "experience_sections"])
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-02 #7: nested content overwrites editor changes")
 def test_cv_editor_changes_survive_save(client, cv_payload, path, field):
     assert client.post("/v1/cv-data/test/versions/master", json=cv_payload).status_code == 200
     edited = client.get(path).json()

@@ -22,7 +22,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from src.domain import candidate_bundle_from_legacy
+from src.cv_storage import load_cv_file
+from src.template_registry import resolve_cv_templates
 from src.models import ModelFactory
 from src.utils import JobPostAnalysis, FullCVDocument, CoverLetterModel, DocSectionItem, DocSection
 from src.utils_cross_analysis import CVCrossAnalyzer, CoverLetterDrafter
@@ -53,19 +54,6 @@ def _log_agg_metrics(agg_metrics, txt_suff: str) -> None:
     _log(f" - ({txt_suff}) Section Scores:\n", agg_metrics[1])
 
 
-def _load_json(path: str) -> dict:
-    """ load json.
-
-    Args:
-        path: TODO: describe.
-
-    Returns:
-        TODO: describe return value.
-    """
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
 def _make_parser() -> argparse.ArgumentParser:
     """ make parser.
 
@@ -83,9 +71,9 @@ def _make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prof-signature", default="\\\\Machine Learning Engineer \\\\ Zurich", help="Cover letter professional signature.")
 
     parser.add_argument("--cv-template", default=None, help="CV latex template path (overrides template ID).")
-    parser.add_argument("--cv-template-id", default="default_cv", help="CV template identifier from config/templates.json.")
+    parser.add_argument("--cv-template-id", default=None, help="Override the stored CV template ID using config/templates.json.")
     parser.add_argument("--motivation-template", default=None, help="Motivation letter template path (overrides template ID).")
-    parser.add_argument("--motivation-template-id", default="default_motivation_letter", help="Motivation template identifier from config/templates.json.")
+    parser.add_argument("--motivation-template-id", default=None, help="Override the stored motivation template ID using config/templates.json.")
 
     parser.add_argument("--analysis-provider", default="google", choices=["google", "ollama"], help="Analysis model provider.")
     parser.add_argument("--analysis-model", default="gemini-3.1-pro-preview", help="Analysis model name.")
@@ -111,10 +99,8 @@ async def run_pipeline(args: argparse.Namespace) -> str:
     Returns:
         TODO: describe return value.
     """
-    candidate_payload = _load_json(args.candidate_json)
-    bundle = candidate_bundle_from_legacy(
-        candidate_payload,
-        candidate_id=args.candidate_id,
+    cv_data = resolve_cv_templates(
+        load_cv_file(args.candidate_json, args.candidate_id),
         cv_template_id=args.cv_template_id,
         cv_template_path=args.cv_template,
         motivation_template_id=args.motivation_template_id,
@@ -127,8 +113,8 @@ async def run_pipeline(args: argparse.Namespace) -> str:
 
     tmp_dir = tempfile.mkdtemp(prefix="autocv_")
     _log(f"- using temp folder: {tmp_dir}")
-    _log(f"- loaded {len(bundle.candidate.alternative_statements)} personal statements.")
-    _log(f"- loaded {len(bundle.candidate.experience_sections)} professional experiences.")
+    _log(f"- loaded {len(cv_data.alternative_statements)} personal statements.")
+    _log(f"- loaded {len(cv_data.experience_sections)} professional experiences.")
 
     analysis_model = ModelFactory(
         model_provider=args.analysis_provider,
@@ -146,9 +132,9 @@ async def run_pipeline(args: argparse.Namespace) -> str:
     jpa = JobPostAnalysis(args.job_posting, llm_model=analysis_model)
     await jpa.analyze()
 
-    doc_section_items = [DocSectionItem(**item.model_dump()) for item in bundle.candidate.experience_sections]
-    doc_section = DocSection(bundle.cv_template.experience_section_title, doc_section_items)
-    fcv = FullCVDocument(bundle.candidate.personal_statement, doc_section.copy(), cv_template=bundle.cv_template)
+    doc_section_items = [DocSectionItem(**item.model_dump()) for item in cv_data.experience_sections]
+    doc_section = DocSection(cv_data.cv_template.experience_section_title, doc_section_items)
+    fcv = FullCVDocument(cv_data.personal_statement, doc_section.copy(), cv_template=cv_data.cv_template)
 
     cvca = CVCrossAnalyzer(
         jpa,
@@ -157,13 +143,13 @@ async def run_pipeline(args: argparse.Namespace) -> str:
         llm_editor_model=authoring_model,
     )
 
-    if bundle.candidate.alternative_statements:
-        await cvca.analyze_rewrite_personal_statement(bundle.candidate.alternative_statements)
-        rewritten_statement = cvca.data.get("edited_statement") or bundle.candidate.personal_statement
+    if cv_data.alternative_statements:
+        await cvca.analyze_rewrite_personal_statement(cv_data.alternative_statements)
+        rewritten_statement = cvca.data.get("edited_statement") or cv_data.personal_statement
     else:
-        rewritten_statement = bundle.candidate.personal_statement
+        rewritten_statement = cv_data.personal_statement
 
-    fcv = FullCVDocument(rewritten_statement, doc_section.copy(), cv_template=bundle.cv_template)
+    fcv = FullCVDocument(rewritten_statement, doc_section.copy(), cv_template=cv_data.cv_template)
     cvca = CVCrossAnalyzer(
         jpa,
         fcv,
@@ -185,7 +171,7 @@ async def run_pipeline(args: argparse.Namespace) -> str:
     _log_agg_metrics(metrics_post, "after edits")
 
     if not args.skip_cover_letter:
-        clm = CoverLetterModel(motivation_template=bundle.motivation_letter_template)
+        clm = CoverLetterModel(motivation_template=cv_data.motivation_letter_template)
         cld = CoverLetterDrafter(cvca, cover_letter_model)
         letter_body = await cld.get_cover_letter_text()
         letter_body = letter_body.replace("&", "\\&")
