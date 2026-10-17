@@ -12,6 +12,8 @@ from src.config import BackendConfig
 from src.domain import CVData, CandidateMetadata, ExperienceSectionData
 from src.pipeline import analyze_posting, bullet_scoring_chain
 from src.utils_cross_analysis import AnalysisResultCache
+from src.analysis import Assessment
+from src.outcomes import StageFailure
 from .cv_processor import CVProcessor
 from .job_runner import JobRunner
 from .working_copy import create_working_copy, select_working_copy, document_from_working_copy
@@ -140,7 +142,11 @@ class ApplicationServices:
         for index in indices:
             item = section.items[index]
             text = text_map.get(index, item.text)
-            result = await chain.ainvoke({"cv_experience": text, "job_posting_data": str(job.job_analysis or {})})
+            try:
+                raw = await chain.ainvoke({"cv_experience": text, "job_posting_data": str(job.job_analysis or {})})
+                result = Assessment.model_validate(raw.model_dump())
+            except Exception as error:
+                raise StageFailure("rescore", f"section={section.id}, bullet={item.id}", error) from error
             changes[item.id] = (item.text, text, result)
             results.append(RescoredItemResult(index=index, relevance_score=result.experience_relevance_score,
                 explanation=result.explanation, posting_evidence=result.posting_evidence, scored_text=text))

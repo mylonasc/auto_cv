@@ -35,6 +35,15 @@ for (const status of ['failed', 'cancelled'] as const) {
   });
 }
 
+test('fallback provenance survives HTTP and SSE mapping without claiming model success', () => {
+  const analysis: API.JobAnalysis = { basic_analysis: { skills: 'python' }, provenance: {
+    skills: { status: 'fallback', method: 'posting_heuristic_v1', reason: 'Placeholder model response' },
+  } };
+  const snapshot = { ...job, job_analysis: analysis };
+  assert.deepEqual(jobToView(snapshot).jobAnalysis, analysis);
+  assert.deepEqual(jobToView(JSON.parse(JSON.stringify(snapshot))).jobAnalysis, analysis);
+});
+
 test('missing metrics stay absent rather than inventing a succeeded result or job ID', () => {
   assert.ok(job.result);
   const view = resultToView({ ...job.result, summary_metrics: null });

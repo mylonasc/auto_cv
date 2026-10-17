@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from core.paths import StoragePaths
 from services.application import ApplicationServices, OperationError
 from api import cv_jobs, config, models, cv_data, submissions
+from src.outcomes import StageFailure
 
 
 def create_app(*, paths=None, services=None):
@@ -32,6 +33,10 @@ def create_app(*, paths=None, services=None):
     @app.exception_handler(OperationError)
     async def operation_error(request: Request, error: OperationError):
         return JSONResponse(status_code=error.status, content={"detail": error.message})
+
+    @app.exception_handler(StageFailure)
+    async def stage_error(request: Request, error: StageFailure):
+        return JSONResponse(status_code=502, content={"detail": str(error)})
 
     @app.exception_handler(FileNotFoundError)
     async def missing(request: Request, error: FileNotFoundError):

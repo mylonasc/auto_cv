@@ -2,6 +2,8 @@ import json
 import asyncio
 import hashlib
 import threading
+import logging
+from copy import deepcopy
 from bs4 import BeautifulSoup
 import os
 import pandas as pd
@@ -11,16 +13,20 @@ from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 from .analysis import Assessment, AnalyzedBullet, AnalyzedRole, AnalysisSnapshot, SelectionPolicy, select_bullets, aggregate_metrics, score_comment
 from .utils import DocSection, DocSectionItem, FullCVDocument
+from .outcomes import StageFailure, gather_owned
+
+logger = logging.getLogger(__name__)
+CACHE_FORMAT = 2
 
 class BulletAnalysis(BaseModel):
     """BulletAnalysis model."""
-    experience_relevance_score: float = Field(..., description="Score from 0 to 10 based on relevance to the job posting.")
+    experience_relevance_score: float = Field(..., ge=0, le=10, allow_inf_nan=False, description="Score from 0 to 10 based on relevance to the job posting.")
     explanation: str = Field(..., description="Short explanation (less than 20 words) of why the score was assigned.")
     posting_evidence: str = Field(..., description="Which parts of the job posting analysis are relevant to this bullet.")
 
 class SectionAnalysis(BaseModel):
     """SectionAnalysis model."""
-    experience_relevance_score: float = Field(..., description="Overall score from 0 to 10 for the entire role/experience.")
+    experience_relevance_score: float = Field(..., ge=0, le=10, allow_inf_nan=False, description="Overall score from 0 to 10 for the entire role/experience.")
     explanation: str = Field(..., description="Concise summary justifying the overall score based on the individual items.")
     posting_evidence: str = Field(..., description="Key skills/requirements satisfied by this entire section.")
 
@@ -70,39 +76,27 @@ section_synthesis_analysis_prompt = '''
 '''
 
 class AnalysisResultCache:
-    """Simple disk-backed cache for analysis calls."""
+    """Best-effort v2 cache. Unrecognized/corrupt files remain untouched."""
 
     def __init__(self, cache_path: Optional[str] = None):
-        """  init  .
-
-        Args:
-            cache_path: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
         self._lock = threading.RLock()
         self.cache_path = cache_path or self._default_cache_path()
         self._cache: Dict[str, Dict[str, Any]] = {}
+        self.warnings = []
+        self._disk_writable = True
         self._load()
 
-    def _default_cache_path(self) -> str:
-        """ default cache path.
+    def warn(self, message):
+        self.warnings.append(message)
+        logger.warning("Analysis cache: %s", message)
 
-        Returns:
-            TODO: describe return value.
-        """
+    def _default_cache_path(self) -> str:
         cv_root = os.getenv('CV_CUSTOMIZER_ROOT', os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
         data_root = os.getenv('AUTO_CV_DATA_ROOT', os.path.join(cv_root, 'data'))
         cache_dir = os.path.join(data_root, 'cache')
         return os.path.join(cache_dir, 'analysis_results_cache.json')
 
     def _load(self):
-        """ load.
-
-        Returns:
-            TODO: describe return value.
-        """
         with self._lock:
             if not os.path.exists(self.cache_path):
                 self._cache = {}
@@ -110,75 +104,50 @@ class AnalysisResultCache:
             try:
                 with open(self.cache_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    if isinstance(data, dict):
-                        self._cache = data
-                    else:
-                        self._cache = {}
-            except Exception:
+                    if not isinstance(data, dict) or data.get('format') != CACHE_FORMAT or not isinstance(data.get('entries'), dict):
+                        raise ValueError("Unrecognized cache format")
+                    self._cache = data['entries']
+            except (OSError, ValueError):
                 self._cache = {}
+                self._disk_writable = False
+                self.warn("Unreadable/legacy cache ignored; original retained, disk writes disabled for this instance")
 
     def _save(self):
-        """ save.
-
-        Returns:
-            TODO: describe return value.
-        """
         with self._lock:
+            if not self._disk_writable:
+                return
             try:
-                atomic_write_json(self.cache_path, self._cache)
-            except PermissionError:
-                pass
+                atomic_write_json(self.cache_path, {'format': CACHE_FORMAT, 'entries': self._cache})
+            except (OSError, ValueError):
+                self.warn("Persistence failed; valid analysis retained in memory only")
 
     def get(self, key: str) -> Optional[Dict[str, Any]]:
-        """Get.
-
-        Args:
-            key: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
         with self._lock:
             value = self._cache.get(key)
-            return value.copy() if isinstance(value, dict) else None
+            if value is None:
+                return None
+            try:
+                return Assessment.model_validate(value).model_dump()
+            except ValueError:
+                self._cache.pop(key, None)
+                self.warn("Invalid cached assessment ignored; fresh analysis required")
+                return None
 
     def set(self, key: str, value: Dict[str, Any], persist: bool = True):
-        """Set.
-
-        Args:
-            key: TODO: describe.
-            value: TODO: describe.
-            persist: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
         with self._lock:
-            self._cache[key] = value
+            self._cache[key] = Assessment.model_validate(deepcopy(value)).model_dump()
             if persist:
                 self._save()
 
     def flush(self):
-        """Flush.
-
-        Returns:
-            TODO: describe return value.
-        """
         self._save()
 
 
 def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
-    """ make cache key.
-
-    Args:
-        scope: TODO: describe.
-        payload: TODO: describe.
-
-    Returns:
-        TODO: describe return value.
-    """
+    """Hash complete effective inputs, model settings and prompt/schema identity."""
     key_obj = {
         'scope': scope,
+        'format': CACHE_FORMAT,
         'payload': payload,
     }
     key_json = json.dumps(key_obj, sort_keys=True, ensure_ascii=True)
@@ -237,7 +206,7 @@ class CoverLetterDrafter:
 
 class CVCrossAnalyzer:
     """CVCrossAnalyzer model."""
-    def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3, *, cache=None):
+    def __init__(self, job_post_analyzer, full_cv_document, llm_model = None, llm_editor_model = None, max_section_parse_retries = 3, *, cache=None, model_identity=None):
         """  init  .
 
         Args:
@@ -252,6 +221,8 @@ class CVCrossAnalyzer:
         """
         self.cv_model = full_cv_document
         self.cache = cache if cache is not None else AnalysisResultCache()
+        # Ad hoc callers without declared model settings cannot safely reuse cache.
+        self.model_identity = deepcopy(model_identity)
         self.source_cv = full_cv_document.copy()
         self.snapshot: AnalysisSnapshot | None = None
         self.selected_ids: frozenset[str] | None = None
@@ -294,7 +265,10 @@ class CVCrossAnalyzer:
         statements_list = statements_list or self.personal_statements
         if not statements_list: raise Exception("No personal statements provided")
         statements_str = ''.join(['Personal Statement %i'%i+'-'*10+s+'\n\n' for i, s in enumerate(statements_list)])
-        res = await self.chains['personal_statement_rewrite']['chain'].ainvoke({'job_posting_raw' : post_txt ,'personal_statements' : statements_str})
+        try:
+            res = await self.chains['personal_statement_rewrite']['chain'].ainvoke({'job_posting_raw' : post_txt ,'personal_statements' : statements_str})
+        except Exception as error:
+            raise StageFailure("statement_rewrite", "personal_statement", error) from error
         self.data['edited_statement'] = res.edited_statement
         self.data['statement_list_analysis'] = res.analysis
         
@@ -329,37 +303,36 @@ class CVCrossAnalyzer:
                 if progress_callback:
                     await progress_callback(f"[{completed_items}/{total}] {message}")
 
-        async def assess(scope, payload, chain_name, inputs):
+        async def assess(scope, context_id, chain_name, inputs):
             async with semaphore:
                 try:
-                    key = _make_cache_key(scope, payload)
-                    data = self.cache.get(key)
+                    prompt, schema = ((section_experience_analysis_prompt, BulletAnalysis) if chain_name == 'experience_section_analysis'
+                                      else (section_synthesis_analysis_prompt, SectionAnalysis))
+                    key = _make_cache_key(scope, {'inputs': inputs, 'posting_text': raw,
+                        'model': self.model_identity, 'prompt': prompt, 'schema': schema.model_json_schema(),
+                        'assessment_schema': Assessment.model_json_schema()})
+                    data = self.cache.get(key) if self.model_identity is not None else None
                     if data is None:
                         output = await self.chains[chain_name]['chain'].ainvoke(inputs)
-                        data = output.model_dump()
-                        self.cache.set(key, data, persist=False)
+                        data = Assessment.model_validate(output.model_dump()).model_dump()
+                        if self.model_identity is not None:
+                            self.cache.set(key, data, persist=False)
                     return Assessment.model_validate(data)
-                except Exception:
-                    # Missing assessments remain explicit in the snapshot. RFK-07
-                    # adds stage-level partial/failure reporting and cache policy.
-                    return None
+                except Exception as error:
+                    raise StageFailure(scope, context_id, error) from error
 
         async def analyze_bullet(bullet):
-            assessment = await assess('experience_bullet_v1', {
-                'job_posting_text': raw, 'cv_experience': bullet.text,
-            }, 'experience_section_analysis', {'cv_experience': bullet.text, 'job_posting_data': context})
+            assessment = await assess('experience_bullet', bullet.id,
+                'experience_section_analysis', {'cv_experience': bullet.text, 'job_posting_data': context})
             await progress(f"{'Analyzed' if assessment else 'Failed'} bullet: {bullet.text[:30]}")
             return AnalyzedBullet(id=bullet.id, text=bullet.text, assessment=assessment)
 
         async def analyze_role(role):
-            items = tuple(await asyncio.gather(*(analyze_bullet(item) for item in role.section_item_list)))
+            items = tuple(await gather_owned(*(analyze_bullet(item) for item in role.section_item_list)))
             details = '\n'.join(f"{item.text}: {item.assessment.experience_relevance_score if item.assessment else 'N/A'}"
                                 for item in items)
             content = '\n'.join(item.text for item in items)
-            assessment = await assess('experience_section_synthesis_v2', {
-                'job_posting_text': raw, 'company': role.company, 'position': role.position,
-                'cv_experience': content, 'item_analyses': details,
-            }, 'section_synthesis_analysis', {
+            assessment = await assess('experience_section_synthesis', role.id, 'section_synthesis_analysis', {
                 'cv_experience': content, 'job_posting_data': context,
                 'company': role.company, 'position': role.position, 'item_analyses': details,
             })
@@ -367,7 +340,7 @@ class CVCrossAnalyzer:
             return AnalyzedRole(id=role.id, company=role.company, position=role.position,
                                 duration=role.duration, items=items, assessment=assessment)
 
-        self.snapshot = AnalysisSnapshot(roles=tuple(await asyncio.gather(
+        self.snapshot = AnalysisSnapshot(roles=tuple(await gather_owned(
             *(analyze_role(role) for role in section.doc_section_items))))
         self.cache.flush()
         self.data['experience_section_analysis'] = self.snapshot.model_dump(mode='json')

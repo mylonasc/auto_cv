@@ -44,9 +44,17 @@ class IndustryJobAnalysis(TypedDict, total=False):
 
 
 @with_config(ConfigDict(extra="forbid"))
+class FieldProvenance(TypedDict):
+    status: Literal["success", "fallback"]
+    method: str
+    reason: NotRequired[str]
+
+
+@with_config(ConfigDict(extra="forbid"))
 class JobAnalysis(TypedDict, total=False):
     basic_analysis: BasicJobAnalysis
     industry_and_position_analysis: IndustryJobAnalysis
+    provenance: Dict[str, FieldProvenance]
 
 
 class JobStatus(str, Enum):

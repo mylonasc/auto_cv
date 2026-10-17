@@ -13,6 +13,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from pathlib import Path
 from .domain import CVTemplateData, MotivationLetterTemplateData
+from .outcomes import StageFailure, gather_owned
 
 # Define project root
 _here = Path(__file__).resolve().parent.parent
@@ -54,15 +55,7 @@ def _trim_encap_tag_load_json(_res: Any, encap_tag: str = "output") -> Dict[str,
         raise Exception("json decode failed") from exc
 
 def _latex_to_pdf(latex_string: str, output_pdf: str) -> None:
-    """ latex to pdf.
-
-    Args:
-        latex_string: TODO: describe.
-        output_pdf: TODO: describe.
-
-    Returns:
-        TODO: describe return value.
-    """
+    """Compile in scratch space; publish only a nonempty successful output."""
     import shutil
     # Create a temporary directory to store intermediate files
     with tempfile.TemporaryDirectory() as tempdir:
@@ -86,19 +79,18 @@ def _latex_to_pdf(latex_string: str, output_pdf: str) -> None:
         try:
             # -output-directory specifies where the PDF should be created (tempdir)
             subprocess.run(
-                ["xelatex", "-output-directory", tempdir, tex_file_path],
-                check=True,
+                ["xelatex", "-interaction=nonstopmode", "-halt-on-error", "-output-directory", tempdir, tex_file_path],
+                check=True, capture_output=True, timeout=120,
             )
 
             # Move the generated PDF to the specified output path
             pdf_path = os.path.join(tempdir, "temp.pdf")
-            if os.path.exists(pdf_path):
+            if os.path.isfile(pdf_path) and os.path.getsize(pdf_path) > 0:
                 shutil.move(pdf_path, output_pdf)
-                print(f"PDF generated successfully: {output_pdf}")
             else:
-                print("Error: PDF was not generated.")
-        except subprocess.CalledProcessError as exc:
-            print("Error compiling LaTeX:", exc)
+                raise RuntimeError("PDF was not generated or was empty")
+        except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
+            raise StageFailure("pdf_render", "xelatex", exc) from exc
 
 class DocSection:
     """DocSection model."""
@@ -529,11 +521,13 @@ class JobPostAnalysis:
         Returns:
             TODO: describe return value.
         """
-        tasks = []
-        for c in self.chains:
-            tasks.append(c['chain'].ainvoke({'job_posting_text' : self.post_txt}))
+        async def invoke(chain):
+            try:
+                return await chain['chain'].ainvoke({'job_posting_text': self.post_txt})
+            except Exception as error:
+                raise StageFailure("posting_analysis", chain['provides'], error) from error
 
-        results = await asyncio.gather(*tasks)
+        results = await gather_owned(*(invoke(chain) for chain in self.chains))
         for c, res in zip(self.chains, results):
             # res is already a Pydantic object
             self.data[c['provides']] = res.model_dump()
@@ -556,10 +550,20 @@ class JobPostAnalysis:
                 'qualifications', 'none', 'n/a'
             }
 
+        provenance = {}
         if _is_placeholder(skills):
             skills = self._fallback_extract_skills()
+            provenance['skills'] = {'status': 'fallback', 'method': 'posting_heuristic_v1',
+                                    'reason': 'Model returned empty/placeholder skills'}
+        else:
+            provenance['skills'] = {'status': 'success', 'method': 'model'}
         if _is_placeholder(qualifications):
             qualifications = self._fallback_extract_qualifications()
+            provenance['qualifications'] = {'status': 'fallback', 'method': 'posting_heuristic_v1',
+                                            'reason': 'Model returned empty/placeholder qualifications'}
+        else:
+            provenance['qualifications'] = {'status': 'success', 'method': 'model'}
+        self.data['provenance'] = provenance
 
         preferred = basic.get('preferred_qualifications')
         if isinstance(preferred, str) and preferred.strip().lower() in {'', 'none', 'n/a'}:
@@ -613,7 +617,7 @@ class JobPostAnalysis:
                 dedup.append(item)
 
         if not dedup:
-            return 'Machine Learning; Python; Communication'
+            return 'Not identified in posting'
         return '; '.join(dedup[:12])
 
     def _fallback_extract_qualifications(self) -> str:
@@ -633,5 +637,5 @@ class JobPostAnalysis:
                     break
 
         if not items:
-            return 'Relevant degree or equivalent experience; Demonstrated delivery experience; Strong communication skills'
+            return 'Not identified in posting'
         return '; '.join(items[:8])

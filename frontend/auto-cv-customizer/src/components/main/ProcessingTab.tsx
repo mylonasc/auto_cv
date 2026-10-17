@@ -894,6 +894,9 @@ const ProcessingTab: React.FC = () => {
                   <>
                     <div className="analysis-card">
                       <h4>Extracted Skills</h4>
+                      {state.processingState.jobAnalysis.provenance?.skills?.status === 'fallback' && (
+                        <p role="note">Heuristic fallback — {state.processingState.jobAnalysis.provenance.skills.reason}</p>
+                      )}
                       <div className="tags-container">
                         {state.processingState.jobAnalysis.basic_analysis.skills?.split(';').map((s: string, i: number) => (
                           <span key={i} className="skill-tag">{s.trim()}</span>
@@ -902,6 +905,9 @@ const ProcessingTab: React.FC = () => {
                     </div>
                     <div className="analysis-card">
                       <h4>Qualifications</h4>
+                      {state.processingState.jobAnalysis.provenance?.qualifications?.status === 'fallback' && (
+                        <p role="note">Heuristic fallback — {state.processingState.jobAnalysis.provenance.qualifications.reason}</p>
+                      )}
                       <ul className="qual-list">
                         {state.processingState.jobAnalysis.basic_analysis.qualifications?.split(';').map((q: string, i: number) => (
                           <li key={i}>{q.trim()}</li>

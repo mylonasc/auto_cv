@@ -93,6 +93,12 @@ export interface ExperienceSectionData {
   text_items: Array<string>;
 }
 
+export interface FieldProvenance {
+  status: "success" | "fallback";
+  method: string;
+  reason?: string;
+}
+
 export interface IndustryJobAnalysis {
   company_name?: string | null;
   industry?: string | null;
@@ -104,6 +110,7 @@ export interface IndustryJobAnalysis {
 export interface JobAnalysis {
   basic_analysis?: BasicJobAnalysis;
   industry_and_position_analysis?: IndustryJobAnalysis;
+  provenance?: Record<string, FieldProvenance>;
 }
 
 export interface JobAnalysisRequest {

@@ -546,16 +546,33 @@ work, and isolate caching from content/document mutation.
 
 Acceptance criteria:
 
-- [ ] Stages explicitly distinguish success, failure, and permitted partial
+- [x] Stages explicitly distinguish success, failure, and permitted partial
   results; bullet/section/rescore failures are surfaced with context.
-- [ ] PDF process failure or missing output cannot publish a successful artifact.
-- [ ] Heuristic/default posting analysis is labeled as fallback with provenance.
-- [ ] Cache keys include effective content/posting analysis, provider/model,
+- [x] PDF process failure or missing output cannot publish a successful artifact.
+- [x] Heuristic/default posting analysis is labeled as fallback with provenance.
+- [x] Cache keys include effective content/posting analysis, provider/model,
   relevant model settings, and prompt/schema versions; changing any relevant
   input invalidates the cache in tests.
-- [ ] Cache failures follow a documented policy; corrupt/legacy entries cannot
+- [x] Cache failures follow a documented policy; corrupt/legacy entries cannot
   silently masquerade as fresh valid analysis.
-- [ ] Failure/cancellation tests confirm truthful terminal status and cleanup.
+- [x] Failure/cancellation tests confirm truthful terminal status and cleanup.
+
+Delivery evidence:
+
+- Required analysis stages fail closed with contextual errors; posting heuristics
+  alone are explicitly permitted degraded results, with field-level provenance
+  and visible UI labels. Missing evidence no longer invents default requirements.
+- XeLaTeX exit/timeout/missing/empty-output checks and publication guards prevent
+  failed/stale PDFs from becoming artifacts. Rescore failure leaves drafts intact.
+- Cache v2 hashes actual prompt/schema/effective inputs, posting analysis and
+  configured/resolved model identity; invalid entries are misses and unreadable
+  historical stores remain untouched. Persistence failures are warned, not fatal.
+- **178 backend tests passed**, ten typed frontend unit tests, four isolated
+  Chromium checks, TypeScript/Vite build, scoped frontend lint and schema drift
+  checks passed. Live providers/real XeLaTeX/exporters remain untested.
+- Independent suite rerun preserved five external sentinels and hashes of all
+  697 existing data/assets files.
+- Semantics/recovery: [FAILURE_AND_CACHE_POLICY.md](docs/FAILURE_AND_CACHE_POLICY.md).
 
 ### RFK-08 — Frontend workflow and draft ownership
 

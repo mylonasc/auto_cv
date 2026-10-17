@@ -1,8 +1,10 @@
 """Shared application stages; HTTP, CLI and telemetry are adapters, not pipelines."""
 
 from dataclasses import dataclass
+import os
+from importlib.metadata import version, PackageNotFoundError
 
-from .config import BackendConfig, build_model
+from .config import BackendConfig, build_model, public_config
 from .domain import CVData
 from .template_registry import resolve_cv_templates
 from .utils import JobPostAnalysis, FullCVDocument, DocSection, DocSectionItem
@@ -16,6 +18,23 @@ class CVRun:
     config: BackendConfig
     job: JobPostAnalysis
     analyzer: CVCrossAnalyzer
+
+
+def cache_model_identity(config, model):
+    """Include resolved SDK defaults/endpoint alongside declared non-secret settings."""
+    identity = public_config(config).analysis_model.model_dump()
+    identity['resolved'] = {name: getattr(model, name) for name in (
+        'model', 'model_name', 'base_url', 'temperature', 'num_predict', 'top_k',
+        'top_p', 'seed', 'max_tokens',
+    ) if isinstance(getattr(model, name, None), (str, int, float, bool))}
+    if config.analysis_model.provider == 'ollama':
+        identity['endpoint'] = str(getattr(model, 'base_url', None) or os.getenv('OLLAMA_HOST', 'http://localhost:11434'))
+    package = {'ollama': 'langchain-ollama', 'google': 'langchain-google-genai'}[config.analysis_model.provider]
+    try:
+        identity['sdk_version'] = version(package)
+    except PackageNotFoundError:
+        identity['sdk_version'] = 'uninstalled'
+    return identity
 
 
 async def analyze_posting(text: str, config: BackendConfig, *, model=None):
@@ -40,7 +59,8 @@ async def analyze_cv(source: CVData, text: str, config: BackendConfig | None = N
         DocSectionItem(**section.model_dump()) for section in source.experience_sections
     ]), cv_template=source.cv_template)
     editor_model = model_builder(config.statement_editor_model) if source.alternative_statements else analysis_model
-    analyzer = CVCrossAnalyzer(posting, document, llm_model=analysis_model, llm_editor_model=editor_model, cache=cache)
+    analyzer = CVCrossAnalyzer(posting, document, llm_model=analysis_model, llm_editor_model=editor_model,
+                              cache=cache, model_identity=cache_model_identity(config, analysis_model))
     if source.alternative_statements:
         await progress("Optimizing personal statement...")
         await analyzer.analyze_rewrite_personal_statement(source.alternative_statements + [source.personal_statement])
