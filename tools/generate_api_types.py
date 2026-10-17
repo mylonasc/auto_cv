@@ -14,6 +14,7 @@ import sys
 from pydantic import BaseModel, create_model
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "server_application/backend"))
 from models import api_models as api
 
@@ -70,6 +71,8 @@ def generate():
             required = model.model_json_schema().get("required", [])
             keys = " | ".join(json.dumps(key) for key in required) or "never"
             lines.append(f"export type {model.__name__}Input = Partial<{model.__name__}> & Pick<{model.__name__}, {keys}>;")
+    lines.extend(["", "export const DEFAULT_BACKEND_CONFIG: BackendConfig = " +
+                  json.dumps(api.BackendConfig().model_dump(mode="json"), indent=2) + ";"])
     return "\n".join(lines) + "\n"
 
 

@@ -180,18 +180,8 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
             </div>
 
             <div className="model-config">
-              <h4>Cover Letter Editor</h4>
-              <label>
-                Provider:
-                <select 
-                  value={config.coverLetterEditorModel.provider}
-                  onChange={e => updateModelConfig('coverLetterEditorModel', 'provider', e.target.value)}
-                >
-                  <option value="ollama">Ollama</option>
-                  <option value="google">Google</option>
-                </select>
-              </label>
-              {renderModelField('coverLetterEditorModel')}
+              <h4>Cover Letter Editor (CLI only)</h4>
+              <p>Configure this existing CLI workflow with --cover-letter-provider and --cover-letter-model. HTTP jobs do not generate cover letters.</p>
             </div>
           </div>
 
@@ -233,9 +223,10 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
               <input 
                 type="checkbox"
                 checked={config.outputs.includeCoverLetter}
+                disabled={!config.outputs.includeCoverLetter}
                 onChange={e => updateOutputs('includeCoverLetter', e.target.checked)}
               />
-              Include Cover Letter
+              Include Cover Letter (CLI only; disable for HTTP jobs)
             </label>
             <label>
               <input 

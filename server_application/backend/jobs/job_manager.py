@@ -7,9 +7,10 @@ import os
 from datetime import datetime
 from typing import Optional, Dict, List, Any, Union
 from models.api_models import (
-    CVJobResponse, JobStatus, CVJobResult, Artifact, JobAnalysis
+    CVJobResponse, JobStatus, CVJobResult, Artifact, JobAnalysis, BackendConfig
 )
 from models.legacy import normalize_persisted_job
+from src.config import public_config
 from core.paths import JOBS_DIR, ensure_data_dirs
 
 ensure_data_dirs()
@@ -66,12 +67,14 @@ class JobManager:
         with open(self._job_path(job.id), 'w') as f:
             json.dump(job.model_dump(mode='json'), f, default=str)
     
-    def create_job(self, candidate: str = "charilaos_mylonas", job_description: Optional[str] = None) -> CVJobResponse:
+    def create_job(self, candidate: str = "charilaos_mylonas", job_description: Optional[str] = None,
+                   effective_config: Optional[BackendConfig] = None) -> CVJobResponse:
         """Create a new job."""
         now = datetime.now()
         job = CVJobResponse(
             id=str(uuid.uuid4()),
             status=JobStatus.QUEUED,
+            effective_config=public_config(effective_config) if effective_config is not None else None,
             archived=False,
             job_description=job_description,
             progress="Job created",

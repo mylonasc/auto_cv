@@ -7,22 +7,13 @@ from typing_extensions import TypedDict, NotRequired
 from datetime import datetime
 from enum import Enum
 from uuid import uuid4
+from src.artifacts import Artifact
+from src.config import ModelConfig, RewritePolicy, AnalysisPolicy, OutputsConfig, BackendConfig
 
 
 class APIModel(BaseModel):
     """New API data is validated, never silently truncated or retained malformed."""
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False, validate_assignment=True)
-
-
-@with_config(ConfigDict(extra="forbid", allow_inf_nan=False))
-class Artifact(TypedDict):
-    id: str
-    kind: Literal["pdf", "latex", "json"]
-    filename: str
-    path: NotRequired[str | None]
-    source: NotRequired[str | None]
-    job_id: NotRequired[str]
-    created_at: NotRequired[str]
 
 
 @with_config(ConfigDict(extra="forbid", allow_inf_nan=False))
@@ -64,44 +55,6 @@ class JobStatus(str, Enum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCELLED = "cancelled"
-
-
-class ModelConfig(APIModel):
-    """ModelConfig model."""
-    provider: Literal["ollama", "google"] = "ollama"
-    model: str = "gemma4:31b"
-    config: Optional[Dict[str, Any]] = None
-
-
-class RewritePolicy(APIModel):
-    """RewritePolicy model."""
-    max_section_items_keep: int = 5
-    min_section_items_keep: int = 1
-    min_relevance_score: int = 4
-
-
-class AnalysisPolicy(APIModel):
-    """AnalysisPolicy model."""
-    max_section_parse_retries: int = 3
-
-
-class OutputsConfig(APIModel):
-    """OutputsConfig model."""
-    include_cover_letter: bool = False
-    render_pdf: bool = True
-    include_latex: bool = True
-    include_scoring_comments: bool = True
-
-
-class BackendConfig(APIModel):
-    """BackendConfig model."""
-    analysis_model: ModelConfig = Field(default_factory=lambda: ModelConfig())
-    statement_editor_model: ModelConfig = Field(default_factory=lambda: ModelConfig())
-    cover_letter_editor_model: ModelConfig = Field(default_factory=lambda: ModelConfig())
-    rewrite_policy: RewritePolicy = Field(default_factory=lambda: RewritePolicy())
-    analysis_policy: AnalysisPolicy = Field(default_factory=lambda: AnalysisPolicy())
-    outputs: OutputsConfig = Field(default_factory=lambda: OutputsConfig())
-    concurrency_limit: int = 5
 
 
 class CreateJobRequest(APIModel):
@@ -172,6 +125,7 @@ class CVJobResponse(APIModel):
     """CVJobResponse model."""
     id: str
     status: JobStatus
+    effective_config: Optional[BackendConfig] = None
     archived: bool = False
     job_description: Optional[str] = None
     progress: Optional[str] = None

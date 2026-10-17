@@ -1,6 +1,7 @@
 {
   "id": "contract-job",
   "status": "succeeded",
+  "effective_config": null,
   "archived": false,
   "job_description": "Python engineer",
   "progress": "Processing complete",

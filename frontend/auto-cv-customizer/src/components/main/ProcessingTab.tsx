@@ -562,7 +562,7 @@ const ProcessingTab: React.FC = () => {
 
       <div className="rewrite-controls-card">
         <h3>Stage 2: CV Analysis + Personal Statement Selection</h3>
-        <p className="hint">Run this after Stage 1 to produce section/bullet relevance scores and statement optimization.</p>
+        <p className="hint">Run complete posting and CV analysis, statement optimization and configured initial outputs. Stage 1 is an optional preview, not a prerequisite.</p>
         <div className="processing-actions">
           {!state.processingState || ['succeeded', 'failed', 'cancelled'].includes(state.processingState.status) ? (
             <button

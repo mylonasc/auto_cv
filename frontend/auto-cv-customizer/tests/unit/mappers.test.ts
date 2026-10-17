@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type * as API from '../../src/types/api.generated';
-import { jobToView, resultToView, workingCopyToAPI, workingCopyToView } from '../../src/services/mappers.ts';
+import { jobToView, resultToView, workingCopyToAPI, workingCopyToView, configToAPI, configToView } from '../../src/services/mappers.ts';
+import { DEFAULT_BACKEND_CONFIG } from '../../src/types/api.generated.ts';
 
 // Also validated by Python against the real HTTP and SSE serializers.
 const job: API.CVJobResponse = JSON.parse(readFileSync(
@@ -55,4 +56,16 @@ test('working-copy mapping round-trips all editable and analysis fields', () => 
     }],
   };
   assert.deepEqual(workingCopyToAPI(workingCopyToView(copy)), copy);
+});
+
+test('UI initialization and configuration mapping use generated application defaults', () => {
+  const view = configToView(DEFAULT_BACKEND_CONFIG);
+  assert.equal(view.analysisModel.model, DEFAULT_BACKEND_CONFIG.analysis_model.model);
+  assert.equal(view.rewritePolicy.minRelevanceScore, 4);
+  assert.equal(view.outputs.includeCoverLetter, false);
+  const roundTrip = configToAPI(view);
+  for (const key of ['analysis_model', 'statement_editor_model', 'cover_letter_editor_model'] as const) {
+    assert.deepEqual(roundTrip[key], { ...DEFAULT_BACKEND_CONFIG[key], config: {} });
+  }
+  assert.deepEqual(roundTrip.rewrite_policy, DEFAULT_BACKEND_CONFIG.rewrite_policy);
 });

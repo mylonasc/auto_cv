@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from typing import List, Optional
 import asyncio
 import os
-import tempfile
+from uuid import uuid4
 
 from models.api_models import (
     CreateJobRequest, CVJobResponse, JobStatus, CVJobResult, RenderCVRequest, JobAnalysisRequest,
@@ -19,11 +19,10 @@ from core.paths import ARTIFACTS_DIR, WORKING_CVS_DIR, ensure_data_dirs
 from src.utils import FullCVDocument, DocSection, DocSectionItem
 from src.domain import CVTemplateData
 from src.template_registry import resolve_template_path
-from src.utils import JobPostAnalysis
-from src.models import ModelFactory
 from src.analysis import score_comment, select_scored_ids, SelectionPolicy
-from src.utils_cross_analysis import BulletAnalysis, section_experience_analysis_prompt, _make_default_model
-from langchain_core.prompts import ChatPromptTemplate
+from src.pipeline import analyze_posting, bullet_scoring_chain
+from src.artifacts import render_artifacts
+from .config import get_config
 from datetime import datetime
 
 ensure_data_dirs()
@@ -154,36 +153,9 @@ def _render_from_working_copy(working_copy: WorkingCopy, request: RenderCVReques
     cv_template = CVTemplateData(template_id=request.cv_template_id, template_path=cv_template_path)
     document = FullCVDocument(working_copy.personal_statement, experience_section, cv_template=cv_template)
 
-    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    artifacts: list = []
-
-    if request.render_pdf:
-        pdf_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.pdf"
-        pdf_path = os.path.join(ARTIFACTS_DIR, pdf_name)
-        document.copy().render_pdf(pdf_path, include_scoring_comments=request.include_scoring_comments)
-        artifacts.append({
-            "id": f"pdf_{job_id}_{timestamp}",
-            "kind": "pdf",
-            "filename": pdf_name,
-            "path": pdf_path,
-            "source": "working_copy",
-        })
-
-    if request.include_latex:
-        tex_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.tex"
-        tex_path = os.path.join(ARTIFACTS_DIR, tex_name)
-        with open(tex_path, "w", encoding="utf-8") as f:
-            f.write(document.make_latex(include_scoring_comments=request.include_scoring_comments))
-        artifacts.append({
-            "id": f"latex_{job_id}_{timestamp}",
-            "kind": "latex",
-            "filename": tex_name,
-            "path": tex_path,
-            "source": "working_copy",
-        })
-
-    return artifacts
+    return render_artifacts(document, ARTIFACTS_DIR, f"cv_output_{job_id}_{uuid4().hex}",
+                            render_pdf=request.render_pdf, include_latex=request.include_latex,
+                            include_scoring_comments=request.include_scoring_comments, source="working_copy")
 
 
 async def status_callback(job_id: str, status: JobStatus, progress: Optional[str] = None, message: Optional[str] = None):
@@ -286,7 +258,12 @@ async def create_job(request: CreateJobRequest, background_tasks: BackgroundTask
     - **config**: Optional backend configuration
     """
     # Create job
-    job = job_manager.create_job(candidate=request.candidate, job_description=request.job_description)
+    effective_config = (request.config or await get_config()).model_copy(deep=True)
+    if effective_config.outputs.include_cover_letter:
+        raise HTTPException(status_code=422, detail="Cover-letter output is CLI-only; disable it for HTTP jobs")
+    request = request.model_copy(update={"config": effective_config})
+    job = job_manager.create_job(candidate=request.candidate, job_description=request.job_description,
+                                 effective_config=effective_config)
     
     # Store request for background task
     active_tasks[job.id] = request
@@ -300,25 +277,8 @@ async def create_job(request: CreateJobRequest, background_tasks: BackgroundTask
 @router.post("/job-analysis", response_model=JobAnalysisResponse)
 async def analyze_job_only(request: JobAnalysisRequest):
     """Analyze job posting only and return extracted job analysis."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as tf:
-        tf.write(request.job_description)
-        temp_path = tf.name
-
-    try:
-        llm_model = None
-        if request.config and request.config.analysis_model:
-            llm_model = ModelFactory(
-                model_provider=request.config.analysis_model.provider,
-                model_str=request.config.analysis_model.model,
-                config=request.config.analysis_model.config,
-            ).get_llm_model()
-
-        jpa = JobPostAnalysis(temp_path, llm_model=llm_model)
-        await jpa.analyze()
-        return {"job_analysis": jpa.data}
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    result = await analyze_posting(request.job_description, request.config or await get_config())
+    return {"job_analysis": result.data}
 
 
 @router.get("/{job_id}", response_model=CVJobResponse)
@@ -510,8 +470,7 @@ async def rescore_working_copy_items(job_id: str, request: RescoreRequest):
     job_post_data_str = str(job_analysis_data)
 
     # Create the analysis chain
-    llm = _make_default_model()
-    chain = ChatPromptTemplate.from_template(section_experience_analysis_prompt) | llm.with_structured_output(BulletAnalysis)
+    chain = bullet_scoring_chain(job.effective_config or await get_config())
 
     results: list = []
     for idx in indices:
@@ -560,7 +519,7 @@ async def render_job_artifacts(job_id: str, request: RenderCVRequest):
 
     # ── Branch: render from WorkingCopy when provided ──
     if request.working_copy:
-        artifacts = _render_from_working_copy(request.working_copy, request, job_id)
+        artifacts = await asyncio.to_thread(_render_from_working_copy, request.working_copy, request, job_id)
         # Update job result artifacts
         result_obj = job.result.model_dump() if hasattr(job.result, "model_dump") else job.result
         if isinstance(result_obj, dict):
@@ -611,32 +570,12 @@ async def render_job_artifacts(job_id: str, request: RenderCVRequest):
     cv_template = CVTemplateData(template_id=request.cv_template_id, template_path=cv_template_path)
     document = FullCVDocument(result_obj.get("personal_statement", ""), experience_section, cv_template=cv_template)
 
-    os.makedirs(ARTIFACTS_DIR, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    artifacts = result_obj.get("artifacts", [])
-
-    if request.render_pdf:
-        pdf_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.pdf"
-        pdf_path = os.path.join(ARTIFACTS_DIR, pdf_name)
-        document.copy().render_pdf(pdf_path, include_scoring_comments=request.include_scoring_comments)
-        artifacts.append({
-            "id": f"pdf_{job_id}_{timestamp}",
-            "kind": "pdf",
-            "filename": pdf_name,
-            "path": pdf_path,
-        })
-
-    if request.include_latex:
-        tex_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.tex"
-        tex_path = os.path.join(ARTIFACTS_DIR, tex_name)
-        with open(tex_path, "w", encoding="utf-8") as f:
-            f.write(document.make_latex(include_scoring_comments=request.include_scoring_comments))
-        artifacts.append({
-            "id": f"latex_{job_id}_{timestamp}",
-            "kind": "latex",
-            "filename": tex_name,
-            "path": tex_path,
-        })
+    artifacts = result_obj.get("artifacts", []) + await asyncio.to_thread(
+        render_artifacts,
+        document, ARTIFACTS_DIR, f"cv_output_{job_id}_{uuid4().hex}",
+        render_pdf=request.render_pdf, include_latex=request.include_latex,
+        include_scoring_comments=request.include_scoring_comments,
+    )
 
     result_obj["artifacts"] = artifacts
     job_manager.update_job_status(job_id=job_id, status=job.status, result=result_obj)

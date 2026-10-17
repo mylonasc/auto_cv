@@ -34,6 +34,7 @@ export interface BasicJobAnalysis {
 export interface CVJobResponse {
   id: string;
   status: JobStatus;
+  effective_config: BackendConfig | null;
   archived: boolean;
   job_description: string | null;
   progress: string | null;
@@ -243,3 +244,36 @@ export type RenderCVRequestInput = Partial<RenderCVRequest> & Pick<RenderCVReque
 export type RescoreRequestInput = Partial<RescoreRequest> & Pick<RescoreRequest, "section_index">;
 export type SubmissionCreateRequestInput = Partial<SubmissionCreateRequest> & Pick<SubmissionCreateRequest, "job_id">;
 export type SubmissionUpdateRequestInput = Partial<SubmissionUpdateRequest> & Pick<SubmissionUpdateRequest, never>;
+
+export const DEFAULT_BACKEND_CONFIG: BackendConfig = {
+  "analysis_model": {
+    "provider": "ollama",
+    "model": "gemma4:31b",
+    "config": null
+  },
+  "statement_editor_model": {
+    "provider": "ollama",
+    "model": "gemma4:31b",
+    "config": null
+  },
+  "cover_letter_editor_model": {
+    "provider": "ollama",
+    "model": "gemma4:31b",
+    "config": null
+  },
+  "rewrite_policy": {
+    "max_section_items_keep": 5,
+    "min_section_items_keep": 1,
+    "min_relevance_score": 4
+  },
+  "analysis_policy": {
+    "max_section_parse_retries": 3
+  },
+  "outputs": {
+    "include_cover_letter": false,
+    "render_pdf": true,
+    "include_latex": true,
+    "include_scoring_comments": true
+  },
+  "concurrency_limit": 5
+};

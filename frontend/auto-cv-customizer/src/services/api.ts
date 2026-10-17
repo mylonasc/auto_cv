@@ -2,8 +2,8 @@
 import axios from 'axios';
 import type * as API from '../types/api.generated';
 import type { CVData } from '../types/cv';
-import type { BackendConfig, ModelConfig } from '../types/view';
-import { jobToView, resultToView, workingCopyToAPI, workingCopyToView } from './mappers';
+import type { BackendConfig } from '../types/view';
+import { jobToView, resultToView, workingCopyToAPI, workingCopyToView, configToAPI, configToView } from './mappers';
 
 export interface TemplateRegistryResponse {
   cv_templates: Record<string, string>;
@@ -21,42 +21,8 @@ const API_BASE_URL = '/api/v1';
 class ApiService {
   private client = axios.create({ baseURL: API_BASE_URL, headers: { 'Content-Type': 'application/json' } });
 
-  private toBackendConfig(config: BackendConfig): API.BackendConfig {
-    return {
-      analysis_model: config.analysisModel, statement_editor_model: config.statementEditorModel,
-      cover_letter_editor_model: config.coverLetterEditorModel,
-      rewrite_policy: {
-        max_section_items_keep: config.rewritePolicy.maxSectionItemsKeep,
-        min_section_items_keep: config.rewritePolicy.minSectionItemsKeep,
-        min_relevance_score: config.rewritePolicy.minRelevanceScore,
-      },
-      analysis_policy: { max_section_parse_retries: config.analysisPolicy.maxSectionParseRetries },
-      outputs: {
-        include_cover_letter: config.outputs.includeCoverLetter, render_pdf: config.outputs.renderPDF,
-        include_latex: config.outputs.includeLaTeX, include_scoring_comments: config.outputs.includeScoringComments,
-      },
-      concurrency_limit: config.concurrency_limit,
-    };
-  }
-
-  private fromBackendConfig(config: API.BackendConfig): BackendConfig {
-    const model = (value: API.ModelConfig): ModelConfig => ({ ...value, config: value.config ?? {} });
-    return {
-      analysisModel: model(config.analysis_model), statementEditorModel: model(config.statement_editor_model),
-      coverLetterEditorModel: model(config.cover_letter_editor_model),
-      rewritePolicy: {
-        maxSectionItemsKeep: config.rewrite_policy.max_section_items_keep,
-        minSectionItemsKeep: config.rewrite_policy.min_section_items_keep,
-        minRelevanceScore: config.rewrite_policy.min_relevance_score,
-      },
-      analysisPolicy: { maxSectionParseRetries: config.analysis_policy.max_section_parse_retries },
-      outputs: {
-        includeCoverLetter: config.outputs.include_cover_letter, renderPDF: config.outputs.render_pdf,
-        includeLaTeX: config.outputs.include_latex, includeScoringComments: config.outputs.include_scoring_comments,
-      },
-      concurrency_limit: config.concurrency_limit,
-    };
-  }
+  private toBackendConfig = configToAPI;
+  private fromBackendConfig = configToView;
 
   async createJob(jobDescription: string, candidate = 'charilaos_mylonas', cvVersionId = 'master', config?: BackendConfig) {
     const payload: API.CreateJobRequestInput = {

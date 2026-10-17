@@ -68,9 +68,6 @@ section_synthesis_analysis_prompt = '''
     The section score must be logically grounded in the individual item scores.
 '''
 
-from .models import ModelFactory
-
-
 class AnalysisResultCache:
     """Simple disk-backed cache for analysis calls."""
 
@@ -193,27 +190,14 @@ def _make_cache_key(scope: str, payload: Dict[str, Any]) -> str:
     key_json = json.dumps(key_obj, sort_keys=True, ensure_ascii=True)
     return hashlib.sha256(key_json.encode('utf-8')).hexdigest()
 
-def _load_defaults():
-    """ load defaults.
-
-    Returns:
-        TODO: describe return value.
-    """
-    from pathlib import Path
-    import yaml
-    _here = Path(__file__).resolve().parent.parent
-    with open(os.path.join(_here, 'config/llm_defaults.yaml'),'r') as f:
-        res = yaml.safe_load(f)
-    return res
-
 def _make_default_model():
     """ make default model.
 
     Returns:
         TODO: describe return value.
     """
-    default_model_options = _load_defaults()
-    return ModelFactory(**default_model_options['cv_cross_analysis_llm_default']).get_llm_model()
+    from .config import BackendConfig, build_model
+    return build_model(BackendConfig().analysis_model)
 
 class CoverLetterDrafter:
     """CoverLetterDrafter model."""

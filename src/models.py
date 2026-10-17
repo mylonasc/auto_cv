@@ -6,6 +6,7 @@ This code also implements tools to query available models etc where applicable
 
 from typing import Optional
 import os
+from .config import PROVIDER_DEFAULTS
 
 MODEL_PROVIDERS = [
     'ollama',
@@ -14,10 +15,7 @@ MODEL_PROVIDERS = [
 
 DEFAULT_MODEL_PROVIDER = 'ollama' # local model
 
-MODEL_DEFAULTS = {
-    'ollama' : 'llama3', 
-    'google' : 'models/gemini-2.5-flash-preview-05-20'
-}
+MODEL_DEFAULTS = PROVIDER_DEFAULTS
 
 MODELS_DEFAULT_CONFIG = {
     'ollama' : {'num_predict' : 8000, 'temperature' : 0.9},

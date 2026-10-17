@@ -458,6 +458,12 @@ class CoverLetterModel:
         """
         _latex_to_pdf(self.render_tex_template(), file)
 
+    def make_latex(self, include_scoring_comments=False):
+        return self.render_tex_template()
+
+    def render_pdf(self, file, include_scoring_comments=False):
+        _latex_to_pdf(self.make_latex(), file)
+
 class BasicAnalysis(BaseModel):
     """BasicAnalysis model."""
     skills: str = Field(..., description="Semicolon separated list of required skills.")
@@ -485,37 +491,27 @@ analyses_prompts = [
     }
 ]
 
-from .models import ModelFactory
-
-def _load_defaults():
-    """ load defaults.
-
-    Returns:
-        TODO: describe return value.
-    """
-    from pathlib import Path
-    import yaml
-    _here = Path(__file__).resolve().parent.parent
-    with open(os.path.join(_here, 'config/llm_defaults.yaml'),'r') as f:
-        res = yaml.safe_load(f)
-    return res
-
 def _make_default_model_job_post_analysis():
     """ make default model job post analysis.
 
     Returns:
         TODO: describe return value.
     """
-    default_model_options = _load_defaults()
-    return ModelFactory(**default_model_options['job_post_analysis_llm_default']).get_llm_model()
+    from .config import BackendConfig, build_model
+    return build_model(BackendConfig().analysis_model)
 
 class JobPostAnalysis:
     """JobPostAnalysis model."""
-    def __init__(self, post_txt_file, analysis_prompts = analyses_prompts, llm_model = None):
+    def __init__(self, post_txt_file=None, analysis_prompts = analyses_prompts, llm_model = None, *, post_text=None):
         """ A class to manage analysis of the job posting. """
         self.post_txt_file = post_txt_file
-        with open(self.post_txt_file ,'r') as f:
-            self.post_txt = f.read()
+        if post_text is not None:
+            self.post_txt = post_text
+        elif post_txt_file is not None:
+            with open(self.post_txt_file ,'r') as f:
+                self.post_txt = f.read()
+        else:
+            raise ValueError("Provide posting text or a posting file")
         
         self.model = llm_model or _make_default_model_job_post_analysis()
         

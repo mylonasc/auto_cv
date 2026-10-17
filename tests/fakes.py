@@ -12,6 +12,10 @@ class StructuredModel:
     def __init__(self):
         self.calls = []
 
+    def __call__(self, prompt):
+        self.calls.append(("CoverLetter", prompt.to_string()))
+        return "<COVERLETTER>I bring Python delivery experience.</COVERLETTER>"
+
     def with_structured_output(self, schema):
         def respond(prompt):
             text = prompt.to_string()

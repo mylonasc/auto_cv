@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useReducer, type Dispatch } from 'react';
 import type { BackendConfig, ProcessingState, WorkingCopy } from '../types/view';
+import { DEFAULT_BACKEND_CONFIG } from '../types/api.generated';
+import { configToView } from '../services/mappers';
 export type {
   BackendConfig, ProcessingState, WorkingCopy, ModelConfig, RewritePolicy,
   AnalysisPolicy, OutputsConfig, SummaryMetrics, CVResultItem, CVResultSection,
@@ -90,26 +92,7 @@ const initialState: AppState = {
   currentJobDescriptionId: null,
   cvVersions: [],
   currentCVVersionId: 'master',
-  backendConfig: {
-    analysisModel: { provider: 'ollama', model: 'gemma4:31b', config: {} },
-    statementEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
-    coverLetterEditorModel: { provider: 'google', model: 'models/gemini-2.5-flash-preview-05-20', config: {} },
-    rewritePolicy: {
-      maxSectionItemsKeep: 6,
-      minSectionItemsKeep: 1,
-      minRelevanceScore: 3
-    },
-    analysisPolicy: {
-      maxSectionParseRetries: 3
-    },
-    outputs: {
-      includeCoverLetter: true,
-      renderPDF: true,
-      includeLaTeX: true,
-      includeScoringComments: true
-    },
-    concurrency_limit: 5
-  },
+  backendConfig: configToView(DEFAULT_BACKEND_CONFIG),
   processingState: null,
   workingCopy: null,
   uiState: {
