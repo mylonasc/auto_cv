@@ -239,9 +239,7 @@ const EditorTab: React.FC = () => {
     updateCvData(prev => ({
       ...prev,
       cv_template: {
-        template_id: prev.cv_template?.template_id || 'default_cv',
-        template_path: prev.cv_template?.template_path || 'assets/latex_cv_template_v0.tex',
-        experience_section_title: prev.cv_template?.experience_section_title || 'Work Experience',
+        ...prev.cv_template,
         [field]: value,
       },
     }));
@@ -251,8 +249,7 @@ const EditorTab: React.FC = () => {
     updateCvData(prev => ({
       ...prev,
       motivation_letter_template: {
-        template_id: prev.motivation_letter_template?.template_id || 'default_motivation_letter',
-        template_path: prev.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex',
+        ...prev.motivation_letter_template,
         [field]: value,
       },
     }));
@@ -355,7 +352,7 @@ const EditorTab: React.FC = () => {
                           ...prev,
                           cv_template: {
                             template_id: selectedId,
-                            template_path: templateRegistry.cv_templates[selectedId] || prev.cv_template?.template_path || 'assets/latex_cv_template_v0.tex',
+                             template_path: templateRegistry.cv_templates[selectedId] || null,
                             experience_section_title: prev.cv_template?.experience_section_title || 'Work Experience',
                           },
                         }));
@@ -389,7 +386,7 @@ const EditorTab: React.FC = () => {
                           ...prev,
                           motivation_letter_template: {
                             template_id: selectedId,
-                            template_path: templateRegistry.motivation_letter_templates[selectedId] || prev.motivation_letter_template?.template_path || 'assets/cover_letter/CoverLetter_Template.tex',
+                             template_path: templateRegistry.motivation_letter_templates[selectedId] || null,
                           },
                         }));
                       }}

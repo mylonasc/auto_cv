@@ -41,6 +41,10 @@
 - Prefer small cohesive changes consistent with surrounding conventions.
 - Define canonical schemas and explicit adapters rather than adding distributed
   fallback branches or suppressing validation errors.
+- CV content uses `src.domain.CVData` (schema v1): top-level statements/experience,
+  metadata-only `candidate`. Use `src.cv_storage` for legacy file adaptation and
+  recoverable saves; never duplicate writable content or silently choose between
+  conflicting copies. Read `docs/CV_SCHEMA.md` for compatibility/recovery rules.
 - Keep JSON storage initially; centralize atomic writes and repository ownership.
 - Resolve configuration once and inject dependencies. Avoid runtime file/network
   side effects during module imports and workflow ownership in tab components.

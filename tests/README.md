@@ -32,6 +32,17 @@ Known defects are strict expected failures linked to their owning RFK issue. The
 assert intended behavior against production code. When a fix produces an XPASS,
 remove the marker in the same change, rather than weakening the assertion.
 
+## Isolated browser checks for CV editing
+
+From `frontend/auto-cv-customizer`, run `npm run test:cv`. This uses its own Vite
+server on port 5187 and mocks **all** browser API requests. Unexpected API or
+external requests are rejected, so these checks cannot reach your backend data.
+They cover preview, visual, and JSON editing with canonical metadata/template
+preservation; backend tests independently validate real persistence and migration.
+An installed Playwright Chromium browser is required (explicit setup if needed:
+`npx playwright install chromium`). The separate legacy `test:e2e` suite is not
+API-isolated and is not part of this offline validation command.
+
 ## Opt-in live integration smoke check
 
 Live provider/LaTeX checks are **not** part of the pytest suite. After explicitly

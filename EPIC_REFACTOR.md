@@ -361,15 +361,40 @@ for historical flat/nested/list shapes to a documented storage-boundary adapter.
 
 Acceptance criteria:
 
-- [ ] One typed CV representation is used by persistence, editing, and processing;
+- [x] One typed CV representation is used by persistence, editing, and processing;
   API payloads do not contain competing writable copies of content.
-- [ ] Fixtures for all currently supported legacy shapes migrate deterministically
+- [x] Fixtures for all currently supported legacy shapes migrate deterministically
   and idempotently, with explicit conflict precedence and validation failures.
-- [ ] Read/edit/save/reload preserves statements, alternatives, experience bullets,
+- [x] Read/edit/save/reload preserves statements, alternatives, experience bullets,
   candidate metadata, and template choices through both editor paths.
-- [ ] Migration is non-destructive: original data is preserved or backed up and
+- [x] Migration is non-destructive: original data is preserved or backed up and
   recovery behavior is documented; ambiguous conflicts are not silently lost.
-- [ ] The existing supported CV and templates still load and render.
+- [x] The existing supported CV and templates still load and render.
+
+Delivery evidence (on `enhancement/epic-refactor`, not yet merged):
+
+- `src.domain.CVData` is the single schema: versioned top-level CV content,
+  metadata-only `candidate`, and portable template references. API, processor,
+  CLI, and both frontend editors use it. Legacy adapters are not in consumers.
+- Flat/nested/list/equal-duplicate input adapts deterministically in memory.
+  Unequal copies fail explicitly; reads never rewrite source files. Explicit
+  saves retain immutable byte-exact backups before atomic replacement. Recovery
+  and compatibility rules: [`docs/CV_SCHEMA.md`](docs/CV_SCHEMA.md).
+- Backend suite: **85 passed, 6 strict expected failures**, all owned by later
+  RFKs. The six RFK-02 edit-loss failures are fixed and unmarked. Added metadata
+  and template-edit regressions, storage/API/processor parity, recovery-failure
+  coverage, and canonical CLI processing.
+- `npm run test:cv`: **4 passed** using API-isolated Chromium tests for preview,
+  visual, JSON editing, and preservation of registry-only template choices.
+  This command cannot proxy API requests to user/backend data.
+- Frontend TypeScript/Vite build and scoped lint pass. Repository-wide lint still
+  reports the two pre-existing `any` casts in `vite.config.ts` (tracked under
+  RFK-10 #15); this is not reported as a passing full lint run.
+- All nine existing CV documents normalized successfully in a read-only check.
+  Both supported CV templates expand with the tracked CV in offline tests; PDF
+  execution is faked, so real XeLaTeX compilation is not claimed.
+- Independent safety run preserved five external sentinels and hashes of all
+  664 existing runtime/CV/user files. No automatic migration of user files ran.
 
 ### RFK-03 — Authoritative HTTP, SSE, and artifact contracts
 

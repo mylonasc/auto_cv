@@ -46,7 +46,10 @@ def test_cv_read_round_trip_preserves_content_and_metadata(client, cv_payload, p
 
 
 @pytest.mark.parametrize("path", ["/v1/cv-data/test", "/v1/cv-data/test/versions/master"])
-@pytest.mark.parametrize("field", ["personal_statement", "alternative_statements", "experience_sections"])
+@pytest.mark.parametrize("field", [
+    "personal_statement", "alternative_statements", "experience_sections",
+    "candidate", "cv_template", "motivation_letter_template",
+])
 def test_cv_editor_changes_survive_save(client, cv_payload, path, field):
     assert client.post("/v1/cv-data/test/versions/master", json=cv_payload).status_code == 200
     edited = client.get(path).json()
@@ -54,8 +57,16 @@ def test_cv_editor_changes_survive_save(client, cv_payload, path, field):
         edited[field] = "Edited statement"
     elif field == "alternative_statements":
         edited[field].append("New alternative")
-    else:
+    elif field == "experience_sections":
         edited[field][0]["text_items"].append("New experience")
+    elif field == "candidate":
+        edited[field]["full_name"] = "Edited Name"
+        edited[field]["profile"]["custom"] = "Edited Profile"
+    elif field == "cv_template":
+        edited[field].update(template_id="template2", template_path=None,
+                             experience_section_title="Selected Experience")
+    else:
+        edited[field]["template_path"] = "custom-cover-letter.tex"
     expected = copy.deepcopy(edited[field])
     assert client.put(path, json=edited).status_code == 200
     assert client.get(path).json()[field] == expected
