@@ -73,6 +73,6 @@ AUTO_CV_DATA_ROOT="$scratch/runtime" python tools/autocv.py \
 
 Use another existing scratch parent if `/tmp/opencode` is unavailable. This is an
 explicitly networked/manual check: inspect generated PDFs and logs; do not infer
-correct rendering from placeholder PDFs in unit tests. Never reuse an output
-directory containing valuable files: the current CLI replaces its output folder.
-RFK-05/RFK-10 will consolidate entry points and their setup instructions.
+correct rendering from placeholder PDFs in unit tests. The CLI refuses to replace
+an existing output directory; choose a fresh path. See `docs/PIPELINE.md` for
+shared defaults, effective configuration and entry-point semantics.

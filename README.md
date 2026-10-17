@@ -166,7 +166,10 @@ pip install -r requirements-otel.txt
 
 Then run with:
 ```bash
-python tools/autocv-otel.py
+python tools/autocv-otel.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_post.txt \
+  --skip-cover-letter
 ```
 
 ## Running the CLI Pipeline Script
@@ -174,7 +177,10 @@ python tools/autocv-otel.py
 To run the script-based CV generation flow directly:
 
 ```bash
-python tools/autocv.py
+python tools/autocv.py \
+  --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
+  --job-posting job_post.txt \
+  --skip-cover-letter
 ```
 
 Full argument example:
@@ -235,6 +241,10 @@ python tools/autocv.py \
 ```
 
 Template registry is stored in `config/templates.json`.
+
+API and CLI share application defaults and analysis/selection/rendering stages.
+CLI output directories must be fresh; existing paths are never replaced.
+See [workflow, effective settings, and capability boundaries](docs/PIPELINE.md).
 
 ## API Endpoints
 

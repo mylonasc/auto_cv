@@ -474,16 +474,34 @@ posting analysis, CV analysis, working-copy preparation, and rendering stages.
 
 Acceptance criteria:
 
-- [ ] API, CLI, and telemetry invoke the same stage implementations; telemetry
+- [x] API, CLI, and telemetry invoke the same stage implementations; telemetry
   wraps execution and awaits async calls rather than copying the pipeline.
-- [ ] Analysis, statement editing, and rescoring receive resolved model/policy
+- [x] Analysis, statement editing, and rescoring receive resolved model/policy
   dependencies explicitly; requested settings are verified using fake providers.
-- [ ] Defaults are resolved in one place; supported configuration is effective,
+- [x] Defaults are resolved in one place; supported configuration is effective,
   and unsupported/inactive options are not misleadingly presented as effective.
-- [ ] Standalone versus combined stages have explicit inputs/outputs; UI labels
+- [x] Standalone versus combined stages have explicit inputs/outputs; UI labels
   match actual execution, including when analysis or rendering is repeated.
-- [ ] One filtering/rendering path serves the existing entry points, with parity
+- [x] One filtering/rendering path serves the existing entry points, with parity
   tests for equivalent API and CLI inputs.
+
+Delivery evidence (epic branch, not yet merged):
+
+- Shared `src/pipeline.py`, `src/config.py`, and `src/artifacts.py` replace API/CLI
+  orchestration/default/render duplication. Telemetry wraps the CLI and has no
+  import-time exporter setup or copied unawaited pipeline.
+- Effective non-secret job configuration is retained for rescoring. Runtime
+  credentials are excluded from persisted effective metadata. Generated UI
+  defaults match the application; unsupported HTTP cover letters are rejected,
+  and the legacy parse-retry field is honestly reserved/deprecated.
+- CLI output now refuses to delete/replace an existing directory. Blocking HTTP
+  renders run off the event loop and unique artifact IDs avoid timestamp clashes.
+- **130 backend tests, nine typed frontend unit tests and four isolated browser
+  tests passed**; only RFK-06's strict expected failure remains. Model-role,
+  API/CLI LaTeX/metrics parity, cover-letter selection, redaction, rescore config,
+  telemetry-finally and output-sentinel tests pass. Build, scoped lint, type drift
+  and diff checks pass; live providers/LaTeX/exporters were not exercised.
+- Details/default changes/compatibility: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 ### RFK-06 — Repositories and job execution lifecycle
 
