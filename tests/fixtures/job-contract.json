@@ -8,7 +8,7 @@
   "result": {
     "personal_statement": "Experienced engineer",
     "sections": [{
-      "title": "Experience", "company": "Example", "position": "Engineer", "duration": "2020",
+      "title": "Experience", "id": null, "company": "Example", "position": "Engineer", "duration": "2020",
       "section_score": 0, "explanation": "Role explanation", "posting_evidence": "Role evidence",
       "items": [{"text": "Built Python software", "relevance_score": 0,
         "explanation": "Bullet explanation", "posting_evidence": "Bullet evidence", "kept": false}],

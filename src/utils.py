@@ -4,6 +4,7 @@ import re
 import subprocess
 import tempfile
 import asyncio
+from uuid import uuid4
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
@@ -19,6 +20,14 @@ CV_CUSTOMIZER_ROOT = os.getenv('CV_CUSTOMIZER_ROOT', str(_here))
 
 TEMPLATE_NAME = os.path.join(CV_CUSTOMIZER_ROOT, 'assets', 'latex_cv_template_v0.tex')
 TEMPLATE_COVER_LETTER = os.path.join(CV_CUSTOMIZER_ROOT, 'assets', 'cover_letter', 'CoverLetter_Template.tex')
+
+
+def _latex_comment(text: str) -> str:
+    """Analysis is plain text, unlike source CV text which may contain LaTeX."""
+    escapes = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$',
+               '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
+               '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
+    return ''.join(escapes.get(character, character) for character in text)
 
 def _trim_encap_tag_load_json(_res: Any, encap_tag: str = "output") -> Dict[str, Any]:
     # Handle AIMessage or other objects by casting to string
@@ -115,7 +124,7 @@ class DocSection:
         for _i in self.doc_section_items:
             s += _i.get_markdown()
         return s + '\n'
-    def get_latex(self):
+    def get_latex(self, include_scoring_comments=False):
         """Get latex.
 
         Returns:
@@ -123,7 +132,7 @@ class DocSection:
         """
         s = f'\\begin{{rSection}}{{{self.section_title}}}\n'
         for _i in self.doc_section_items:
-            s += _i.get_latex() + '\n'
+            s += _i.get_latex(include_scoring_comments=include_scoring_comments) + '\n'
         s += '\\end{rSection}\n'
         return s
     def copy(self):
@@ -137,7 +146,7 @@ class DocSection:
     
 class SectionListItem:
     """SectionListItem model."""
-    def __init__(self, text, parent = None, comment = None):
+    def __init__(self, text, parent = None, comment = None, id=None):
         """  init  .
 
         Args:
@@ -149,6 +158,7 @@ class SectionListItem:
             TODO: describe return value.
         """
         self.text = text
+        self.id = id or str(uuid4())
         self.parent = parent
         self.comment = comment
     def set_comment(self, comment):
@@ -171,15 +181,15 @@ class SectionListItem:
         if self.comment is not None:
             s += f' (comment:  {self.comment})'
         return s + '\n'
-    def get_latex(self):
+    def get_latex(self, include_scoring_comments=False):
         """Get latex.
 
         Returns:
             TODO: describe return value.
         """
         s = f'    \\item {self.text}'
-        if self.comment is not None:
-            s += f'\\pdfcomment{{{self.comment}}}'
+        if include_scoring_comments and self.comment is not None:
+            s += f'\\pdfcomment{{{_latex_comment(self.comment)}}}'
         return s + '\n'
     def copy(self):
         """Copy.
@@ -187,11 +197,11 @@ class SectionListItem:
         Returns:
             TODO: describe return value.
         """
-        return SectionListItem(self.text, self.parent, self.comment)
+        return SectionListItem(self.text, self.parent, self.comment, id=self.id)
 
 class DocSectionItem:
     """DocSectionItem model."""
-    def __init__(self, company : str, duration : str, position : str, text_items : list[str]):
+    def __init__(self, company : str, duration : str, position : str, text_items : list[str], id=None, item_ids=None):
         """  init  .
 
         Args:
@@ -204,7 +214,11 @@ class DocSectionItem:
             TODO: describe return value.
         """
         self.company, self.duration, self.position =  company, duration, position
-        self.section_item_list = [SectionListItem(li, parent = self) for li in text_items]
+        self.id = id or str(uuid4())
+        if item_ids is not None and len(item_ids) != len(text_items):
+            raise ValueError("item_ids must match text_items")
+        self.section_item_list = [SectionListItem(li, parent=self, id=item_ids[i] if item_ids else None)
+                                  for i, li in enumerate(text_items)]
         self.comment = None
     def set_comment(self, comment):
         """Set comment.
@@ -233,18 +247,23 @@ class DocSectionItem:
             TODO: describe return value.
         """
         text_items_copy = [i.text for i in self.section_item_list]
-        return DocSectionItem(self.company, self.duration, self.position, text_items_copy)
-    def get_latex(self):
+        result = DocSectionItem(self.company, self.duration, self.position, text_items_copy,
+                                id=self.id, item_ids=[i.id for i in self.section_item_list])
+        result.comment = self.comment
+        for original, copied in zip(self.section_item_list, result.section_item_list):
+            copied.comment = original.comment
+        return result
+    def get_latex(self, include_scoring_comments=False):
         """Get latex.
 
         Returns:
             TODO: describe return value.
         """
         s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}}}\n"
-        if self.comment is not None:
-            s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}\\pdfcomment{{{self.comment}}}}}\n"
+        if include_scoring_comments and self.comment is not None:
+            s = f"  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}\\pdfcomment{{{_latex_comment(self.comment)}}}}}\n"
         for i in self.section_item_list:
-            s += i.get_latex()
+            s += i.get_latex(include_scoring_comments=include_scoring_comments)
         s += f'  \\end{{myrSubsection}}\n'
         return s
     
@@ -255,6 +274,8 @@ class DocSectionItem:
             TODO: describe return value.
         """
         return {
+            'id': self.id,
+            'item_ids': [i.id for i in self.section_item_list],
             'company' : self.company,
             'duration' : self.duration,
             'position' : self.position,
@@ -291,7 +312,7 @@ class FullCVDocument:
         self.statement, self.experience_section = statement, experience_section
         self.cv_template = cv_template or CVTemplateData(template_path=TEMPLATE_NAME)
         
-    def make_latex(self, newpage_after_experience = True):
+    def make_latex(self, newpage_after_experience = True, include_scoring_comments=False):
         """Make latex.
 
         Args:
@@ -304,13 +325,13 @@ class FullCVDocument:
             ff = f.read()
 
         ff = ff.replace('<statement>', self.statement)
-        _exp_latex = self.experience_section.get_latex()
+        _exp_latex = self.experience_section.get_latex(include_scoring_comments=include_scoring_comments)
         if newpage_after_experience:
             _exp_latex += '\n' + '\\newpage' + '\n'  *2
         ff = ff.replace('<experience_section>', _exp_latex)
         return ff
     
-    def render_pdf(self, out_file):
+    def render_pdf(self, out_file, include_scoring_comments=False):
         """Render pdf.
 
         Args:
@@ -319,7 +340,7 @@ class FullCVDocument:
         Returns:
             TODO: describe return value.
         """
-        _latex_to_pdf(self.make_latex(), out_file)
+        _latex_to_pdf(self.make_latex(include_scoring_comments=include_scoring_comments), out_file)
     
     def to_json(self, file):
         """To json.
@@ -367,7 +388,7 @@ class FullCVDocument:
         Returns:
             TODO: describe return value.
         """
-        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template)
+        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template.model_copy(deep=True))
 
 class CoverLetterModel:
     """CoverLetterModel model."""

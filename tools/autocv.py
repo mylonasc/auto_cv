@@ -181,9 +181,9 @@ async def run_pipeline(args: argparse.Namespace) -> str:
         with open(os.path.join(tmp_dir, "cover_letter_tmp.tex"), "w", encoding="utf-8") as f:
             f.write(clm.render_tex_template())
 
-    cvca.cv_model.copy().render_pdf(os.path.join(tmp_dir, "test_before_edits.pdf"))
-    cvca.cv_model.render_pdf(os.path.join(tmp_dir, "test_after_edits.pdf"))
-    cvca.cv_model.copy().render_pdf(os.path.join(tmp_dir, "test_after_edits_nocomments.pdf"))
+    cvca.source_cv.render_pdf(os.path.join(tmp_dir, "test_before_edits.pdf"))
+    cvca.render_document(True).render_pdf(os.path.join(tmp_dir, "test_after_edits.pdf"), include_scoring_comments=True)
+    cvca.render_document().render_pdf(os.path.join(tmp_dir, "test_after_edits_nocomments.pdf"))
 
     with open(os.path.join(tmp_dir, "metrics_summary.txt"), "w", encoding="utf-8") as f:
         f.write(json.dumps(metrics_post[0]))
@@ -194,9 +194,9 @@ async def run_pipeline(args: argparse.Namespace) -> str:
     latex_root = os.path.join(tmp_dir, "latex_folder")
     os.makedirs(latex_root, exist_ok=True)
     with open(os.path.join(latex_root, "cv_edited_with_comments.tex"), "w", encoding="utf-8") as f:
-        f.write(cvca.cv_model.make_latex())
+        f.write(cvca.render_document(True).make_latex(include_scoring_comments=True))
     with open(os.path.join(latex_root, "cv_edited_no_comments.tex"), "w", encoding="utf-8") as f:
-        f.write(cvca.cv_model.copy().make_latex())
+        f.write(cvca.render_document().make_latex())
 
     resume_cls_src = os.path.join(os.getenv("CV_CUSTOMIZER_ROOT", os.getcwd()), "assets", "resume.cls")
     pic_src = os.path.join(os.getenv("CV_CUSTOMIZER_ROOT", os.getcwd()), "assets", "images", "my_pic.jpeg")

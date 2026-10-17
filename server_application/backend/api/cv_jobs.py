@@ -12,6 +12,7 @@ from models.api_models import (
     WorkingCopy, WorkingCopySection, WorkingCopyItem, SectionFilterConfig,
     RescoreRequest, RescoreResponse, RescoredItemResult, RescoreItem, JobAnalysisResponse,
 )
+from models.legacy import normalize_working_copy
 from jobs.job_manager import job_manager
 from services.cv_processor import CVProcessor
 from core.paths import ARTIFACTS_DIR, WORKING_CVS_DIR, ensure_data_dirs
@@ -20,6 +21,7 @@ from src.domain import CVTemplateData
 from src.template_registry import resolve_template_path
 from src.utils import JobPostAnalysis
 from src.models import ModelFactory
+from src.analysis import score_comment, select_scored_ids, SelectionPolicy
 from src.utils_cross_analysis import BulletAnalysis, section_experience_analysis_prompt, _make_default_model
 from langchain_core.prompts import ChatPromptTemplate
 from datetime import datetime
@@ -72,7 +74,9 @@ def _create_working_copy_from_job(job) -> WorkingCopy:
         items = section.get("items", []) or []
         wc_items = [
             WorkingCopyItem(
+                **({"id": it["id"]} if it.get("id") else {}),
                 text=it.get("text", ""),
+                scored_text=it.get("text") if it.get("relevance_score") is not None else None,
                 original_text=it.get("text", ""),
                 relevance_score=it.get("relevance_score"),
                 explanation=it.get("explanation"),
@@ -82,6 +86,7 @@ def _create_working_copy_from_job(job) -> WorkingCopy:
             for it in items
         ]
         wc_sections.append(WorkingCopySection(
+            **({"id": section["id"]} if section.get("id") else {}),
             company=section.get("company", ""),
             position=section.get("position", ""),
             duration=section.get("duration", ""),
@@ -118,21 +123,30 @@ def _load_working_copy_from_disk(job_id: str) -> Optional[WorkingCopy]:
         return None
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return WorkingCopy(**data)
+    return WorkingCopy.model_validate(normalize_working_copy(data))
 
 
 def _render_from_working_copy(working_copy: WorkingCopy, request: RenderCVRequest, job_id: str) -> list:
     """Render PDF/LaTeX artifacts from a WorkingCopy directly."""
     doc_items = []
     for section in working_copy.sections:
-        kept_texts = [item.text for item in section.items if item.kept]
+        kept_items = [item for item in section.items if item.kept]
+        kept_texts = [item.text for item in kept_items]
         if kept_texts:
-            doc_items.append(DocSectionItem(
+            rendered = DocSectionItem(
                 company=section.company,
                 duration=section.duration,
                 position=section.position,
                 text_items=kept_texts,
-            ))
+                id=section.id, item_ids=[item.id for item in kept_items],
+            )
+            if request.include_scoring_comments:
+                rendered.set_comment(score_comment(section.section_score, section.section_explanation,
+                                                   section.section_posting_evidence))
+                for point, item in zip(rendered.section_item_list, kept_items):
+                    if item.scored_text == item.text:
+                        point.set_comment(score_comment(item.relevance_score, item.explanation, item.posting_evidence))
+            doc_items.append(rendered)
 
     title = "Work Experience"
     experience_section = DocSection(title, doc_items)
@@ -147,7 +161,7 @@ def _render_from_working_copy(working_copy: WorkingCopy, request: RenderCVReques
     if request.render_pdf:
         pdf_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.pdf"
         pdf_path = os.path.join(ARTIFACTS_DIR, pdf_name)
-        document.copy().render_pdf(pdf_path)
+        document.copy().render_pdf(pdf_path, include_scoring_comments=request.include_scoring_comments)
         artifacts.append({
             "id": f"pdf_{job_id}_{timestamp}",
             "kind": "pdf",
@@ -160,7 +174,7 @@ def _render_from_working_copy(working_copy: WorkingCopy, request: RenderCVReques
         tex_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.tex"
         tex_path = os.path.join(ARTIFACTS_DIR, tex_name)
         with open(tex_path, "w", encoding="utf-8") as f:
-            f.write(document.make_latex())
+            f.write(document.make_latex(include_scoring_comments=request.include_scoring_comments))
         artifacts.append({
             "id": f"latex_{job_id}_{timestamp}",
             "kind": "latex",
@@ -513,6 +527,7 @@ async def rescore_working_copy_items(job_id: str, request: RescoreRequest):
             })
 
             item.text = text
+            item.scored_text = text
             item.relevance_score = res.experience_relevance_score
             item.explanation = res.explanation
             item.posting_evidence = res.posting_evidence
@@ -522,6 +537,7 @@ async def rescore_working_copy_items(job_id: str, request: RescoreRequest):
                 relevance_score=res.experience_relevance_score,
                 explanation=res.explanation,
                 posting_evidence=res.posting_evidence,
+                scored_text=text,
             ))
         except Exception as e:
             print(f"Rescore failed for item {idx}: {e}")
@@ -566,28 +582,28 @@ async def render_job_artifacts(job_id: str, request: RenderCVRequest):
         raise HTTPException(status_code=400, detail="Job has no section analysis to render from")
 
     doc_items = []
+    policy = SelectionPolicy(min_items=request.min_section_items_keep,
+                             max_items=request.max_section_items_keep, min_score=request.min_relevance_score)
     for section in sections:
         raw_items = section.get("items") or []
-        sorted_items = sorted(raw_items, key=lambda x: -(x.get("relevance_score") or 0))
-        kept = []
-        for item in sorted_items:
-            score = item.get("relevance_score") or 0
-            if len(kept) < request.min_section_items_keep or (
-                len(kept) < request.max_section_items_keep and score >= request.min_relevance_score
-            ):
-                kept.append(item.get("text") or "")
-
+        selected = select_scored_ids(tuple((str(index), item.get("relevance_score"))
+                                           for index, item in enumerate(raw_items)), policy)
+        kept = [item for index, item in enumerate(raw_items) if str(index) in selected and item.get("text")]
         if not kept:
-            kept = [it.get("text") or "" for it in sorted_items[:request.min_section_items_keep]]
-
-        doc_items.append(
-            DocSectionItem(
+            continue
+        rendered = DocSectionItem(
                 company=section.get("company") or "",
                 duration=section.get("duration") or "",
                 position=section.get("position") or "",
-                text_items=[t for t in kept if t],
+                text_items=[item["text"] for item in kept],
+                id=section.get("id"), item_ids=[item.get("id") for item in kept],
             )
-        )
+        if request.include_scoring_comments:
+            rendered.set_comment(score_comment(section.get("section_score"), section.get("explanation"),
+                                               section.get("posting_evidence")))
+            for point, item in zip(rendered.section_item_list, kept):
+                point.set_comment(score_comment(item.get("relevance_score"), item.get("explanation"), item.get("posting_evidence")))
+        doc_items.append(rendered)
 
     title = sections[0].get("title") if sections and isinstance(sections[0], dict) else "Work Experience"
     experience_section = DocSection(title or "Work Experience", doc_items)
@@ -602,7 +618,7 @@ async def render_job_artifacts(job_id: str, request: RenderCVRequest):
     if request.render_pdf:
         pdf_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.pdf"
         pdf_path = os.path.join(ARTIFACTS_DIR, pdf_name)
-        document.copy().render_pdf(pdf_path)
+        document.copy().render_pdf(pdf_path, include_scoring_comments=request.include_scoring_comments)
         artifacts.append({
             "id": f"pdf_{job_id}_{timestamp}",
             "kind": "pdf",
@@ -614,7 +630,7 @@ async def render_job_artifacts(job_id: str, request: RenderCVRequest):
         tex_name = f"cv_output_{job_id}_{request.cv_template_id}_{timestamp}.tex"
         tex_path = os.path.join(ARTIFACTS_DIR, tex_name)
         with open(tex_path, "w", encoding="utf-8") as f:
-            f.write(document.make_latex())
+            f.write(document.make_latex(include_scoring_comments=request.include_scoring_comments))
         artifacts.append({
             "id": f"latex_{job_id}_{timestamp}",
             "kind": "latex",

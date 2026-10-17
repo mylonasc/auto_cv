@@ -24,11 +24,11 @@ async def test_cv_cross_analysis(tmp_path, fake_model):
         progress.append(message)
 
     result = await cross.analyze_job_experience_section(progress_callback=record)
-    assert result["full_section_analysis"][role]["experience_relevance_score"] == 8
-    bullets = result["by_section_item_analysis"][role]
-    assert [bullets[bullet]["experience_relevance_score"] for bullet in role.section_item_list] == [9, 2]
+    assert result.roles[0].assessment.experience_relevance_score == 8
+    assert [bullet.assessment.experience_relevance_score for bullet in result.roles[0].items] == [9, 2]
     assert len(progress) == 3
     cross.rewrite_reviewed_experience_section(min_relevance_score=5)
-    assert [bullet.text for bullet in role.section_item_list] == [
+    assert len(role.section_item_list) == 2  # Source is never pruned.
+    assert [bullet.text for bullet in cross.cv_model.experience_section.doc_section_items[0].section_item_list] == [
         "Developed Python applications using LangChain.",
     ]

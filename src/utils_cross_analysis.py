@@ -3,12 +3,13 @@ import asyncio
 import hashlib
 import threading
 from bs4 import BeautifulSoup
-import numpy as np
 import os
 import pandas as pd
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
+from .analysis import Assessment, AnalyzedBullet, AnalyzedRole, AnalysisSnapshot, SelectionPolicy, select_bullets, aggregate_metrics, score_comment
+from .utils import DocSection, DocSectionItem, FullCVDocument
 
 class BulletAnalysis(BaseModel):
     """BulletAnalysis model."""
@@ -272,6 +273,9 @@ class CVCrossAnalyzer:
             TODO: describe return value.
         """
         self.cv_model = full_cv_document
+        self.source_cv = full_cv_document.copy()
+        self.snapshot: AnalysisSnapshot | None = None
+        self.selected_ids: frozenset[str] | None = None
         self.job_post_analyzer = job_post_analyzer
         self.model = llm_model or _make_default_model()
         self.llm_editor_model = llm_editor_model or self.model
@@ -328,164 +332,106 @@ class CVCrossAnalyzer:
         self.data['personal_statement_analysis'] = res.model_dump()
         
     async def analyze_job_experience_section(self, concurrency_limit=5, progress_callback=None):
-        """Analyze job experience section.
-
-        Args:
-            concurrency_limit: TODO: describe.
-            progress_callback: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
-        section = self.cv_model.experience_section
-        _job_post_data = str(self.job_post_analyzer.data)
-        _job_post_raw = getattr(self.job_post_analyzer, 'post_txt', _job_post_data)
-        by_section_item_analysis = {}
-        by_section_analysis = {}
-        
+        """Analyze source content without mutating text, comments or selection."""
+        if concurrency_limit < 1:
+            raise ValueError("concurrency_limit must be positive")
+        section = self.source_cv.experience_section
+        context = str(self.job_post_analyzer.data)
+        raw = self.job_post_analyzer.post_txt
         semaphore = asyncio.Semaphore(concurrency_limit)
-        total_bullets = sum(len(s.section_item_list) for s in section.doc_section_items)
-        total_sections = len(section.doc_section_items)
+        total = sum(len(s.section_item_list) + 1 for s in section.doc_section_items)
         completed_items = 0
         progress_lock = asyncio.Lock()
 
-        async def update_progress(msg):
-            """Update progress.
-
-            Args:
-                msg: TODO: describe.
-
-            Returns:
-                TODO: describe return value.
-            """
+        async def progress(message):
             nonlocal completed_items
             async with progress_lock:
                 completed_items += 1
-                if progress_callback: await progress_callback(f"[{completed_items}/{total_bullets+total_sections}] {msg}")
+                if progress_callback:
+                    await progress_callback(f"[{completed_items}/{total}] {message}")
 
-        async def analyze_bullet(s_item, bullet):
-            """Analyze bullet.
-
-            Args:
-                s_item: TODO: describe.
-                bullet: TODO: describe.
-
-            Returns:
-                TODO: describe return value.
-            """
+        async def assess(scope, payload, chain_name, inputs):
             async with semaphore:
                 try:
-                    cache_key = _make_cache_key('experience_bullet_v1', {
-                        'job_posting_text': _job_post_raw,
-                        'cv_experience': bullet.text,
-                    })
-                    jdata = _analysis_cache.get(cache_key)
-                    if jdata is None:
-                        res = await self.chains['experience_section_analysis']['chain'].ainvoke({'cv_experience' : bullet.text, 'job_posting_data' : _job_post_data})
-                        jdata = res.model_dump()
-                        _analysis_cache.set(cache_key, jdata, persist=False)
-                    bullet.set_comment(str(jdata).replace(' & ',' and '))
-                    await update_progress(f"Analyzed bullet: {bullet.text[:30]}...")
-                    return s_item, bullet, jdata
-                except Exception as e:
-                    await update_progress(f"Failed bullet: {bullet.text[:30]}...")
+                    key = _make_cache_key(scope, payload)
+                    data = _analysis_cache.get(key)
+                    if data is None:
+                        output = await self.chains[chain_name]['chain'].ainvoke(inputs)
+                        data = output.model_dump()
+                        _analysis_cache.set(key, data, persist=False)
+                    return Assessment.model_validate(data)
+                except Exception:
+                    # Missing assessments remain explicit in the snapshot. RFK-07
+                    # adds stage-level partial/failure reporting and cache policy.
                     return None
 
-        bullet_tasks = [analyze_bullet(s, i) for s in section.doc_section_items for i in s.section_item_list]
-        for res in await asyncio.gather(*bullet_tasks):
-            if res:
-                s_item, bullet, jdata = res
-                if s_item not in by_section_item_analysis: by_section_item_analysis[s_item] = {}
-                by_section_item_analysis[s_item][bullet] = jdata
+        async def analyze_bullet(bullet):
+            assessment = await assess('experience_bullet_v1', {
+                'job_posting_text': raw, 'cv_experience': bullet.text,
+            }, 'experience_section_analysis', {'cv_experience': bullet.text, 'job_posting_data': context})
+            await progress(f"{'Analyzed' if assessment else 'Failed'} bullet: {bullet.text[:30]}")
+            return AnalyzedBullet(id=bullet.id, text=bullet.text, assessment=assessment)
 
-        async def synthesize_section(s_item):
-            """Synthesize section.
+        async def analyze_role(role):
+            items = tuple(await asyncio.gather(*(analyze_bullet(item) for item in role.section_item_list)))
+            details = '\n'.join(f"{item.text}: {item.assessment.experience_relevance_score if item.assessment else 'N/A'}"
+                                for item in items)
+            content = '\n'.join(item.text for item in items)
+            assessment = await assess('experience_section_synthesis_v2', {
+                'job_posting_text': raw, 'company': role.company, 'position': role.position,
+                'cv_experience': content, 'item_analyses': details,
+            }, 'section_synthesis_analysis', {
+                'cv_experience': content, 'job_posting_data': context,
+                'company': role.company, 'position': role.position, 'item_analyses': details,
+            })
+            await progress(f"Synthesized section: {role.company}")
+            return AnalyzedRole(id=role.id, company=role.company, position=role.position,
+                                duration=role.duration, items=items, assessment=assessment)
 
-            Args:
-                s_item: TODO: describe.
-
-            Returns:
-                TODO: describe return value.
-            """
-            async with semaphore:
-                bullet_analyses = ""
-                for i, bullet in enumerate(s_item.section_item_list):
-                    analysis = by_section_item_analysis.get(s_item, {}).get(bullet, {})
-                    bullet_analyses += f"Bullet {i+1}: {bullet.text}\n Score: {analysis.get('experience_relevance_score', 'N/A')}\n\n"
-                try:
-                    cv_experience = s_item.get_markdown()
-                    cache_key = _make_cache_key('experience_section_synthesis_v1', {
-                        'job_posting_text': _job_post_raw,
-                        'company': s_item.company,
-                        'position': s_item.position,
-                        'cv_experience': cv_experience,
-                        'item_analyses': bullet_analyses,
-                    })
-                    jdata = _analysis_cache.get(cache_key)
-                    if jdata is None:
-                        res = await self.chains['section_synthesis_analysis']['chain'].ainvoke({
-                            'cv_experience' : cv_experience, 'job_posting_data' : _job_post_data,
-                            'company': s_item.company, 'position': s_item.position, 'item_analyses': bullet_analyses
-                        })
-                        jdata = res.model_dump()
-                        _analysis_cache.set(cache_key, jdata, persist=False)
-                    s_item.set_comment(str(jdata))
-                    await update_progress(f"Synthesized section: {s_item.company}")
-                    return s_item, jdata
-                except Exception as e:
-                    return None
-
-        section_tasks = [synthesize_section(s) for s in section.doc_section_items]
-        for res in await asyncio.gather(*section_tasks):
-            if res: by_section_analysis[res[0]] = res[1]
-
+        self.snapshot = AnalysisSnapshot(roles=tuple(await asyncio.gather(
+            *(analyze_role(role) for role in section.doc_section_items))))
         _analysis_cache.flush()
-
-        self.data['experience_section_analysis'] = {'full_section_analysis' : by_section_analysis,'by_section_item_analysis' : by_section_item_analysis}
-        return self.data['experience_section_analysis']
+        self.data['experience_section_analysis'] = self.snapshot.model_dump(mode='json')
+        return self.snapshot
         
     def get_section_aggregate_metrics(self):
-        """Get section aggregate metrics.
-
-        Returns:
-            TODO: describe return value.
-        """
-        section_scoring = []
-        section_weights = []
-        for section, s in self.data['experience_section_analysis']['full_section_analysis'].items():
-            weight = len(section.get_markdown().split(' '))
-            score = s['experience_relevance_score']
-            section_scoring.append(score)
-            section_weights.append(weight)
-        
-        all_dat = pd.DataFrame({'section_relevance': section_scoring, 'section_weight': section_weights})
-        mean_section_relevance = np.mean(all_dat['section_relevance'])
-        weighted_mean_section_relevance = np.sum(all_dat['section_relevance'] * all_dat['section_weight'] / np.sum(all_dat['section_weight']))
-        _res  = {
-            'conciseness_relevance_metric' : weighted_mean_section_relevance - mean_section_relevance, 
-            'mean_section_relevance' : mean_section_relevance,
-            'weighted_mean_section_relevance' : weighted_mean_section_relevance
-        }
-        return _res, all_dat, []
+        """Compatibility presentation for CLI callers; calculation is pure."""
+        if self.snapshot is None:
+            raise ValueError("Analyze the CV before calculating metrics")
+        records = [{'role_id': role.id, 'section_relevance': role.assessment.experience_relevance_score}
+                   for role in self.snapshot.roles if role.assessment]
+        return aggregate_metrics(self.snapshot, self.selected_ids), pd.DataFrame(records), []
     
     def rewrite_reviewed_experience_section(self, min_section_items_keep = 1, max_section_items_keep = 6, min_relevance_score = 3):
-        """Rewrite reviewed experience section.
+        """Select a new document without deleting anything from the analysis."""
+        if self.snapshot is None:
+            raise ValueError("Analyze the CV before selecting content")
+        policy = SelectionPolicy(min_items=min_section_items_keep, max_items=max_section_items_keep,
+                                 min_score=min_relevance_score)
+        self.selected_ids = frozenset(item_id for role in self.snapshot.roles
+                                      for item_id in select_bullets(role.items, policy))
+        self.cv_model = self.render_document()
+        return self.selected_ids
 
-        Args:
-            min_section_items_keep: TODO: describe.
-            max_section_items_keep: TODO: describe.
-            min_relevance_score: TODO: describe.
-
-        Returns:
-            TODO: describe return value.
-        """
-        bsa = self.data['experience_section_analysis']['by_section_item_analysis']
-        fsa = self.data['experience_section_analysis']['full_section_analysis']
-        for k in fsa.keys():
-            temp_list = sorted(k.section_item_list, key = lambda x : -bsa[k].get(x, {}).get('experience_relevance_score', 0))
-            new_list = []
-            for item in temp_list:
-                score = bsa[k].get(item, {}).get('experience_relevance_score', 0)
-                if len(new_list) < min_section_items_keep or (len(new_list) < max_section_items_keep and score >= min_relevance_score):
-                    new_list.append(item)
-            k.section_item_list = new_list
+    def render_document(self, include_scoring_comments=False):
+        """Build a rendering adapter from immutable analysis and explicit selection."""
+        if self.snapshot is None:
+            raise ValueError("Analyze the CV before rendering")
+        roles = []
+        for role in self.snapshot.roles:
+            items = [item for item in role.items if self.selected_ids is None or item.id in self.selected_ids]
+            if not items:
+                continue
+            rendered = DocSectionItem(role.company, role.duration, role.position,
+                                      [item.text for item in items], id=role.id,
+                                      item_ids=[item.id for item in items])
+            if include_scoring_comments:
+                def comment(assessment):
+                    return score_comment(assessment.experience_relevance_score, assessment.explanation,
+                                         assessment.posting_evidence) if assessment else None
+                rendered.set_comment(comment(role.assessment))
+                for bullet, item in zip(rendered.section_item_list, items):
+                    bullet.set_comment(comment(item.assessment))
+            roles.append(rendered)
+        return FullCVDocument(self.cv_model.statement, DocSection(self.source_cv.experience_section.section_title, roles),
+                              cv_template=self.source_cv.cv_template.model_copy(deep=True))

@@ -147,12 +147,7 @@ class CVProcessor:
                 min_relevance_score=rewrite_policy.min_relevance_score
             )
             
-            # Get results
-            # Update metrics after rewrite
-            await cvca.analyze_job_experience_section(
-                concurrency_limit=self.config.concurrency_limit,
-                progress_callback=progress_wrapper
-            )
+            # Selection never destroys the complete source analysis or reruns it.
             agg_metrics_tuple = await asyncio.to_thread(cvca.get_section_aggregate_metrics)
             agg_metrics_summary = agg_metrics_tuple[0]
             
@@ -167,8 +162,9 @@ class CVProcessor:
                     await status_callback(job_id, JobStatus.PROCESSING, "Generating PDF...")
                 pdf_path = os.path.join(artifacts_dir, f"cv_output_{job_id}.pdf")
                 # render_pdf might also be blocking
-                cv_copy = cvca.cv_model.copy()
-                await asyncio.to_thread(cv_copy.render_pdf, pdf_path)
+                document = cvca.render_document(include_scoring_comments=self.config.outputs.include_scoring_comments)
+                await asyncio.to_thread(document.render_pdf, pdf_path,
+                                        include_scoring_comments=self.config.outputs.include_scoring_comments)
                 artifacts.append({
                     "id": f"pdf_{job_id}",
                     "kind": "pdf",
@@ -181,7 +177,9 @@ class CVProcessor:
                 if status_callback:
                     await status_callback(job_id, JobStatus.PROCESSING, "Generating LaTeX...")
                 
-                latex_content = await asyncio.to_thread(cvca.cv_model.make_latex)
+                document = cvca.render_document(include_scoring_comments=self.config.outputs.include_scoring_comments)
+                latex_content = await asyncio.to_thread(document.make_latex,
+                                                       include_scoring_comments=self.config.outputs.include_scoring_comments)
                 latex_path = os.path.join(artifacts_dir, f"cv_output_{job_id}.tex")
                 with open(latex_path, 'w') as f:
                     f.write(latex_content)
@@ -194,57 +192,25 @@ class CVProcessor:
             
             # Build result
             sections = []
-            # We treat each DocSectionItem as a section for the frontend's benefit
-            experience_section = cvca.cv_model.experience_section
-            analysis_data = cvca.data.get('experience_section_analysis', {})
-            full_section_analysis = analysis_data.get('full_section_analysis', {})
-            by_item_analysis = analysis_data.get('by_section_item_analysis', {})
-            
-            for item in experience_section.doc_section_items:
-                item_analysis = full_section_analysis.get(item, {})
-                
-                # Extract score and explanation
-                score = None
-                explanation = None
-                posting_evidence = None
-                if isinstance(item_analysis, dict):
-                    score = item_analysis.get('experience_relevance_score')
-                    explanation = item_analysis.get('explanation')
-                    posting_evidence = item_analysis.get('posting_evidence')
-                elif isinstance(item_analysis, list) and len(item_analysis) > 0:
-                    score = item_analysis[0].get('experience_relevance_score')
-                    explanation = item_analysis[0].get('explanation')
-                    posting_evidence = item_analysis[0].get('posting_evidence')
-                
-                # Get individual bullet point analyses
-                bullet_items = []
-                item_bullets_analysis = by_item_analysis.get(item, {})
-                for bullet in item.section_item_list:
-                    bullet_analysis = item_bullets_analysis.get(bullet, {})
-                    bullet_score = None
-                    bullet_explanation = None
-                    bullet_evidence = None
-                    if isinstance(bullet_analysis, dict):
-                        bullet_score = bullet_analysis.get('experience_relevance_score')
-                        bullet_explanation = bullet_analysis.get('explanation')
-                        bullet_evidence = bullet_analysis.get('posting_evidence')
-                    
-                    bullet_items.append({
-                        "text": bullet.text,
-                        "relevance_score": bullet_score,
-                        "explanation": bullet_explanation,
-                        "posting_evidence": bullet_evidence,
-                        "kept": True # Since it was kept in the filtered list
-                    })
+            for role in cvca.snapshot.roles:
+                assessment = role.assessment
+                bullet_items = [{
+                    "id": bullet.id, "text": bullet.text,
+                    "relevance_score": bullet.assessment.experience_relevance_score if bullet.assessment else None,
+                    "explanation": bullet.assessment.explanation if bullet.assessment else None,
+                    "posting_evidence": bullet.assessment.posting_evidence if bullet.assessment else None,
+                    "kept": bullet.id in cvca.selected_ids,
+                } for bullet in role.items]
 
                 sections.append({
-                    "title": experience_section.section_title,
-                    "company": item.company,
-                    "position": item.position,
-                    "duration": item.duration,
-                    "section_score": score,
-                    "explanation": explanation,
-                    "posting_evidence": posting_evidence,
+                    "id": role.id,
+                    "title": cvca.source_cv.experience_section.section_title,
+                    "company": role.company,
+                    "position": role.position,
+                    "duration": role.duration,
+                    "section_score": assessment.experience_relevance_score if assessment else None,
+                    "explanation": assessment.explanation if assessment else None,
+                    "posting_evidence": assessment.posting_evidence if assessment else None,
                     "items": bullet_items
                 })
             

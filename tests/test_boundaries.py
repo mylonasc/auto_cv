@@ -119,7 +119,6 @@ def test_section_evidence_survives_http_and_working_copy(client, completed_job):
     assert wc["sections"][0]["section_posting_evidence"] == "Software delivery"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="RFK-04 #9: filtering discards analyzed content")
 def test_working_copy_retains_deselected_bullets(client, completed_job):
     wc = client.get(f"/v1/cv-jobs/{completed_job.id}/working-cv").json()
     items = wc["sections"][0]["items"]

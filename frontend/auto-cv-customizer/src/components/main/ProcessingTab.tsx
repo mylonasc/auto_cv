@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppState, type BackendJob, type WorkingCopy, type SectionFilterConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import type { TemplateRegistryResponse } from '../../services/api';
+import { applySectionFilter as filterSection } from '../../domain/selection';
 import './ProcessingTab.css';
 
 const ProcessingTab: React.FC = () => {
@@ -194,6 +195,7 @@ const ProcessingTab: React.FC = () => {
         cv_template_path: templateRegistry.cv_templates[selectedTemplateId],
         include_latex: state.backendConfig.outputs.includeLaTeX,
         render_pdf: state.backendConfig.outputs.renderPDF,
+        include_scoring_comments: state.backendConfig.outputs.includeScoringComments,
       });
       dispatch({ type: 'SET_PROCESSING_STATE', payload: nextState });
       dispatch({ type: 'SET_UI_STATE', payload: { showExportDialog: true } });
@@ -230,31 +232,14 @@ const ProcessingTab: React.FC = () => {
   }, [state.processingState?.jobId, state.processingState?.status, state.processingState?.lastSuccessfulJobId, loadWorkingCopy, localWorkingCopy]);
 
   const applySectionFilter = (sectionIndex: number) => {
-    setLocalWorkingCopy(prev => {
-      if (!prev) return prev;
-      const sections = prev.sections.map((s, si) => {
-        if (si !== sectionIndex) return s;
-        const fc = s.filterConfig;
-        const scoredItems = s.items.map((it, ii) => ({ ...it, _origIdx: ii }));
-        scoredItems.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
-
-        let keptCount = 0;
-        const keptFlags = new Array(s.items.length).fill(false);
-        for (const sii of scoredItems) {
-          const score = sii.relevanceScore ?? 0;
-          if (keptCount < fc.minItemsKeep || (keptCount < fc.maxItemsKeep && score >= fc.minRelevanceScore)) {
-            keptFlags[sii._origIdx] = true;
-            keptCount++;
-          }
-        }
-
-        return {
-          ...s,
-          items: s.items.map((it, ii) => ({ ...it, kept: keptFlags[ii] })),
-        };
-      });
-      return { ...prev, sections };
-    });
+    if (!localWorkingCopy) return;
+    try {
+      const filtered = filterSection(localWorkingCopy.sections[sectionIndex]);
+      setLocalWorkingCopy({ ...localWorkingCopy,
+        sections: localWorkingCopy.sections.map((section, index) => index === sectionIndex ? filtered : section) });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Invalid filtering policy');
+    }
   };
 
   const toggleItem = (sectionIndex: number, itemIndex: number) => {
@@ -340,6 +325,7 @@ const ProcessingTab: React.FC = () => {
               return {
                 ...it,
                 relevanceScore: ri.relevance_score,
+                scoredText: ri.scored_text,
                 explanation: ri.explanation,
                 postingEvidence: ri.posting_evidence,
               };
@@ -379,6 +365,7 @@ const ProcessingTab: React.FC = () => {
               return {
                 ...it,
                 relevanceScore: ri.relevance_score,
+                scoredText: ri.scored_text,
                 explanation: ri.explanation,
                 postingEvidence: ri.posting_evidence,
               };
@@ -418,6 +405,7 @@ const ProcessingTab: React.FC = () => {
         cv_template_path: templateRegistry.cv_templates[selectedTemplateId],
         include_latex: state.backendConfig.outputs.includeLaTeX,
         render_pdf: state.backendConfig.outputs.renderPDF,
+        include_scoring_comments: state.backendConfig.outputs.includeScoringComments,
         working_copy: backendWC,
       });
       dispatch({ type: 'SET_PROCESSING_STATE', payload: nextState });
@@ -625,7 +613,7 @@ const ProcessingTab: React.FC = () => {
 
             {/* ── Per-Section Editors ── */}
             {localWorkingCopy.sections.map((section, sIdx) => (
-              <div key={sIdx} className="workcpy-section-card">
+              <div key={section.id} className="workcpy-section-card">
                 <div className="workcpy-section-header">
                   <span>{section.company} — {section.position}</span>
                   <span className="workcpy-section-score">
@@ -699,7 +687,7 @@ const ProcessingTab: React.FC = () => {
                 {/* Items */}
                 <ul className="workcpy-items-list">
                   {section.items.map((item, iIdx) => (
-                    <li key={iIdx} className={`workcpy-item-row ${item.kept ? '' : 'removed'}`}>
+                    <li key={item.id} className={`workcpy-item-row ${item.kept ? '' : 'removed'}`}>
                       <input
                         type="checkbox"
                         className="workcpy-item-checkbox"
@@ -714,6 +702,7 @@ const ProcessingTab: React.FC = () => {
                       />
                       <span className="workcpy-item-score">
                         {item.relevanceScore != null ? `${Number(item.relevanceScore).toFixed(1)}` : 'N/A'}
+                        {item.relevanceScore != null && item.scoredText !== item.text && ' (stale)'}
                       </span>
                       <div className="workcpy-item-actions">
                         <button

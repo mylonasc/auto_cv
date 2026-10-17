@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testIgnore: 'cv-editing.spec.ts', // API-isolated checks use playwright.cv.config.ts.
+  testIgnore: ['cv-editing.spec.ts', '**/unit/**'], // Separate isolated browser and Node suites.
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

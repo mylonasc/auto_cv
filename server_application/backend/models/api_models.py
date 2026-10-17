@@ -1,11 +1,12 @@
 """
 Pydantic models for the CV Customizer API.
 """
-from pydantic import BaseModel, ConfigDict, Field, with_config
+from pydantic import BaseModel, ConfigDict, Field, with_config, model_validator
 from typing import Optional, Dict, Any, List, Literal
 from typing_extensions import TypedDict, NotRequired
 from datetime import datetime
 from enum import Enum
+from uuid import uuid4
 
 
 class APIModel(BaseModel):
@@ -26,6 +27,7 @@ class Artifact(TypedDict):
 
 @with_config(ConfigDict(extra="forbid", allow_inf_nan=False))
 class ResultItem(TypedDict):
+    id: NotRequired[str]
     text: str
     relevance_score: NotRequired[float | None]
     explanation: NotRequired[str | None]
@@ -131,6 +133,7 @@ class ExperienceItem(BaseModel):
 class SectionResult(APIModel):
     """SectionResult model."""
     title: str
+    id: Optional[str] = None
     company: Optional[str] = None
     position: Optional[str] = None
     duration: Optional[str] = None
@@ -190,6 +193,8 @@ class SectionFilterConfig(APIModel):
 class WorkingCopyItem(APIModel):
     """A single bullet item in a working copy section."""
     text: str
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    scored_text: Optional[str] = None
     original_text: str = ""
     relevance_score: Optional[float] = None
     explanation: Optional[str] = None
@@ -200,6 +205,7 @@ class WorkingCopyItem(APIModel):
 class WorkingCopySection(APIModel):
     """A single experience section in a working copy."""
     company: str = ""
+    id: str = Field(default_factory=lambda: str(uuid4()))
     position: str = ""
     duration: str = ""
     section_score: Optional[float] = None
@@ -237,6 +243,7 @@ class RescoredItemResult(APIModel):
     relevance_score: float
     explanation: str
     posting_evidence: str
+    scored_text: str
 
 
 class RescoreResponse(APIModel):
@@ -247,14 +254,21 @@ class RescoreResponse(APIModel):
 
 class RenderCVRequest(APIModel):
     """RenderCVRequest model."""
-    min_relevance_score: int = 4
-    min_section_items_keep: int = 1
-    max_section_items_keep: int = 5
+    min_relevance_score: int = Field(default=4, ge=0, le=10)
+    min_section_items_keep: int = Field(default=1, ge=0)
+    max_section_items_keep: int = Field(default=5, ge=0)
     cv_template_id: str = "default_cv"
     cv_template_path: Optional[str] = None
     include_latex: bool = True
     render_pdf: bool = True
+    include_scoring_comments: bool = False
     working_copy: Optional[WorkingCopy] = None
+
+    @model_validator(mode="after")
+    def valid_limits(self):
+        if self.min_section_items_keep > self.max_section_items_keep:
+            raise ValueError("minimum items cannot exceed maximum items")
+        return self
 
 
 class SubmissionCreateRequest(APIModel):

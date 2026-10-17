@@ -64,7 +64,9 @@ export interface SectionFilterConfig {
   maxItemsKeep: number;
 }
 export interface WorkingCopyItem {
+  id: string;
   text: string;
+  scoredText: string | null;
   originalText: string;
   relevanceScore: number | null;
   explanation: string | null;
@@ -72,6 +74,7 @@ export interface WorkingCopyItem {
   kept: boolean;
 }
 export interface WorkingCopySection {
+  id: string;
   company: string;
   position: string;
   duration: string;

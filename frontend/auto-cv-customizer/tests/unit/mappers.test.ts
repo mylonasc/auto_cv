@@ -46,10 +46,11 @@ test('working-copy mapping round-trips all editable and analysis fields', () => 
   const copy: API.WorkingCopy = {
     job_id: job.id, personal_statement: 'Editable statement', created_at: null, updated_at: null,
     sections: [{
+      id: 'role-1',
       company: 'Example', position: 'Engineer', duration: '2020', section_score: 0,
       section_explanation: null, section_posting_evidence: 'Role evidence',
       filter_config: { min_relevance_score: 0, min_items_keep: 0, max_items_keep: 6 },
-      items: [{ text: 'Edited bullet', original_text: 'Original bullet', relevance_score: null,
+      items: [{ id: 'bullet-1', scored_text: 'Original bullet', text: 'Edited bullet', original_text: 'Original bullet', relevance_score: null,
         explanation: null, posting_evidence: 'Bullet evidence', kept: false }],
     }],
   };

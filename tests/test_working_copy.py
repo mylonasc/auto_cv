@@ -112,7 +112,7 @@ class TestWorkingCopyModels:
         resp = RescoreResponse(
             section_index=1,
             items=[
-                RescoredItemResult(index=0, relevance_score=9.5, explanation="Good match", posting_evidence="All requirements"),
+                RescoredItemResult(index=0, relevance_score=9.5, explanation="Good match", posting_evidence="All requirements", scored_text="Built feature"),
             ],
         )
         assert resp.section_index == 1

@@ -111,6 +111,7 @@ export interface RenderCVRequest {
   cv_template_path: string | null;
   include_latex: boolean;
   render_pdf: boolean;
+  include_scoring_comments: boolean;
   working_copy: WorkingCopy | null;
 }
 
@@ -135,9 +136,11 @@ export interface RescoredItemResult {
   relevance_score: number;
   explanation: string;
   posting_evidence: string;
+  scored_text: string;
 }
 
 export interface ResultItem {
+  id?: string;
   text: string;
   relevance_score?: number | null;
   explanation?: string | null;
@@ -159,6 +162,7 @@ export interface SectionFilterConfig {
 
 export interface SectionResult {
   title: string;
+  id: string | null;
   company: string | null;
   position: string | null;
   duration: string | null;
@@ -212,6 +216,8 @@ export interface WorkingCopy {
 
 export interface WorkingCopyItem {
   text: string;
+  id: string;
+  scored_text: string | null;
   original_text: string;
   relevance_score: number | null;
   explanation: string | null;
@@ -221,6 +227,7 @@ export interface WorkingCopyItem {
 
 export interface WorkingCopySection {
   company: string;
+  id: string;
   position: string;
   duration: string;
   section_score: number | null;
