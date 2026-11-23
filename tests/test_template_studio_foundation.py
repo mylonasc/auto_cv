@@ -152,7 +152,9 @@ def test_import_is_an_independent_draft_preserving_all_static_bytes(source, id):
                                                       'item_groups', 'latex']
     assert [section.id for section in sections] == ['about', 'experience', 'education', 'skills',
                                                     'other_information', 'publications']
-    assert sections[2].page_break_before is True
+    # No forced break: education flows after experience; page breaks stay an
+    # explicit per-version choice.
+    assert sections[2].page_break_before is False
     assert [entry.institution for entry in sections[2].entries] == ['ETH Zurich', 'ETH Zurich']
     assert sections[2].entries[0].details == ['Advisor: Prof. Eleni Chatzi']
     assert [(group.name, group.rating) for group in sections[3].groups] == [

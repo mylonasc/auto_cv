@@ -91,7 +91,9 @@ Every section has `id`, `kind`, `title`, `enabled` and `page_break_before`:
 - `publications`: identified author/title/venue/year/URL entries and inclusion
   flags. No invented scoring or bibliography parsing.
 - `education`: identified institution/dates/degree/detail-lines entries. The
-  curated import parses the shipped Education block into these fields.
+  curated import parses the shipped Education block into these fields. The
+  legacy hard page break before Education was removed; education flows
+  naturally and `page_break_before` stays an explicit per-version choice.
 - `skills`: identified skill groups with items text and an optional 0–6 rating
   rendered as filled/empty dots; unrated groups render as plain rows.
 - `item_groups`: identified titled bullet groups (used for Other Information).

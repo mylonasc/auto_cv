@@ -100,7 +100,9 @@ def test_one_pass_expansion_preserves_authored_tokens_and_latex_and_template_own
     text = document().make_latex()
     assert 'Statement <experience_section> & 100%' in text
     assert r'Engineer \& lead' in text
-    assert text.count(r'\newpage') == 1
+    # Starter entries carry no forced page breaks; pagination beyond explicit
+    # per-section page_break_before flags would have to come from content.
+    assert r'\newpage' not in text
 
 
 def test_plain_text_is_escaped_without_changing_source_or_comments():
