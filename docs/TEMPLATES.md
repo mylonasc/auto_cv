@@ -73,6 +73,33 @@ CLI LaTeX exports materialize the same captured resources next to their source
 files; they no longer copy hard-coded résumé classes or an unrelated image.
 Conflicting resource destinations fail instead of overwriting different content.
 
+## Template file anatomy (what to edit, what to keep stable)
+
+The shipped starters are intentionally explicit rather than DRY: two small
+entry files plus one shared class override. Live content is ~140 lines per
+starter; dead commented-out alternatives were removed, and render equivalence
+(word boxes, page/word counts, overfull profile) is verified before/after any
+template cleanup. File ownership:
+
+| File | Owns | Editing rules |
+| --- | --- | --- |
+| `assets/latex_cv_template_v0.tex` (Classic) | Preamble, header data, section order, static sections, page breaks | Keep the marked import comments, `name`/document/section markers and placeholders; update `BUILTINS` hash after any byte change |
+| `assets/latex_cv_template_v2.tex` (Wide) | Same, with `resume_v2` class | Same; differs from Classic only by document class + header spacing |
+| `assets/resume.cls` | Header layout, `rSection`, `rSubsection`, `myrSubsection`, `myrSubsectionEmpty2` environments | Snapshotted into managed packages on import; legacy renders read the live file. Unused environments stay out |
+| `assets/resume_v2.cls` | Wide work-experience override only | Loads `resume`; keep overrides minimal and commented |
+| `assets/templates/resume/*.tex` | Legacy rendering fragments (`role`, `bullet`, `section`, `comment`) | Must keep the documented placeholders; changing them changes legacy output for old jobs |
+| `assets/images/my_pic.jpeg` | Header photo resource | Captured as a package asset; do not rename without updating both registry resources |
+
+The curated Studio importer (`src/template_import.py`) depends on exact marker
+strings, not on line numbers: the strengths banner pair, the vspace comment
+before Other Information, the About/document/experience markers and the closing
+`end{document}`. These are flagged with `NOTE: ... import markers` comments in
+the entry files. Any byte change to an entry file changes its SHA-256 and must
+update `BUILTINS` in the same commit, with the render-equivalence check
+(`docs/TEMPLATE_STUDIO.md` visual section) re-run. Managed revisions already
+saved keep working unchanged: they snapshot their own bytes and never re-read
+the checkout.
+
 ## Reference precedence and compatibility
 
 - Initial outputs use the saved source-CV reference.

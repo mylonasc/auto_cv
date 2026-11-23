@@ -30,7 +30,6 @@
 \usepackage{graphicx}
 
 \usepackage{tikz}
-%\usepackage{minipage}
 
 \pagestyle{empty} % Suppress page numbers
 
@@ -53,8 +52,6 @@
 \def \name#1{\def\@name{#1}} % Defines the \name command to set name
 \def \@name {} % Sets \@name to empty by default
 
-\def \addressSep {$\diamond$} % Set default address separator to a diamond
-
 \def \myaddress#1#2{
   \@ifundefined{@addressone}{
     \def \@addressone{#1 & #2 }
@@ -74,36 +71,13 @@
   }
 }
 
-% \printaddress is used to style an address line (given as input)
-% \def \printaddress #1{
-% \break
-%   \begingroup
-    %\def \\ {\addressSep\ }
-%   \hspace{0.1cm} #1
-%   \endgroup
-%   \par
-%   \addressskip
-% }
-
-
 \def \printpicture #1{
  \includegraphics[width=3cm]{my_pic.jpeg}
 }
 
 
-% \printname is used to print the name as a page header
-\def \printname {
-  %\begingroup
-  %  \hfil{\MakeUppercase{\namesize\bf \@name}}\hfil
-  %  \nameskip\break
-  %\endgroup
-{\scshape {\namesize \@name}} \hfill %{\namesize\bf \MakeUppercase \@name}\hfill
-\nameskip\break
-}
-
-%----------------------------------------------------------------------------------------
-%	PRINT THE HEADING LINES
-%----------------------------------------------------------------------------------------
+% The heading below prints \@name with the contact rows and photo; the
+% section environments after it own the CV body layout.
 
 
 \let\ori@document=\document
@@ -112,7 +86,6 @@
 
  \setlength{\leftmargin}{2.0em} % Margin within the section
 
-%\nameskip
 \vspace{0.0cm}
 \begin{tabularx}{\linewidth}{c c  l  c   c  l r }
    \multicolumn{6}{ l}{
@@ -127,7 +100,6 @@
  \end{tabularx}
 
 }
-%\printpicture
 
 %----------------------------------------------------------------------------------------
 %	SECTION FORMATTING
@@ -143,7 +115,6 @@
   \begin{list}{}{ % List for each individual item in the section
      \setlength{\leftmargin}{1.0em} % Margin within the section
      \setlength{\rightmargin}{1.0em} % Margin within the section
-     %\setlength{\rightmargin}{1.5em} % Margin within the section
   }
   \item[]
 }{
@@ -188,15 +159,6 @@
   \end{tabular}
   \vspace{0.0em}
 }
-
-\newenvironment{myrSubsectionEmpty}[3]{
-  \begin{tabular}{p{0.2\textwidth}|p{0.75\textwidth}}
-    \textsc{#2}   & \bf{ #1}\\
-      &   {#3 \vspace{0.3cm}} %&  \em {#4} \vspace{0.4cm}\\ 
-    %\begin{tabular}{l}
-    %  \end{tabular} 
-  \end{tabular}
-    }{}
 
 \newenvironment{rSubsection}[4]{ % 4 input arguments - company name, year(s) employed, job title and location
  {\bf #1} \hfill {#2} % Bold company name and date on the right
