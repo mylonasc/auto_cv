@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse
 from src.template_package import TemplateRevision, TemplateID, RevisionID
 from ..models.studio import StudioImportRequest, StudioDraft, StudioSaveRequest
 from .dependencies import get_services
-from ..models.studio import StudioPreviewRequest, StudioPreviewError
-from ..services.studio_preview import PreviewBusy
+from ..models.studio import StudioPreviewRequest, StudioPreviewError, StudioPreviewReport
+from ..services.studio_preview import PreviewBusy, PreviewToolsUnavailable
 from src.tex_compiler import LatexCompileError
 
 router = APIRouter(prefix='/v1/template-studio', tags=['Template Studio'])
@@ -43,3 +43,21 @@ async def preview(request: StudioPreviewRequest, services=Depends(get_services))
         return JSONResponse(status_code=422, content=StudioPreviewError(detail=str(error), diagnostics=error.diagnostics).model_dump(), headers={'Cache-Control': 'no-store'})
     return Response(content, media_type='application/pdf', headers={'Cache-Control': 'no-store',
         'Content-Disposition': 'inline; filename="studio-preview.pdf"', 'X-Preview-Input': identity})
+
+
+@router.post('/preview-report', response_model=StudioPreviewReport, responses={
+    422: {'model': StudioPreviewError}, 429: {'model': StudioPreviewError}, 501: {'model': StudioPreviewError}})
+async def preview_report(request: StudioPreviewRequest, services=Depends(get_services)):
+    try:
+        report = await services.studio_preview.render_report(request)
+    except PreviewBusy as error:
+        return JSONResponse(status_code=429, content=StudioPreviewError(detail=str(error)).model_dump(), headers={'Retry-After': '2', 'Cache-Control': 'no-store'})
+    except PreviewToolsUnavailable as error:
+        return JSONResponse(status_code=501, content=StudioPreviewError(detail=str(error)).model_dump(), headers={'Cache-Control': 'no-store'})
+    except LatexCompileError as error:
+        return JSONResponse(status_code=422, content=StudioPreviewError(detail=str(error), diagnostics=error.diagnostics).model_dump(), headers={'Cache-Control': 'no-store'})
+    return StudioPreviewReport(input_id=report.input_id, pages=report.pages, words=report.words,
+        overfulls=[item.__dict__ for item in report.overfulls], overfull_count=report.overfull_count,
+        overlaps=[item.__dict__ for item in report.overlaps],
+        outside_page=[item.__dict__ for item in report.outside_page],
+        missing_glyphs=list(report.missing_glyphs), omitted=dict(report.omitted))

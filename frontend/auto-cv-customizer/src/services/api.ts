@@ -111,6 +111,9 @@ class ApiService {
     if (typeof identity !== 'string' || !/^[a-f0-9]{64}$/.test(identity) || response.data.type !== 'application/pdf') throw new Error('Invalid PDF preview response.');
     return { blob: response.data, identity };
   }
+  async previewReport(payload: API.StudioPreviewRequestInput) {
+    return (await this.client.post<API.StudioPreviewReport>('/template-studio/preview-report', payload, { timeout: 60000 })).data;
+  }
   async renderJobArtifacts(id: string, payload: API.RenderCVRequestInput) {
     return jobToView((await this.client.post<API.CVJobResponse>(`/cv-jobs/${id}/render`, payload)).data);
   }

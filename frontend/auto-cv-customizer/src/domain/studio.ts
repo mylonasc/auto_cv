@@ -50,3 +50,18 @@ export function duplicateSection(section: NonNullable<CVData['document']>['secti
   if (section.kind === 'statement' || section.kind === 'experience') throw new Error('Bindings cannot be duplicated');
   return { ...section, id: id(), title: `${section.title} copy`, ...('entries' in section ? { entries: section.entries.map(entry => ({ ...entry, id: id() })) } : {}) } as typeof section;
 }
+
+const STARTER_LABELS: Record<string, string> = {
+  default_cv: 'Classic — narrow work-experience rows',
+  template2: 'Wide — full-width work-experience rows (recommended)',
+};
+
+export function starterLabel(id: string): string {
+  return STARTER_LABELS[id] ? `${id} — ${STARTER_LABELS[id]}` : id;
+}
+
+export function defaultStarter(cvTemplateId: string | undefined, registry: string[]): string {
+  if (cvTemplateId && registry.includes(cvTemplateId)) return cvTemplateId;
+  if (registry.includes('template2')) return 'template2';
+  return registry[0] ?? 'default_cv';
+}

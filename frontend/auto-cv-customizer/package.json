@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:cv": "playwright test --config playwright.cv.config.ts",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
     "test:unit": "tsc -p tsconfig.tests.json && node --experimental-strip-types --test tests/unit/*.test.ts"
   },
   "dependencies": {

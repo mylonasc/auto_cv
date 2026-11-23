@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { studioDraft } from '../studio-fixture.ts';
-import { studioReducer as reduce, initialStudio, same, move, duplicateSection } from '../../src/domain/studio.ts';
+import { studioReducer as reduce, initialStudio, same, move, duplicateSection, starterLabel, defaultStarter } from '../../src/domain/studio.ts';
 import { httpErrorMessage } from '../../src/services/errors.ts';
 
 test('Studio late load cannot overwrite a newer edit; saves only update captured baselines', () => {
@@ -40,4 +40,14 @@ test('preview diagnostics retain file and line while bounding displayed output',
   const text = httpErrorMessage(422, { detail: 'Compilation failed', diagnostics: './resume.cls:90: Error\n' + 'x'.repeat(20000) }, 'fallback');
   assert.match(text, /resume.cls:90/);
   assert.ok(text.length < 8300);
+});
+
+test('starter selection prefers the wide template and falls back to the registry', () => {
+  assert.match(starterLabel('template2'), /Wide/);
+  assert.match(starterLabel('default_cv'), /Classic/);
+  assert.equal(starterLabel('custom'), 'custom');
+  assert.equal(defaultStarter('default_cv', ['default_cv', 'template2']), 'default_cv');
+  assert.equal(defaultStarter('gone', ['default_cv', 'template2']), 'template2');
+  assert.equal(defaultStarter(undefined, ['default_cv']), 'default_cv');
+  assert.equal(defaultStarter(undefined, []), 'default_cv');
 });

@@ -7,9 +7,13 @@ async function setup(page: Page) {
   const unexpected: string[] = [];
   let saved: StudioDraft | null = null;
   const previews: StudioDraft[] = [];
+  const imports: { template_id: string; source_template?: string }[] = [];
   let previewGate: Promise<void> | undefined;
   let previewError = false;
   let conflict = false;
+  const report = { input_id: 'c'.repeat(64), pages: 2, words: 449,
+    overfulls: [{ kind: 'hbox', amount_pt: 55.4, start_line: 106, end_line: 125, excerpt: 'Overfull \\hbox (55.4pt too wide)' }],
+    overfull_count: 9, overlaps: [], outside_page: [], missing_glyphs: [], omitted: {} };
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.origin !== 'http://127.0.0.1:5187') { unexpected.push(url.href); return route.abort(); }
@@ -17,16 +21,21 @@ async function setup(page: Page) {
     const path = url.pathname;
     if (path.endsWith('/health')) return route.fulfill({ json: { status: 'healthy' } });
     if (path.endsWith('/config')) return route.fulfill({ json: DEFAULT_BACKEND_CONFIG });
-    if (path.endsWith('/cv-data/templates')) return route.fulfill({ json: { cv_templates: { default_cv: 'builtin.tex' }, motivation_letter_templates: {} } });
+    if (path.endsWith('/cv-data/templates')) return route.fulfill({ json: { cv_templates: { default_cv: 'builtin.tex', template2: 'wide-builtin.tex' }, motivation_letter_templates: {} } });
     if (path.endsWith('/versions')) return route.fulfill({ json: [{ id: 'master', name: 'Master', last_modified: 0 }] });
     if (path.endsWith('/versions/master')) return route.fulfill({ json: { ...draft.cv, document: null, cv_template: { ...draft.cv.cv_template, revision: null, template_id: 'default_cv' } } });
-    if (path.endsWith('/template-studio/import')) return route.fulfill({ json: draft });
+    if (path.endsWith('/template-studio/import')) {
+      const body = route.request().postDataJSON();
+      imports.push({ template_id: body.template_id, source_template: body.source_template });
+      return route.fulfill({ json: draft });
+    }
     if (path.endsWith('/template-studio/preview')) {
       previews.push(route.request().postDataJSON());
       await previewGate;
       if (previewError) return route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ detail: 'XeLaTeX compilation failed.', diagnostics: './resume.cls:90: Undefined control sequence.' }) });
       return route.fulfill({ contentType: 'application/pdf', headers: { 'X-Preview-Input': 'c'.repeat(64) }, body: Buffer.from('%PDF-1.4\n% offline placeholder\n') });
     }
+    if (path.endsWith('/template-studio/preview-report')) return route.fulfill({ json: report });
     if (path.endsWith('/template-studio/packages') && route.request().method() === 'POST') {
       if (conflict) return route.fulfill({ status: 409, json: { detail: 'Template changed; reload the saved revision before saving' } });
       return route.fulfill({ json: { revision: 'b'.repeat(64), package: route.request().postDataJSON().package } });
@@ -43,7 +52,7 @@ async function setup(page: Page) {
   await page.getByRole('button', { name: 'Template Studio', exact: true }).last().click();
   await page.getByRole('button', { name: 'Load / import draft' }).click();
   await expect(page.getByText('CV: unsaved · Template: unsaved')).toBeVisible();
-  return { unexpected, previews, saved: () => saved, conflict: () => { conflict = true; }, failPreview: () => { previewError = true; }, holdPreview: () => {
+  return { unexpected, previews, imports, saved: () => saved, conflict: () => { conflict = true; }, failPreview: () => { previewError = true; }, holdPreview: () => {
     let release!: () => void;
     previewGate = new Promise<void>(resolve => { release = resolve; });
     return release;
@@ -130,5 +139,20 @@ test('unsaved preview survives tabs, rejects stale completion, decodes JSON blob
   await expect(page.getByRole('alert')).toContainText('resume.cls:90');
   await expect(frame).toHaveAttribute('src', newURL!);
   expect(api.saved()).toBeNull();
+  expect(api.unexpected).toEqual([]);
+});
+
+test('starter selection is forwarded and layout quality is summarized', async ({ page }) => {
+  const api = await setup(page);
+  expect(api.imports).toEqual([{ template_id: 'my-template', source_template: 'template2' }]);
+  await expect(page.getByLabel('Starter template', { exact: true })).toHaveValue('template2');
+  await page.getByLabel('Starter template', { exact: true }).selectOption('default_cv');
+  await page.getByRole('button', { name: 'Load / import draft' }).click();
+  await expect.poll(() => api.imports.length).toBe(2);
+  expect(api.imports[1]).toEqual({ template_id: 'my-template', source_template: 'default_cv' });
+  await page.getByRole('button', { name: 'Check layout quality', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('9 overfull warnings, 0 overlaps');
+  await page.getByText('Quality details', { exact: true }).click();
+  await expect(page.getByText(/Overfull hbox \+55.4pt/)).toBeVisible();
   expect(api.unexpected).toEqual([]);
 });

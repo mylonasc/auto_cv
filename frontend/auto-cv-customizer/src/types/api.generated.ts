@@ -195,6 +195,28 @@ export interface OutputsConfig {
   include_scoring_comments: boolean;
 }
 
+export interface OutsideWord {
+  page: number;
+  text: string;
+  edge: string;
+  amount_pt: number;
+}
+
+export interface OverfullWarning {
+  kind: string;
+  amount_pt: number;
+  start_line: number;
+  end_line: number;
+  excerpt: string;
+}
+
+export interface OverlapSpot {
+  page: number;
+  first: string;
+  second: string;
+  area: number;
+}
+
 export interface ProcessingOutput {
   result: CVJobResult;
   job_analysis: JobAnalysis;
@@ -332,11 +354,24 @@ export interface StudioImportRequest {
   cv: CVData;
   template_id: string;
   name: string;
+  source_template: string | null;
 }
 
 export interface StudioPreviewError {
   detail: string;
   diagnostics: string;
+}
+
+export interface StudioPreviewReport {
+  input_id: string;
+  pages: number;
+  words: number;
+  overfulls: Array<OverfullWarning>;
+  overfull_count: number;
+  overlaps: Array<OverlapSpot>;
+  outside_page: Array<OutsideWord>;
+  missing_glyphs: Array<string>;
+  omitted: Record<string, number>;
 }
 
 export interface StudioPreviewRequest {

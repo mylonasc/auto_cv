@@ -3,7 +3,7 @@
 Run from the repository root with Python 3.12 or newer:
 
 ```sh
-python -m pip install -r requirements-test.txt
+python -m pip install -e '.[test]'
 python -m pytest -q
 ```
 
@@ -31,6 +31,9 @@ discovery is restricted to `tests/`; research and scripts are not collected.
 - The import-only subprocess probe captures the interpreter launcher before the
   per-test guards and installs its own filesystem/network/process audit guards.
   This exception does not authorize model/PDF or live integration subprocesses.
+- `test_packages.py` applies the same guarded exception to installed entry-point
+  probes from unrelated directories, without `PYTHONPATH`. Install the checkout
+  first; these tests verify real distribution metadata, not injected import paths.
 
 Known defects are strict expected failures linked to their owning RFK issue. They
 assert intended behavior against production code. When a fix produces an XPASS,
@@ -54,7 +57,7 @@ identity. Pure reducer/monitor coverage runs with `npm run test:unit`.
 
 ## Transport and mapping contracts
 
-Run `.venv/bin/python -B tools/generate_api_types.py --check` from the root to
+Run `.venv/bin/python -B -m tools.generate_api_types --check` from the root to
 check that frontend transport types match the authoritative backend schemas.
 `npm run test:unit` from the frontend type-checks and runs pure mapping tests
 with Node's built-in runner (verified with Node 24). Shared fixtures are also
@@ -70,7 +73,7 @@ documented arguments in the root README. Use a fresh scratch directory for both
 
 ```sh
 scratch=$(mktemp -d /tmp/opencode/auto-cv-live.XXXXXX)
-AUTO_CV_DATA_ROOT="$scratch/runtime" python tools/autocv.py \
+AUTO_CV_DATA_ROOT="$scratch/runtime" auto-cv \
   --candidate-json data/cv_section_data/charilaos_mylonas/master.json \
   --job-posting job_post.txt \
   --output-dir "$scratch/output" \
@@ -85,3 +88,28 @@ explicitly networked/manual check: inspect generated PDFs and logs; do not infer
 correct rendering from placeholder PDFs in unit tests. The CLI refuses to replace
 an existing output directory; choose a fresh path. See `docs/PIPELINE.md` for
 shared defaults, effective configuration and entry-point semantics.
+
+## Opt-in render-quality visual checks
+
+`visual_tests/` (repo root, outside `tests/`) compiles synthetic CVs with the
+real XeLaTeX toolchain and inspects them with poppler. It is never collected by
+the default suite and `tests/conftest.py` guards do not apply there. Requires
+XeLaTeX and `poppler-utils` (`pdftotext`, `pdftoppm`); it fails loudly if they
+are missing. Only synthetic content and temporary storage:
+
+```sh
+datastore=$(mktemp -d /tmp/opencode/auto_cv_visual.XXXXXX)
+AUTO_CV_DATA_ROOT="$datastore" .venv/bin/python -m pytest -q visual_tests/
+```
+
+Review artifacts (PDF, page PNGs, transcript, `quality.json`) are left under
+`$datastore/visual/<starter>/`. These are functional render/overlap checks with
+human-review images, not pixel-perfect visual acceptance.
+
+`npm run test:visual` (from `frontend/auto-cv-customizer`) drives Template
+Studio in Chromium against a real backend on `127.0.0.1:8005` (the Vite proxy
+target) backed by a temporary data root. Start the backend first as documented
+in `frontend/auto-cv-customizer/playwright.visual.config.ts`, then run the
+command. It loads each starter through the UI, previews, checks the layout
+report for zero overlaps/outside-page words, and attaches the compiled PDFs to
+the Playwright report. Not part of `test:cv`, which stays fully API-mocked.

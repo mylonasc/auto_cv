@@ -4,6 +4,7 @@ import { initialStudio, same, studioReducer } from '../domain/studio';
 import type { CVData, StudioDraft } from '../types/api.generated';
 import type { CVVersionInfo } from '../services/api';
 import { useStudioPreview } from '../hooks/useStudioPreview';
+import { useStudioReport } from '../hooks/useStudioReport';
 
 function useStudioController() {
   const [state, dispatch] = useReducer(studioReducer, initialStudio);
@@ -20,6 +21,8 @@ function useStudioController() {
   const cvDirty = !!state.draft && !same(state.draft.cv, state.cvBaseline);
   const packageDirty = !!state.draft && !same(state.draft.package, state.packageBaseline);
   const preview = useStudioPreview(state.draft, state.edit);
+  const report = useStudioReport(state.draft, state.edit);
+  const [starter, setStarter] = useState('template2');
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => { if (cvDirty || packageDirty) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', guard);
@@ -41,7 +44,7 @@ function useStudioController() {
       if (cv.document && cv.cv_template.revision) {
         const saved = await apiService.getStudioTemplate(cv.cv_template.template_id, cv.cv_template.revision);
         draft = { cv, package: saved.package };
-      } else draft = await apiService.importStudio({ cv, template_id: templateID, name: templateID });
+      } else draft = await apiService.importStudio({ cv, template_id: templateID, name: templateID, source_template: starter });
       dispatch({ type: 'load', draft, saved: !!cv.document, edit });
     });
   };
@@ -70,7 +73,7 @@ function useStudioController() {
     setNotice(`Created CV version ${target}. Select it in Job Description when ready; it is not activated automatically.`);
     setVersions(await apiService.listCVVersions());
   });
-  return { state, dispatch, busy, error, notice, preview, versions, source, setSource, target, setTarget, templateID, setTemplateID,
+  return { state, dispatch, busy, error, notice, preview, report, starter, setStarter, versions, source, setSource, target, setTarget, templateID, setTemplateID,
     cvDirty, packageDirty, refresh, load, saveTemplate, reloadTemplate, saveCV,
     editCV: (cv: CVData) => dispatch({ type: 'cv', cv }) };
 }

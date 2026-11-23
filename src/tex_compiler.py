@@ -41,6 +41,13 @@ def run_tex(command, *, check, timeout, **kwargs):
 
 
 def compile_latex(latex: str, resources=(), *, timeout=120) -> bytes:
+    """Compile and return PDF bytes; transcript details are discarded."""
+    content, _transcript = compile_latex_with_transcript(latex, resources, timeout=timeout)
+    return content
+
+
+def compile_latex_with_transcript(latex: str, resources=(), *, timeout=120) -> tuple[bytes, str]:
+    """Compile and also return the bounded transcript tail for layout-quality review."""
     # Lazy import avoids a cycle: the ordinary rendering adapter calls this boundary.
     from .rendering import materialize_resources
     scratch = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
@@ -61,15 +68,20 @@ def compile_latex(latex: str, resources=(), *, timeout=120) -> bytes:
                     timeout=timeout, cwd=folder, start_new_session=True,
                     env={**os.environ, 'openin_any': 'p', 'openout_any': 'p'})
             except (OSError, subprocess.SubprocessError) as error:
-                transcript.seek(0, 2)
-                transcript.seek(max(0, transcript.tell() - MAX_DIAGNOSTICS))
-                diagnostics = transcript.read(MAX_DIAGNOSTICS).decode('utf-8', errors='replace').replace(str(folder), '[scratch]')
+                diagnostics = _transcript_tail(transcript, folder)
                 message = f'XeLaTeX timed out after {timeout} seconds.' if isinstance(error, subprocess.TimeoutExpired) else 'XeLaTeX compilation failed. Check the file/line diagnostics below.'
                 raise LatexCompileError(message, diagnostics) from error
+            transcript_text = _transcript_tail(transcript, folder)
         pdf = folder / 'temp.pdf'
         if not pdf.is_file() or not 0 < pdf.stat().st_size <= MAX_PDF_BYTES:
             raise LatexCompileError('XeLaTeX did not produce a nonempty PDF within the 16 MiB limit.')
         content = pdf.read_bytes()
         if not content.startswith(b'%PDF-'):
             raise LatexCompileError('XeLaTeX output is not a PDF.')
-        return content
+        return content, transcript_text
+
+
+def _transcript_tail(transcript, folder: Path) -> str:
+    transcript.seek(0, 2)
+    transcript.seek(max(0, transcript.tell() - MAX_DIAGNOSTICS))
+    return transcript.read(MAX_DIAGNOSTICS).decode('utf-8', errors='replace').replace(str(folder), '[scratch]')

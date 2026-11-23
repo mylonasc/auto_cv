@@ -752,6 +752,20 @@ servers. An independent suite rerun preserved five sentinels and all 713 invento
 data/assets/legacy hashes (dependency/bytecode trees excluded). Docker and full
 visual/epic-wide acceptance are not claimed; TRF-05 #22 remains open.
 
+TRF-05 delivery: template2 (Wide) is now an explicit Studio starter alongside
+Classic `default_cv`, selectable per legacy import via `source_template`.
+Unsaved-draft production is isolated behind `src/render_pipeline`, with pure
+`src/pdf_quality` analysis (overfulls, missing glyphs, word overlaps, page
+escapes) and a bounded `POST /v1/template-studio/preview-report` sharing the
+single compile slot without persistence (poppler installed in the backend
+image; 501 when unavailable). Opt-in `visual_tests/` and `npm run test:visual`
+verify both starters with real XeLaTeX/poppler and real Chromium: zero word
+overlaps, zero outside-page words, wide bullets left of classic, review PDFs,
+page PNGs and quality JSON retained. Known transcript findings (header/skills
+overfulls, one classic font substitution) are recorded in
+`docs/TEMPLATE_STUDIO.md` as follow-ups. Docker execution of the new checks is
+unverified; #22 stays open for final acceptance.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native

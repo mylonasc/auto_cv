@@ -160,6 +160,66 @@ as raw LaTeX is intentional preservation, not a claim that bibliography entries
 have been semantically parsed. Structured publication entries can be authored
 without guessing the original markup.
 
+### Starter templates
+
+Both shipped starters are curated imports and first-class Studio choices:
+
+- `default_cv` (Classic): narrow work-experience rows; bullets start about a
+  third of the way across the page inside a two-column role table.
+- `template2` (Wide, default in the Studio picker): full-width bullets starting
+  at the left margin via the `resume_v2` class override; otherwise the same
+  header, sections and static tail.
+
+The Studio **Starter template** dropdown lists every registered `cv_templates`
+entry and sends it as `source_template` on `POST /v1/template-studio/import`.
+It applies only to legacy CVs; a composed CV already owns its package and must
+be cloned instead. Unknown starters and composed-plus-starter requests fail
+explicitly. The wide starter's first-bullet position left of the classic one is
+locked by an opt-in visual regression (`visual_tests/`).
+
+### Isolated rendering and layout-quality review
+
+All unsaved-draft production flows through `src/render_pipeline.render_draft`
+(validate pair, prepare exact-revision LaTeX, bounded compile, input identity).
+Studio preview and ordinary job rendering delegate to it instead of composing
+compiler calls themselves. `src/pdf_quality` is pure analysis over a transcript
+and `pdftotext -bbox` XML: overfull warnings with line/amount, missing glyphs
+and font substitutions, word-box overlaps and words outside the physical page.
+Subprocess runners are injected at the service boundary, so offline tests use
+fakes and only explicit opt-in checks invoke real tools.
+
+`POST /v1/template-studio/preview-report` accepts the same draft as preview
+and returns a bounded `StudioPreviewReport` (page/word counts plus capped
+overfull/overlap/outside-page/glyph lists with omission counts). It shares the
+single compile slot with preview, persists nothing and returns 501 when
+`pdftotext` is unavailable (the backend image now installs `poppler-utils`).
+The Studio **Check layout quality** button calls it for the current unsaved
+draft, marks results outdated on further edits, and never replaces the PDF.
+
+Known findings from real compiles (detection first; fixes are follow-ups, not
+silent redesigns): both starters compile successfully with zero word overlaps
+and zero words outside the page, but report header `vbox`/`hbox` overfulls and
+a ~55pt `hbox` overfull where the Technical Strengths dot row runs into the
+right margin (visible on the page PNGs). The classic starter additionally
+substitutes the unavailable small-caps bold font. Evidence: `visual_tests/`
+JSON reports and page PNGs plus `render-visual.spec.ts` PDF attachments.
+
+Opt-in commands (synthetic CVs and temporary storage only; never part of the
+default suite):
+
+```bash
+datastore=$(mktemp -d /tmp/opencode/auto_cv_visual.XXXXXX)
+AUTO_CV_DATA_ROOT="$datastore" .venv/bin/python -m pytest -q visual_tests/
+```
+
+```bash
+datastore=$(mktemp -d /tmp/opencode/auto_cv_visual_backend.XXXXXX)
+AUTO_CV_DATA_ROOT="$datastore" .venv/bin/python -m uvicorn \
+  server_application.backend.main:app --host 127.0.0.1 --port 8005
+# then, from frontend/auto-cv-customizer:
+npm run test:visual
+```
+
 ### Generated boundaries and interim limitations
 
 Frontend types include composition/packages/revisions. The JSON editor's generated
