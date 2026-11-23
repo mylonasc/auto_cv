@@ -35,6 +35,9 @@ const Sidebar: React.FC<{ sidebarCollapsed: boolean; onToggleSidebar: () => void
       
       <nav className="sidebar-nav">
         <ul>
+          <li className={state.uiState.activeTab === 'studio' ? 'active' : ''}>
+            <button onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'studio' } })}><span className="nav-icon">📐</span><span className="nav-text">Template Studio</span></button>
+          </li>
           <li className={state.uiState.activeTab === 'jobInput' ? 'active' : ''}>
             <button onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'jobInput' } })}>
               <span className="nav-icon">📝</span>

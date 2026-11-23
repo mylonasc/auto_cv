@@ -92,6 +92,15 @@ class ApiService {
     return (await this.client.delete<{ status: string; message: string }>(`/cv-data/${candidate}/versions/${id}`)).data;
   }
   async getTemplateRegistry() { return (await this.client.get<TemplateRegistryResponse>('/cv-data/templates')).data; }
+  async importStudio(payload: API.StudioImportRequestInput) {
+    return (await this.client.post<API.StudioDraft>('/template-studio/import', payload)).data;
+  }
+  async getStudioTemplate(id: string, revision?: string) {
+    return (await this.client.get<API.TemplateRevision>(`/template-studio/packages/${encodeURIComponent(id)}`, { params: { revision } })).data;
+  }
+  async saveStudioTemplate(payload: API.StudioSaveRequestInput) {
+    return (await this.client.post<API.TemplateRevision>('/template-studio/packages', payload)).data;
+  }
   async renderJobArtifacts(id: string, payload: API.RenderCVRequestInput) {
     return jobToView((await this.client.post<API.CVJobResponse>(`/cv-jobs/${id}/render`, payload)).data);
   }

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .core.paths import StoragePaths
 from .services.application import ApplicationServices, OperationError
-from .api import cv_jobs, config, models, cv_data, submissions
+from .api import cv_jobs, config, models, cv_data, submissions, template_studio
 from src.outcomes import StageFailure
 from src.template_registry import TemplateError
 
@@ -28,7 +28,7 @@ def create_app(*, paths=None, services=None):
     app = FastAPI(title="CV Customizer API", version="1.0.0", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                        allow_methods=["*"], allow_headers=["*"])
-    for router in (cv_jobs.router, config.router, models.router, cv_data.router, submissions.router):
+    for router in (cv_jobs.router, config.router, models.router, cv_data.router, submissions.router, template_studio.router):
         app.include_router(router)
 
     @app.exception_handler(OperationError)

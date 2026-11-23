@@ -323,6 +323,22 @@ export interface StreamError {
   error: string;
 }
 
+export interface StudioDraft {
+  cv: CVData;
+  package: TemplatePackage;
+}
+
+export interface StudioImportRequest {
+  cv: CVData;
+  template_id: string;
+  name: string;
+}
+
+export interface StudioSaveRequest {
+  package: TemplatePackage;
+  expected_revision: string | null;
+}
+
 export interface Submission {
   id: string;
   job_id: string;
@@ -411,6 +427,8 @@ export type RenderCVRequestInput = Partial<RenderCVRequest> & Pick<RenderCVReque
 export type RescoreRequestInput = Partial<RescoreRequest> & Pick<RescoreRequest, "section_index">;
 export type SubmissionCreateRequestInput = Partial<SubmissionCreateRequest> & Pick<SubmissionCreateRequest, "job_id">;
 export type SubmissionUpdateRequestInput = Partial<SubmissionUpdateRequest> & Pick<SubmissionUpdateRequest, never>;
+export type StudioImportRequestInput = Partial<StudioImportRequest> & Pick<StudioImportRequest, "cv" | "template_id" | "name">;
+export type StudioSaveRequestInput = Partial<StudioSaveRequest> & Pick<StudioSaveRequest, "package" | "expected_revision">;
 
 export const DEFAULT_BACKEND_CONFIG: BackendConfig = {
   "analysis_model": {

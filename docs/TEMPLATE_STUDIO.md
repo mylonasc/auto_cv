@@ -143,6 +143,30 @@ never mutable HEAD. Missing packages, unpinned composition and incompatible lega
 overrides fail rather than dropping sections. Projects/publications are rendered
 but not newly scored. TRF-03 owns workspace/controllers; TRF-04 owns preview.
 
+### TRF-03 authoring workspace
+
+The Template Studio tab now owns its drafts in a provider above conditional tabs.
+Load/import is explicit: the curated converter produces unsaved copies, while an
+existing composed version loads its exact package revision. All captured text
+files, raw header/sections, statement/experience and structured lists are editable.
+Section/entry duplication creates fresh IDs; binding duplication is prohibited.
+Ordering, visibility and page breaks are canonical CV edits, not template edits.
+
+Save template revision is optimistic compare-and-save. Conflicts keep local edits;
+Reload latest saved template explicitly discards only the template draft (with
+confirmation) and pins the retained CV draft to that revision. Save new CV version
+is a separate create-only operation after the package is saved; Studio never
+overwrites master/selected originals or automatically activates a version. A new
+version ID is required for each CV save. Delayed responses advance captured
+baselines without overwriting newer edits. Full reload warns before losing drafts.
+
+Authoring endpoints live under `/v1/template-studio`: `POST /import`,
+`GET /packages`, `GET /packages/{id}?revision=...`, `POST /packages`.
+They share generated contracts; callers cannot supply arbitrary filesystem paths.
+TRF-03 verification: backend **263 passed**, frontend unit **32 passed**, isolated
+Chromium **21 passed**, frontend build/lint and diff checks passed. Preview is
+not included in these checks; it remains TRF-04.
+
 Both shipped classes require `my_pic.jpeg`; the registry now declares the existing
 image as a captured dependency. No original asset was changed. Both imported styles
 passed real XeLaTeX compilation with synthetic statement/experience in scratch

@@ -1,0 +1,14 @@
+.studio { padding: 1rem; }
+.studio .studio-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; margin: 1rem 0; }
+.studio label { display: block; margin: .6rem 0; }
+.studio label input:not([type=checkbox]), .studio select, .studio textarea { display: block; width: 100%; box-sizing: border-box; padding: .5rem; }
+.studio textarea { font-family: monospace; min-height: 5rem; resize: vertical; }
+.studio details { border: 1px solid #cbd5e1; padding: .7rem; margin: .6rem 0; border-radius: 6px; }
+.studio summary { cursor: pointer; font-weight: 600; }
+.studio fieldset { margin: .7rem 0; border: 1px solid #cbd5e1; }
+.studio button { margin: .2rem; }
+.studio pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 20rem; overflow: auto; }
+.studio .studio-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+.studio .studio-preview { position: sticky; top: 1rem; align-self: start; }
+.studio .studio-preview iframe { width: 100%; height: 78vh; border: 1px solid #cbd5e1; }
+@media (max-width: 1000px) { .studio .studio-columns { grid-template-columns: 1fr; } }

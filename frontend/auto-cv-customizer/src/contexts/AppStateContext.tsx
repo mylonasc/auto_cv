@@ -61,7 +61,7 @@ export type {
 
 export interface UIState {
   sidebarCollapsed: boolean;
-  activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history' | 'submissions';
+  activeTab: 'jobInput' | 'processing' | 'results' | 'editor' | 'history' | 'submissions' | 'studio';
   // Modals
   showJobDescriptionManager: boolean;
   showConfigurationPanel: boolean;

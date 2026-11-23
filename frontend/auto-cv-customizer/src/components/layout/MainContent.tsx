@@ -9,12 +9,15 @@ import ResultsTab from '../main/ResultsTab';
 import EditorTab from '../main/EditorTab';
 import HistoryTab from '../main/HistoryTab';
 import SubmissionsTab from '../main/SubmissionsTab';
+import StudioTab from '../studio/StudioTab';
 
 const MainContent: React.FC = () => {
   const { state, dispatch } = useAppState();
 
   const renderTabContent = () => {
     switch (state.uiState.activeTab) {
+      case 'studio':
+        return <StudioTab />;
       case 'jobInput':
         return <JobInputTab />;
       case 'processing':
@@ -35,6 +38,7 @@ const MainContent: React.FC = () => {
   return (
     <main className="main-content">
       <div className="tab-bar">
+        <button className={state.uiState.activeTab === 'studio' ? 'active' : ''} onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'studio' } })}>Template Studio</button>
         <button 
           className={state.uiState.activeTab === 'jobInput' ? 'active' : ''}
           onClick={() => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'jobInput' } })}

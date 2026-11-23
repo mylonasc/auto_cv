@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 from server_application.backend.models import api_models as api
 from src import domain
 from src import composition, template_package
+from server_application.backend.models import studio
 from src.template_registry import TemplateRegistryResponse
 
 OUTPUT = ROOT / "frontend/auto-cv-customizer/src/types/api.generated.ts"
@@ -25,6 +26,7 @@ ROOT_MODELS = [
     api.RenderCVRequest, api.RescoreRequest, api.RescoreResponse, api.Submission,
     api.SubmissionCreateRequest, api.SubmissionUpdateRequest, api.StreamError, TemplateRegistryResponse,
     template_package.TemplatePackage, template_package.TemplateRevision,
+    studio.StudioImportRequest, studio.StudioDraft, studio.StudioSaveRequest,
 ]
 
 
@@ -71,7 +73,7 @@ def validator_dialect(schema):
 def generate():
     root = create_model("Transport", **{model.__name__: (model, ...) for model in ROOT_MODELS})
     definitions = root.model_json_schema(mode="serialization")["$defs"]
-    models = vars(api) | vars(domain) | vars(composition) | vars(template_package)
+    models = vars(api) | vars(domain) | vars(composition) | vars(template_package) | vars(studio)
     model_names = {name for name, model in models.items()
                     if isinstance(model, type) and issubclass(model, BaseModel)}
     model_names.add('TemplateRegistryResponse')

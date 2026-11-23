@@ -727,6 +727,14 @@ header image is now an explicit resource. Both built-in composed styles compiled
 successfully with real XeLaTeX and synthetic content in scratch space; no models or
 normal runtime stores were used by that smoke check.
 
+TRF-02 delivered in `5595564` (#19 closed), backend **260 passed**. TRF-03 adds
+authoring HTTP contracts and provider-owned Studio drafts with content/outline/raw
+source editors, separate immutable template and create-only CV saves, explicit
+conflict recovery and stale-response guards. Verification: **263 backend**, **32
+frontend unit**, **21 isolated Chromium** checks, build/lint/diff checks passed.
+No user CV/template was saved by implementation or test execution. TRF-04 preview
+and TRF-05 final integration remain separate delivery criteria.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native
