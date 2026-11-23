@@ -219,6 +219,11 @@ export interface LatexSection {
   latex: string;
 }
 
+export interface ModelCatalogResponse {
+  ollama: ProviderModelList;
+  google: ProviderModelList;
+}
+
 export interface ModelConfig {
   provider: "ollama" | "google";
   model: string;
@@ -274,6 +279,12 @@ export interface ProjectEntry {
   url: string;
   bullets: Array<string>;
   enabled: boolean;
+}
+
+export interface ProviderModelList {
+  models: Array<string>;
+  error: string | null;
+  live: boolean;
 }
 
 export interface PublicationEntry {

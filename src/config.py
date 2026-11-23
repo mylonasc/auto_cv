@@ -4,7 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .analysis import SelectionPolicy
 
-PROVIDER_DEFAULTS = {"ollama": "gemma4:31b", "google": "models/gemini-2.5-flash-preview-05-20"}
+PROVIDER_DEFAULTS = {"ollama": "gemma4:31b", "google": "models/gemini-3.8-flash"}
 
 
 class ConfigModel(BaseModel):

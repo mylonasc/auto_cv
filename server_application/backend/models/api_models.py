@@ -133,6 +133,18 @@ class StreamError(APIModel):
     error: str
 
 
+class ProviderModelList(APIModel):
+    """Live provider model IDs with provenance; errors never fail the catalog."""
+    models: List[str] = Field(default_factory=list)
+    error: Optional[str] = None
+    live: bool = False
+
+
+class ModelCatalogResponse(APIModel):
+    ollama: ProviderModelList = Field(default_factory=ProviderModelList)
+    google: ProviderModelList = Field(default_factory=ProviderModelList)
+
+
 class CVJobResponse(APIModel):
     """CVJobResponse model."""
     id: str

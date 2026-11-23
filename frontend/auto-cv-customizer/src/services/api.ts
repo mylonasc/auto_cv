@@ -73,8 +73,8 @@ class ApiService {
   async updateConfig(config: BackendConfig) {
     return this.fromBackendConfig((await this.client.put<API.BackendConfig>('/config', this.toBackendConfig(config))).data);
   }
-  async getAvailableModels(provider?: string) {
-    return (await this.client.get<{ ollama?: string[]; google?: string[] }>('/models/available', { params: provider ? { provider } : {} })).data;
+  async getAvailableModels(refresh = false) {
+    return (await this.client.get<API.ModelCatalogResponse>('/models/available', { params: refresh ? { refresh: true } : {} })).data;
   }
   async healthCheck() { return (await this.client.get<{ status: string }>('/health')).data; }
 

@@ -1,42 +1,14 @@
-"""
-API routes for model management.
-"""
-from fastapi import APIRouter, HTTPException
-from typing import Optional
+"""Model catalog routes: live provider lists for the settings dropdown."""
+
+from fastapi import APIRouter, Depends
+
+from ..models.api_models import ModelCatalogResponse
+from .dependencies import get_services
 
 router = APIRouter(prefix="/v1/models", tags=["Models"])
 
 
-@router.get("/available")
-async def list_available_models(provider: Optional[str] = None):
-    """
-    List available LLM models.
-    
-    - **provider**: Filter by provider (ollama, google)
-    """
-    models = {
-        "ollama": [],
-        "google": []
-    }
-    
-    # Get Ollama models
-    try:
-        import ollama
-        ollama_models = ollama.list()
-        models["ollama"] = [m.model for m in ollama_models.models]
-    except Exception as e:
-        print(f"Could not list Ollama models: {e}")
-    
-    # Google models (static list)
-    models["google"] = [
-        "models/gemini-2.5-flash-preview-05-20",
-        "models/gemini-1.5-pro",
-        "models/gemini-1.5-flash"
-    ]
-    
-    if provider:
-        if provider in models:
-            return {provider: models[provider]}
-        else:
-            raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
-    return models
+@router.get("/available", response_model=ModelCatalogResponse)
+async def list_available_models(refresh: bool = False, services=Depends(get_services)):
+    """Provider model IDs with per-provider errors; refresh bypasses the TTL cache."""
+    return await services.model_catalog.get_catalog(refresh=refresh)

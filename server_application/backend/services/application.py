@@ -17,6 +17,7 @@ from src.outcomes import StageFailure
 from src.template_catalog import TemplateCatalog
 from .studio import StudioService
 from .studio_preview import StudioPreview
+from .model_catalog import ModelCatalogService
 from .cv_processor import CVProcessor
 from .job_runner import JobRunner
 from .working_copy import create_working_copy, select_working_copy, document_from_working_copy
@@ -30,7 +31,7 @@ class OperationError(Exception):
 
 class ApplicationServices:
     def __init__(self, paths, *, jobs=None, cvs=None, working=None, submissions=None, artifacts=None,
-                 cache=None, processor_factory=CVProcessor, runner_factory=JobRunner):
+                 cache=None, processor_factory=CVProcessor, runner_factory=JobRunner, model_catalog=None):
         self.paths = paths
         self.jobs = jobs if jobs is not None else JobManager(paths.jobs)
         self.cvs = cvs if cvs is not None else CVRepository(paths.cvs)
@@ -43,6 +44,7 @@ class ApplicationServices:
         self.templates = TemplateCatalog(paths.root / 'template_packages')
         self.studio = StudioService(self.templates.repository)
         self.studio_preview = StudioPreview()
+        self.model_catalog = model_catalog if model_catalog is not None else ModelCatalogService()
         self.processor_factory = processor_factory
         self.runner = runner_factory(self.jobs, self.execute)
 

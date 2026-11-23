@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAppState, type BackendConfig, type ModelConfig, type RewritePolicy, type OutputsConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
-import { Modal } from './Primitives';
+import type { ModelCatalogResponse, ProviderModelList } from '../../types/api.generated';
+import { resolveModelOptions } from '../../domain/modelCatalog';
+import { Button, Modal } from './Primitives';
 import './ConfigurationPanel.css';
 
 interface ConfigurationPanelProps {
@@ -9,39 +11,35 @@ interface ConfigurationPanelProps {
   onClose: () => void;
 }
 
+const emptyProvider: ProviderModelList = { models: [], error: null, live: false };
+
 const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useAppState();
   const [config, setConfig] = useState<BackendConfig>(state.backendConfig);
-  const [availableModels, setAvailableModels] = useState<{ ollama: string[]; google: string[] }>({
-    ollama: [],
-    google: [],
-  });
+  const [catalog, setCatalog] = useState<ModelCatalogResponse>({ ollama: emptyProvider, google: emptyProvider });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   useEffect(() => {
     setConfig(state.backendConfig);
   }, [state.backendConfig, isOpen]);
 
-  useEffect(() => {
-    const fetchModels = async () => {
-      if (!isOpen) {
-        return;
-      }
-      try {
-        setIsLoadingModels(true);
-        const models = await apiService.getAvailableModels();
-        setAvailableModels({
-          ollama: models.ollama || [],
-          google: models.google || [],
-        });
-      } catch (error) {
-        console.error('Failed to fetch available models:', error);
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
+  const fetchModels = async (refresh = false) => {
+    setIsLoadingModels(true);
+    setCatalogError(null);
+    try {
+      setCatalog(await apiService.getAvailableModels(refresh));
+    } catch (error) {
+      setCatalogError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
 
-    fetchModels();
+  useEffect(() => {
+    if (isOpen) {
+      void fetchModels(false);
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -94,11 +92,9 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
 
   const renderModelField = (modelKey: 'analysisModel' | 'statementEditorModel' | 'coverLetterEditorModel') => {
     const provider = config[modelKey].provider;
-    const options = availableModels[provider] || [];
+    const reported = catalog[provider] ?? emptyProvider;
     const selectedModel = config[modelKey].model;
-    const dropdownOptions = selectedModel && !options.includes(selectedModel)
-      ? [selectedModel, ...options]
-      : options;
+    const { options: dropdownOptions, stale } = resolveModelOptions(reported.models, selectedModel);
 
     return (
       <>
@@ -126,13 +122,18 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
             type="text"
             value={config[modelKey].model}
             onChange={e => updateModelConfig(modelKey, 'model', e.target.value)}
-            placeholder={provider === 'ollama' ? 'e.g., gemma4:31b' : 'e.g., models/gemini-1.5-pro'}
+            placeholder={provider === 'ollama' ? 'e.g., gemma4:31b' : 'e.g., models/gemini-3.8-flash'}
           />
         </label>
         <p className="model-hint">
           {isLoadingModels
             ? 'Loading model list...'
-            : `Provider reports ${dropdownOptions.length} available model(s).`}
+            : reported.error
+              ? `Provider list unavailable: ${reported.error}`
+              : reported.live
+                ? `Provider reports ${dropdownOptions.length} available model(s) — live list.`
+                : `Provider reports ${dropdownOptions.length} available model(s).`}
+          {stale && !isLoadingModels && ' This saved model is not in the provider list and may be retired.'}
         </p>
       </>
     );
@@ -143,6 +144,12 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
         <div className="cv-modal-body">
           <div className="config-section">
             <h3>LLM Models</h3>
+            <p>
+              <Button onClick={() => fetchModels(true)} disabled={isLoadingModels}>
+                {isLoadingModels ? 'Refreshing…' : 'Refresh model lists'}
+              </Button>
+            </p>
+            {catalogError && <p role="alert">Could not load provider model lists: {catalogError}</p>}
             
             <div className="model-config">
               <h4>Analysis Model</h4>

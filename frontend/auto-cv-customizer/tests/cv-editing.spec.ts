@@ -30,6 +30,7 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
   const additional = new Map<string, CVData>();
   let saveGate: Promise<void> | undefined;
   const unexpected: string[] = [];
+  const modelCalls: string[] = [];
   const versionsPath = '/api/v1/cv-data/charilaos_mylonas/versions';
   // Intercept all requests, not only expected endpoints: nothing may reach the
   // Vite backend proxy or an external service if a component adds another call.
@@ -74,6 +75,12 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
         outputs: { render_pdf: true, include_latex: true, include_cover_letter: false, include_scoring_comments: true },
         concurrency_limit: 5,
       } satisfies BackendConfig;
+    } else if (url.pathname === '/api/v1/models/available') {
+      modelCalls.push(`${route.request().method()} ${url.pathname}${url.search}`);
+      json = {
+        ollama: { models: ['offline-test', 'other-model'], error: null, live: true },
+        google: { models: ['models/gemini-3.8-flash'], error: 'Google model list failed (HTTP 403); showing stable fallback IDs.', live: false },
+      };
     } else if (url.pathname === '/api/v1/health') {
       json = { status: 'healthy' };
     } else {
@@ -84,7 +91,7 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
     await route.fulfill({ json });
   });
   page.on('dialog', dialog => dialog.accept());
-  return { saved: () => stored, unexpected, additional, holdSave: () => {
+  return { saved: () => stored, unexpected, additional, modelCalls, holdSave: () => {
     let release!: () => void;
     saveGate = new Promise<void>(resolve => { release = resolve; });
     return release;
@@ -294,5 +301,25 @@ test('preview editing is locked during a source save so a late response cannot d
   release();
   await expect.poll(() => api.saved().personal_statement).toBe('Saved preview text');
   await expect(page.locator('.preview-block .item-text')).toContainText('Saved preview text');
+  expect(api.unexpected).toEqual([]);
+});
+
+test('settings lists live provider models, surfaces provider errors and warns on retired IDs', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('heading', { name: 'Backend Configuration' })).toBeVisible();
+  const analysisModels = page.getByLabel('Available Models:').first();
+  await expect(analysisModels.locator('option[value="other-model"]')).toHaveCount(1);
+  await expect(analysisModels.locator('option[value="offline-test"]')).toHaveCount(1);
+  await expect(page.getByText('live list')).toHaveCount(2);
+  await page.getByLabel('Provider:').first().selectOption('google');
+  await expect(analysisModels.locator('option[value="models/gemini-3.8-flash"]')).toHaveCount(1);
+  await expect(page.getByText(/Provider list unavailable: Google model list failed/)).toBeVisible();
+  await page.getByLabel('Custom Model:').first().fill('models/dead-preview');
+  await expect(page.getByText(/may be retired/)).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh model lists' }).click();
+  await expect.poll(() => api.modelCalls.length).toBe(2);
+  expect(api.modelCalls[1]).toContain('refresh=true');
   expect(api.unexpected).toEqual([]);
 });

@@ -15,7 +15,7 @@ initial outputs, rerenders, CLI outputs and CLI cover letters. The HTTP adapter
 offloads blocking rendering to a thread. Artifact IDs/paths are unique per render,
 not based on a timestamp that can collide within a second.
 
-`tools/autocv-otel.py` accepts the same CLI flags and instruments the ordinary
+`auto-cv-otel` (`tools.autocv_otel`) accepts the same CLI flags and instruments the ordinary
 entry point. Optional instrumentation/exporters initialize only during explicit
 execution and flush/shut down in `finally`; no pipeline is copied there.
 
@@ -31,6 +31,17 @@ Unspecified CLI analysis/editor options use the same local defaults as HTTP
 (`ollama`, `gemma4:31b`), with selection min/max/threshold `1/5/4`. This deliberately
 replaces the previous CLI-only cloud/threshold defaults; pass explicit flags for
 the cloud presets documented in the README. Explicit template choices still win.
+
+`GET /v1/models/available` returns the live provider catalog for the settings
+dropdown (`src/model_catalog.py` fetch/parse, `ModelCatalogService` TTL cache,
+typed `ModelCatalogResponse`). Ollama lists local `/api/tags`; Google lists
+`generateContent` models for the server-side `GEMINI_API_KEY` (clients never
+send keys). Each provider resolves independently with an explanatory `error`
+and `live` flag instead of failing the request; `?refresh=true` bypasses the
+cache. When Google is unreachable, stable fallback IDs are returned marked
+not-live. The configured Google default is a stable model ID, not a preview;
+retired IDs surface a 502 at analysis time and a "may be retired" warning in
+the settings panel when the saved value is absent from the live list.
 
 HTTP jobs use an explicit request config, otherwise a copy of the current server
 config. Each job persists **non-secret effective settings**, and rescoring uses
