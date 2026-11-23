@@ -27,10 +27,9 @@ The old `config/llm_defaults.yaml` is retained as historical configuration but i
 not an active runtime source. API/CLI no longer silently select different models
 through analyzer constructors.
 
-Unspecified CLI analysis/editor options use the same local defaults as HTTP
-(`ollama`, `gemma4:31b`), with selection min/max/threshold `1/5/4`. This deliberately
-replaces the previous CLI-only cloud/threshold defaults; pass explicit flags for
-the cloud presets documented in the README. Explicit template choices still win.
+Unspecified CLI model options use the role defaults (analysis on Google
+`models/gemini-2.5-flash`, statement authoring and the CLI-only cover letter on
+Google `models/gemini-3.8-flash`), with selection min/max/threshold `1/5/4`.
 
 `GET /v1/models/available` returns the live provider catalog for the settings
 dropdown (`src/model_catalog.py` fetch/parse, `ModelCatalogService` TTL cache,

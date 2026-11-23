@@ -6,6 +6,15 @@ from .analysis import SelectionPolicy
 
 PROVIDER_DEFAULTS = {"ollama": "gemma4:31b", "google": "models/gemini-3.8-flash"}
 
+# Per-role defaults: analysis and statement authoring run on Gemini, and so does
+# the CLI-only cover-letter editor. Requested roles are websearch-verified
+# stable IDs; the settings catalog still governs selection.
+ROLE_DEFAULTS = {
+    "analysis_model": ("google", "models/gemini-2.5-flash"),
+    "statement_editor_model": ("google", "models/gemini-3.8-flash"),
+    "cover_letter_editor_model": ("google", "models/gemini-3.8-flash"),
+}
+
 
 class ConfigModel(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False, validate_assignment=True)
@@ -45,9 +54,12 @@ class OutputsConfig(ConfigModel):
 
 
 class BackendConfig(ConfigModel):
-    analysis_model: ModelConfig = Field(default_factory=ModelConfig)
-    statement_editor_model: ModelConfig = Field(default_factory=ModelConfig)
-    cover_letter_editor_model: ModelConfig = Field(default_factory=ModelConfig)
+    analysis_model: ModelConfig = Field(default_factory=lambda: ModelConfig(
+        provider=ROLE_DEFAULTS["analysis_model"][0], model=ROLE_DEFAULTS["analysis_model"][1]))
+    statement_editor_model: ModelConfig = Field(default_factory=lambda: ModelConfig(
+        provider=ROLE_DEFAULTS["statement_editor_model"][0], model=ROLE_DEFAULTS["statement_editor_model"][1]))
+    cover_letter_editor_model: ModelConfig = Field(default_factory=lambda: ModelConfig(
+        provider=ROLE_DEFAULTS["cover_letter_editor_model"][0], model=ROLE_DEFAULTS["cover_letter_editor_model"][1]))
     rewrite_policy: RewritePolicy = Field(default_factory=RewritePolicy)
     analysis_policy: AnalysisPolicy = Field(default_factory=AnalysisPolicy)
     outputs: OutputsConfig = Field(default_factory=OutputsConfig)

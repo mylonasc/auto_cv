@@ -557,18 +557,18 @@ export type StudioPreviewRequestInput = Partial<StudioPreviewRequest> & Pick<Stu
 
 export const DEFAULT_BACKEND_CONFIG: BackendConfig = {
   "analysis_model": {
-    "provider": "ollama",
-    "model": "gemma4:31b",
+    "provider": "google",
+    "model": "models/gemini-2.5-flash",
     "config": null
   },
   "statement_editor_model": {
-    "provider": "ollama",
-    "model": "gemma4:31b",
+    "provider": "google",
+    "model": "models/gemini-3.8-flash",
     "config": null
   },
   "cover_letter_editor_model": {
-    "provider": "ollama",
-    "model": "gemma4:31b",
+    "provider": "google",
+    "model": "models/gemini-3.8-flash",
     "config": null
   },
   "rewrite_policy": {

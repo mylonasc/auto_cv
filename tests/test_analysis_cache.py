@@ -115,8 +115,9 @@ async def test_ad_hoc_models_without_identity_cannot_reuse_cache(tmp_path, fake_
 
 def test_effective_model_identity_includes_endpoint_defaults_and_never_credentials(monkeypatch):
     from src.pipeline import cache_model_identity
-    from src.config import BackendConfig
+    from src.config import BackendConfig, ModelConfig
     config = BackendConfig()
+    config.analysis_model = ModelConfig(provider='ollama', model='endpoint-test')
     config.analysis_model.config = {'temperature': .5, 'API_KEY': 'secret'}
     model = SimpleNamespace(model='resolved:latest', temperature=.5)
     one = cache_model_identity(config, model)
