@@ -140,14 +140,16 @@
       % @{} drops this table's own column padding: p{1.0\linewidth} already
       % accounts for the full column, so the padding would stick 12pt out.
       \begin{tabular}{@{}p{\linewidth}@{}}
+    % No negative vertical tweaks here: fixed pull-ups overlap the title row
+    % and compound across roles once bullets wrap to multiple lines.
     \begin{list}{$\cdot$}{\leftmargin=.75em \rightmargin=0cm} % \cdot used for bullets, no indentation
-    \itemsep 0.5em \vspace{-1.75em} % Compress items in list together for aesthetics
-     
+    \itemsep 0.5em
+
 }{
     \end{list}
-    \end{tabular} 
+    \end{tabular}
   \end{tabular}
-  \vspace{-1.0em}
+  \vspace{0.2em}
 }
 
 \newenvironment{myrSubsectionEmpty2}[3]{

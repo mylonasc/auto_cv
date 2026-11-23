@@ -211,13 +211,15 @@ single compile slot with preview, persists nothing and returns 501 when
 The Studio **Check layout quality** button calls it for the current unsaved
 draft, marks results outdated on further edits, and never replaces the PDF.
 
-Known findings from real compiles (detection first; fixes are follow-ups, not
-silent redesigns): both starters compile successfully with zero word overlaps
-and zero words outside the page, but report header `vbox`/`hbox` overfulls and
-a ~55pt `hbox` overfull where the Technical Strengths dot row runs into the
-right margin (visible on the page PNGs). The classic starter additionally
-substitutes the unavailable small-caps bold font. Evidence: `visual_tests/`
-JSON reports and page PNGs plus `render-visual.spec.ts` PDF attachments.
+Layout history from real compiles (detection first, then targeted fixes, never
+silent redesigns): the header `vbox`/`hbox` overfulls, the ~55pt Technical
+Strengths dot-row overflow and the small-caps bold substitution are fixed and
+verified render-identical-or-better on both starters; only sub-2pt list
+micro-overfulls remain. A separate real-CV defect — classic work-experience
+roles piling onto each other once bullets wrap — was traced to fixed negative
+vertical spaces in `myrSubsection` and removed; multi-role wrapping output now
+compiles with zero word overlaps. Evidence: `visual_tests/` JSON reports and
+page PNGs plus `render-visual.spec.ts` PDF attachments.
 
 Opt-in commands (synthetic CVs and temporary storage only; never part of the
 default suite):
