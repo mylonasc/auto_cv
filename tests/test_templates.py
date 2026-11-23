@@ -168,7 +168,8 @@ def test_compiler_materializes_only_declared_snapshot_resources_and_uses_scratch
         assert (folder / 'temp.tex').read_text() == 'test latex'
         (folder / 'temp.pdf').write_bytes(b'%PDF-test')
 
-    monkeypatch.setattr(rendering.subprocess, 'run', run)
+    monkeypatch.setattr('src.tex_compiler.run_tex', run)
+    monkeypatch.setattr('src.tex_compiler.shutil.which', lambda name: '/fake/xelatex')
     output = tmp_path / 'result.pdf'
     _COMPILE_LATEX('test latex', str(output), resources=(RenderResource('images/logo.bin', b'snapshot'),))
     assert output.read_bytes() == b'%PDF-test'

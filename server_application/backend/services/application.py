@@ -16,6 +16,7 @@ from src.analysis import Assessment
 from src.outcomes import StageFailure
 from src.template_catalog import TemplateCatalog
 from .studio import StudioService
+from .studio_preview import StudioPreview
 from .cv_processor import CVProcessor
 from .job_runner import JobRunner
 from .working_copy import create_working_copy, select_working_copy, document_from_working_copy
@@ -41,6 +42,7 @@ class ApplicationServices:
         self.config = BackendConfig()
         self.templates = TemplateCatalog(paths.root / 'template_packages')
         self.studio = StudioService(self.templates.repository)
+        self.studio_preview = StudioPreview()
         self.processor_factory = processor_factory
         self.runner = runner_factory(self.jobs, self.execute)
 

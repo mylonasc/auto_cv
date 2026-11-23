@@ -4,6 +4,7 @@ import { ContentEditor } from './ContentEditor';
 import { SectionEditor } from './SectionEditor';
 import { Button } from '../common/Primitives';
 import './studio.css';
+import { PdfFrame } from '../common/PdfFrame';
 
 export default function StudioTab() {
   const c = useStudio();
@@ -35,6 +36,13 @@ export default function StudioTab() {
         <textarea aria-label="Template source" spellCheck={false} rows={22} value={draft.package.files[selected] ?? ''} onChange={e => c.dispatch({ type: 'package', package: { ...draft.package, files: { ...draft.package.files, [selected]: e.target.value } } })} />
         <small>Captured assets (read-only): {Object.keys(draft.package.assets).join(', ') || 'none'}. Required placeholders are validated on save.</small>
       </details>
-    </div><aside className="studio-preview"><p>PDF preview is the next delivery slice.</p></aside></div></>}
+    </div><aside className="studio-preview">
+      <Button variant="primary" disabled={c.preview.busy} onClick={c.preview.preview}>{c.preview.busy ? 'Compiling preview…' : 'Preview PDF'}</Button>
+      <p>No save, analysis or model call required. Unsaved CV and template edits are compiled together.</p>
+      {c.preview.outdated && <p role="status">Preview outdated — draft has changed.</p>}
+      {c.preview.error && <pre role="alert">{c.preview.error}</pre>}
+      {c.preview.url ? <><a href={c.preview.url} target="_blank" rel="noreferrer">Open PDF in new tab</a><PdfFrame url={c.preview.url} title="Studio PDF preview" /></> : <p>Click Preview PDF to compile this draft.</p>}
+      <small>Diagnostics refer to captured source files or temp.tex (the assembled CV). Trusted local use only; this is not an untrusted-TeX sandbox.</small>
+    </aside></div></>}
   </div>;
 }

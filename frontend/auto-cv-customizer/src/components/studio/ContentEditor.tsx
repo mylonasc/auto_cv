@@ -6,7 +6,7 @@ export function ContentEditor({ cv, change }: { cv: CVData; change: (cv: CVData)
   return <details><summary>Statement and experience content</summary>
     <label>Content format <select value={cv.content_format} onChange={e => change({ ...cv, content_format: e.target.value as CVData['content_format'] })}>
       <option value="latex">Authored LaTeX (preserve existing)</option><option value="plain_text">Plain text (escape TeX characters)</option></select></label>
-    <label>Personal statement<textarea value={cv.personal_statement} onChange={e => change({ ...cv, personal_statement: e.target.value })} /></label>
+    <label>Personal statement<textarea aria-label="Personal statement" value={cv.personal_statement} onChange={e => change({ ...cv, personal_statement: e.target.value })} /></label>
     {cv.experience_sections.map((role, at) => <fieldset key={at}><legend>Experience {at + 1}</legend>
       {(['company', 'position', 'duration'] as const).map(key => <label key={key}>{key}<input value={role[key]} onChange={e => change({ ...cv, experience_sections: cv.experience_sections.map((r, i) => i === at ? { ...r, [key]: e.target.value } : r) })} /></label>)}
       {role.text_items.map((text, index) => <label key={index}>Bullet {index + 1}<textarea value={text} onChange={e => change({ ...cv, experience_sections: cv.experience_sections.map((r, i) => i === at ? { ...r, text_items: r.text_items.map((t, j) => j === index ? e.target.value : t) } : r) })} />

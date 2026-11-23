@@ -27,6 +27,7 @@ ROOT_MODELS = [
     api.SubmissionCreateRequest, api.SubmissionUpdateRequest, api.StreamError, TemplateRegistryResponse,
     template_package.TemplatePackage, template_package.TemplateRevision,
     studio.StudioImportRequest, studio.StudioDraft, studio.StudioSaveRequest,
+    studio.StudioPreviewRequest, studio.StudioPreviewError,
 ]
 
 

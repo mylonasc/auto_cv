@@ -7,5 +7,6 @@ export function httpErrorMessage(status: number | undefined, body: unknown, fall
     const location = Array.isArray(item.loc) ? item.loc.filter(part => typeof part === 'string' || typeof part === 'number').join('.') : '';
     return `${location ? `${location}: ` : ''}${item.msg}`;
   }).filter(Boolean).join('; ') : '';
-  return `${status ? `HTTP ${status}: ` : ''}${text || fallback}`;
+  const diagnostics = object(body) && typeof body.diagnostics === 'string' ? `\n${body.diagnostics.slice(0, 8192)}` : '';
+  return `${status ? `HTTP ${status}: ` : ''}${text || fallback}${diagnostics}`;
 }

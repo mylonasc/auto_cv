@@ -23,3 +23,12 @@ class StudioDraft(StudioModel):
 class StudioSaveRequest(StudioModel):
     package: TemplatePackage
     expected_revision: RevisionID | None
+
+
+class StudioPreviewRequest(StudioDraft):
+    """A CV/package pair; its effective revision is bound without saving."""
+
+
+class StudioPreviewError(StudioModel):
+    detail: str
+    diagnostics: str = Field(default='', max_length=8192)

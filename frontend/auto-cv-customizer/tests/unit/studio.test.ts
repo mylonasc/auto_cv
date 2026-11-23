@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { studioDraft } from '../studio-fixture.ts';
 import { studioReducer as reduce, initialStudio, same, move, duplicateSection } from '../../src/domain/studio.ts';
+import { httpErrorMessage } from '../../src/services/errors.ts';
 
 test('Studio late load cannot overwrite a newer edit; saves only update captured baselines', () => {
   const draft = studioDraft();
@@ -33,4 +34,10 @@ test('ordering is immutable and duplication creates distinct section and entry I
   assert.equal(duplicate.kind, 'entries');
   if (duplicate.kind === 'entries') assert.notEqual(duplicate.entries[0].id, section.entries[0].id);
   assert.throws(() => duplicateSection(studioDraft().cv.document!.sections[0], () => 'no'));
+});
+
+test('preview diagnostics retain file and line while bounding displayed output', () => {
+  const text = httpErrorMessage(422, { detail: 'Compilation failed', diagnostics: './resume.cls:90: Error\n' + 'x'.repeat(20000) }, 'fallback');
+  assert.match(text, /resume.cls:90/);
+  assert.ok(text.length < 8300);
 });

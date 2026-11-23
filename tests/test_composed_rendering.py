@@ -56,6 +56,21 @@ def test_render_uses_exact_pin_not_changed_head(composed, services):
     assert 'NEW STYLE' not in text
 
 
+def test_imported_project_fragment_guards_empty_bullets(composed, services):
+    project = next(section for section in composed.cv.document.sections if section.kind == 'entries').entries[0]
+    project.bullets = []
+    text = FullCVDocument.from_cv(composed.cv, template_catalog=services.templates).make_latex()
+    assert r'\if\relax\detokenize{}\relax\else' in text
+    assert r'R\&D project' in text
+
+
+def test_imported_role_fragment_preserves_empty_role_without_empty_list(composed, services):
+    composed.cv.experience_sections[0].text_items = []
+    text = FullCVDocument.from_cv(composed.cv, template_catalog=services.templates).make_latex()
+    assert r'\if\relax\detokenize{}\relax' in text
+    assert r'\textbf{Company}' in text
+
+
 def test_document_export_retains_composition_and_pin(composed, services, tmp_path):
     document = FullCVDocument.from_cv(composed.cv, template_catalog=services.templates)
     path = tmp_path / 'document.json'

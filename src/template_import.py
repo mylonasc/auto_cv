@@ -104,7 +104,9 @@ def import_builtin_template(cv: CVData, *, root: Path, new_template_id: str, nam
         'fragments/comment.tex': layout['comment'],
         'fragments/entries.tex': '<entries>',
         'fragments/entry.tex': '\\textbf{<name>}\\hfill <url>\\par\n<description>\\par\n'
-                               '\\textit{<technologies>}\n\\begin{itemize}\n<bullets>\\end{itemize}\n',
+                                '\\textit{<technologies>}\n'
+                                '\\if\\relax\\detokenize{<bullets>}\\relax\\else\n'
+                                '\\begin{itemize}\n<bullets>\\end{itemize}\n\\fi\n',
         'fragments/publications.tex': '<entries>',
         'fragments/publication.tex': '<authors> (<year>). \\textit{<title>}. <venue>. <url>\\par\n',
     })

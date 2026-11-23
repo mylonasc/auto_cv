@@ -735,6 +735,23 @@ frontend unit**, **21 isolated Chromium** checks, build/lint/diff checks passed.
 No user CV/template was saved by implementation or test execution. TRF-04 preview
 and TRF-05 final integration remain separate delivery criteria.
 
+TRF-03 delivered in `e1ee1a7` (#20 closed). TRF-04 now adds unsaved-draft PDF
+preview, bounded shared XeLaTeX execution, actionable local diagnostics and
+provider-owned PDF/request lifetimes with stale-result rejection. No model calls
+or persistent preview records. Newly imported project/default role fragments guard
+empty bullet lists after a real browser smoke exposed invalid empty itemize output;
+immutable saved packages and original classes/CVs are retained.
+
+Verification: **280 backend**, **33 typed frontend unit**, **22 API-isolated
+Chromium** checks passed; build/full lint/type drift/diff checks passed. Both
+built-in imports compiled through the real HTTP endpoint, including an empty role.
+Real browser editing produced a 133176-byte PDF and useful intentional compile
+errors without replacing the last PDF. All live checks used owned temporary data,
+forbidden model construction, zero external browser requests, and stopped owned
+servers. An independent suite rerun preserved five sentinels and all 713 inventoried
+data/assets/legacy hashes (dependency/bytecode trees excluded). Docker and full
+visual/epic-wide acceptance are not claimed; TRF-05 #22 remains open.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native

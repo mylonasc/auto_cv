@@ -3,6 +3,7 @@ import { apiService } from '../services/api';
 import { initialStudio, same, studioReducer } from '../domain/studio';
 import type { CVData, StudioDraft } from '../types/api.generated';
 import type { CVVersionInfo } from '../services/api';
+import { useStudioPreview } from '../hooks/useStudioPreview';
 
 function useStudioController() {
   const [state, dispatch] = useReducer(studioReducer, initialStudio);
@@ -18,6 +19,7 @@ function useStudioController() {
   const [templateID, setTemplateID] = useState('my-template');
   const cvDirty = !!state.draft && !same(state.draft.cv, state.cvBaseline);
   const packageDirty = !!state.draft && !same(state.draft.package, state.packageBaseline);
+  const preview = useStudioPreview(state.draft, state.edit);
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => { if (cvDirty || packageDirty) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', guard);
@@ -68,7 +70,7 @@ function useStudioController() {
     setNotice(`Created CV version ${target}. Select it in Job Description when ready; it is not activated automatically.`);
     setVersions(await apiService.listCVVersions());
   });
-  return { state, dispatch, busy, error, notice, versions, source, setSource, target, setTarget, templateID, setTemplateID,
+  return { state, dispatch, busy, error, notice, preview, versions, source, setSource, target, setTarget, templateID, setTemplateID,
     cvDirty, packageDirty, refresh, load, saveTemplate, reloadTemplate, saveCV,
     editCV: (cv: CVData) => dispatch({ type: 'cv', cv }) };
 }

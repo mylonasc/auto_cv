@@ -1,9 +1,7 @@
 """LaTeX compilation boundary; document content and artifact metadata live elsewhere."""
 
 from pathlib import Path
-import shutil
 import subprocess
-import tempfile
 
 from .outcomes import StageFailure
 from .latex_templates import latex_text, RenderResource, resource_destination
@@ -32,19 +30,9 @@ def materialize_resources(resources: tuple[RenderResource, ...], folder: Path) -
 
 def latex_to_pdf(latex_string: str, output_pdf: str, *, resources: tuple[RenderResource, ...] = ()) -> None:
     """Publish only a successful, nonempty XeLaTeX result from isolated scratch space."""
-    scratch = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
+    from .tex_compiler import compile_latex
     try:
-        with tempfile.TemporaryDirectory(prefix='auto_cv_tex_', dir=scratch) as temporary:
-            folder = Path(temporary)
-            materialize_resources(resources, folder)
-            tex = folder / 'temp.tex'
-            tex.write_text(latex_string, encoding='utf-8')
-            subprocess.run(['xelatex', '-interaction=nonstopmode', '-halt-on-error',
-                            '-output-directory', str(folder), str(tex)],
-                            check=True, capture_output=True, timeout=120, cwd=folder)
-            pdf = folder / 'temp.pdf'
-            if not pdf.is_file() or pdf.stat().st_size == 0:
-                raise RuntimeError('PDF was not generated or was empty')
-            shutil.move(str(pdf), output_pdf)
+        content = compile_latex(latex_string, resources)
+        Path(output_pdf).write_bytes(content)
     except (OSError, subprocess.SubprocessError, RuntimeError) as error:
         raise StageFailure('pdf_render', 'xelatex', error) from error

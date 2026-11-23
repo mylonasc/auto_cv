@@ -99,7 +99,8 @@ def test_real_pdf_compiler_fails_truthfully_without_publishing(monkeypatch, tmp_
         if mode == 'empty':
             (Path(command[command.index('-output-directory') + 1]) / 'temp.pdf').touch()
 
-    monkeypatch.setattr(subprocess, 'run', run)
+    monkeypatch.setattr('src.tex_compiler.run_tex', run)
+    monkeypatch.setattr('src.tex_compiler.shutil.which', lambda name: '/fake/xelatex')
     path = tmp_path / 'output.pdf'
     with pytest.raises(StageFailure, match='pdf_render'):
         _COMPILE_LATEX('test', str(path))

@@ -334,6 +334,16 @@ export interface StudioImportRequest {
   name: string;
 }
 
+export interface StudioPreviewError {
+  detail: string;
+  diagnostics: string;
+}
+
+export interface StudioPreviewRequest {
+  cv: CVData;
+  package: TemplatePackage;
+}
+
 export interface StudioSaveRequest {
   package: TemplatePackage;
   expected_revision: string | null;
@@ -429,6 +439,7 @@ export type SubmissionCreateRequestInput = Partial<SubmissionCreateRequest> & Pi
 export type SubmissionUpdateRequestInput = Partial<SubmissionUpdateRequest> & Pick<SubmissionUpdateRequest, never>;
 export type StudioImportRequestInput = Partial<StudioImportRequest> & Pick<StudioImportRequest, "cv" | "template_id" | "name">;
 export type StudioSaveRequestInput = Partial<StudioSaveRequest> & Pick<StudioSaveRequest, "package" | "expected_revision">;
+export type StudioPreviewRequestInput = Partial<StudioPreviewRequest> & Pick<StudioPreviewRequest, "cv" | "package">;
 
 export const DEFAULT_BACKEND_CONFIG: BackendConfig = {
   "analysis_model": {

@@ -18,9 +18,42 @@ and all source/runtime/legacy data.
 The GitHub bodies contain full acceptance checklists. No issue is complete merely
 because its design/types exist. Close only with verified implementation commits.
 
-TRF-01 is delivered in `043978d` and #18 is closed. TRF-02 integrates composition
-rendering; its verification is recorded below. Subsequent slices retain native
-blocking relationships and are not complete merely because foundation types exist.
+TRF-01–TRF-04 are implemented on the epic branch: foundation `043978d`, composed
+rendering `5595564`, authoring `e1ee1a7`, and preview (verification below).
+TRF-05 final epic-wide acceptance remains open; no slice is complete merely
+because its design/types exist.
+
+## Try the live preview
+
+With the current backend/frontend running, open **Template Studio**:
+
+1. Select the source CV, choose an unused template ID for a legacy import, and
+   click **Load / import draft**. Existing composed CVs load their pinned revision.
+2. Edit statement/experience, header, raw sections or any captured template file.
+   **Add entries** adds a personal-project section; **Add publications** adds a
+   structured publication list. Original publications remain a preserved raw block
+   whose **Include section** checkbox can hide it without deletion.
+3. Click **Preview PDF**. Neither save is required. The PDF appears beside the
+   editors. Further edits mark it outdated; compile errors retain the last PDF.
+4. To persist: **Save template revision**, then choose a new CV version ID and
+   **Save new CV version**. Select that new CV in Job Description explicitly.
+
+Manual startup, in separate terminals from the checkout root:
+
+```bash
+.venv/bin/python -m uvicorn server_application.backend.main:app --host 127.0.0.1 --port 8005
+```
+
+```bash
+npm --prefix frontend/auto-cv-customizer run dev -- --host 127.0.0.1
+```
+
+Open the Vite URL printed by the second command (normally http://127.0.0.1:5173).
+XeLaTeX and the existing templates' TeX packages/fonts must be installed on the
+backend host; no LLM/provider is needed for Studio. For Docker, rebuild/restart the
+backend/frontend using the existing deployment setup so its bundled UI is current.
+Docker execution has not been verified for this slice. Starting the normal app
+uses normal storage; the implementation's smoke tests used temporary storage only.
 
 ## Approved scope and ownership
 
@@ -121,7 +154,7 @@ name=...)` is a read-only operation returning an `ImportedTemplate` draft:
 - Return independent values with the predicted revision reference. Do not create
   a repository, save a CV, rewrite a registry or touch originals.
 
-The future TRF-03 operation must save the package before explicitly creating a new
+The TRF-03 operation saves the package before explicitly creating a new
 CV version; it must not overwrite the selected original. Importing publications
 as raw LaTeX is intentional preservation, not a claim that bibliography entries
 have been semantically parsed. Structured publication entries can be authored
@@ -166,6 +199,66 @@ They share generated contracts; callers cannot supply arbitrary filesystem paths
 TRF-03 verification: backend **263 passed**, frontend unit **32 passed**, isolated
 Chromium **21 passed**, frontend build/lint and diff checks passed. Preview is
 not included in these checks; it remains TRF-04.
+
+### TRF-04 job-independent PDF preview
+
+`POST /v1/template-studio/preview` accepts generated `StudioPreviewRequest`
+CV/package drafts, validates both, binds the draft package hash in an independent
+CV copy, and invokes the same composed renderer/compiler as saved output. It does
+not resolve mutable HEAD, save revisions/CVs, call models or create jobs,
+submissions, render records or artifacts. Success is `application/pdf`, `no-store`,
+with `X-Preview-Input` identifying the effective input. Compile failures return
+JSON detail plus bounded file/line diagnostics; invalid schemas return normal
+validation errors. `temp.tex` means the assembled CV, not a writable template file.
+
+One compile per application process is accepted; concurrent previews return 429
+with Retry-After. Compilation runs off the event loop and owns its capacity until
+the worker actually finishes, even after request cancellation. Preview wall timeout
+is 30 seconds (ordinary jobs retain 120); a single-threaded child sets CPU/file
+limits before exec, avoiding preexec_fn in a threaded server. Shell escape is
+disabled, TeX paranoid file-open settings are enabled, output/transcript files are
+capped at 16 MiB each, and only an 8 KiB diagnostic tail is returned. Captured
+resources and temporary compiler files are removed with owned scratch lifetimes.
+Ordinary job/provider error messages remain sanitized.
+
+The provider owns requests and last-successful PDF across tabs. Edits during a
+request reject its late result; later edits mark an older PDF outdated. Failed
+compiles preserve the last successful PDF. The reusable PDF frame uses object URLs
+revoked on replacement/provider unmount, and blob-mode HTTP errors are decoded as
+bounded JSON rather than hiding the compile diagnostics.
+
+Real browser compilation caught empty project/role list environments. Newly
+imported project fragments and the shared default role fragment now guard empty
+bullet lists. Existing immutable packages are not rewritten; their source remains
+editable. Nonempty list appearance is unchanged; empty roles retain their headings.
+
+**Trust boundary:** these are trusted-local authoring controls, not a sandbox for
+hostile TeX. No authentication/container isolation/filesystem quota is added. TeX
+can still access host-installed packages/fonts and consume resources within the
+process limits. Timed-out/failed compilers have their owned process group killed
+and reaped, including PDF/font helpers. Disabling shell escape/restricting file opens also applies to
+ordinary rendering; custom templates relying on external commands/absolute reads
+must be adapted explicitly, not enabled through a preview escape hatch.
+
+TRF-04 verification:
+
+- `.venv/bin/python -m pytest -q`: **280 passed**, including temporary storage,
+  unsaved input identity, bounded diagnostics, validation, 429/cancellation capacity,
+  compile failure/timeout/missing/empty/invalid/oversize output and scratch cleanup.
+- `npm run test:unit`: **33 passed**; `npm run test:cv`: **22 API-isolated Chromium
+  checks passed**, including stale preview rejection, tab persistence, old-PDF
+  retention, object URL replacement/revocation and JSON blob error decoding.
+- Frontend build/full lint, generated-schema drift and diff checks passed.
+- Real HTTP/XeLaTeX compilation passed for both built-in imports, including an
+  empty role (132165 and 117670 PDF bytes in the final smoke). Real Chromium edits
+  compiled a 133176-byte unsaved project/statement PDF, displayed the iframe, then
+  displayed deliberate TeX diagnostics while preserving the old PDF. Model creation
+  was forbidden; zero external browser requests. The temporary seed store remained
+  byte-identical and owned smoke servers were stopped. This is functional smoke
+  evidence, not pixel-perfect visual acceptance or Docker verification.
+- Independent sandboxed rerun preserved five external sentinels and all **713**
+  inventoried data/assets/legacy file hashes (excluding dependency/bytecode trees).
+  No real user CV, template package or artifact was saved/migrated.
 
 Both shipped classes require `my_pic.jpeg`; the registry now declares the existing
 image as a captured dependency. No original asset was changed. Both imported styles

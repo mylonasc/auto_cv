@@ -20,9 +20,13 @@ class ApiService {
   private client = axios.create({ baseURL: API_BASE_URL, headers: { 'Content-Type': 'application/json' } });
 
   constructor() {
-    this.client.interceptors.response.use(response => response, (error: unknown) => {
+    this.client.interceptors.response.use(response => response, async (error: unknown) => {
       if (!axios.isAxiosError(error)) return Promise.reject(error);
-      return Promise.reject(new Error(httpErrorMessage(error.response?.status, error.response?.data, error.message)));
+      let body: unknown = error.response?.data;
+      if (body instanceof Blob && body.size <= 32768) {
+        try { body = JSON.parse(await body.text()); } catch { body = undefined; }
+      }
+      return Promise.reject(new Error(httpErrorMessage(error.response?.status, body, error.message)));
     });
   }
 
@@ -100,6 +104,12 @@ class ApiService {
   }
   async saveStudioTemplate(payload: API.StudioSaveRequestInput) {
     return (await this.client.post<API.TemplateRevision>('/template-studio/packages', payload)).data;
+  }
+  async previewStudio(payload: API.StudioPreviewRequestInput, signal: AbortSignal) {
+    const response = await this.client.post<Blob>('/template-studio/preview', payload, { responseType: 'blob', signal, timeout: 40000 });
+    const identity: unknown = response.headers['x-preview-input'];
+    if (typeof identity !== 'string' || !/^[a-f0-9]{64}$/.test(identity) || response.data.type !== 'application/pdf') throw new Error('Invalid PDF preview response.');
+    return { blob: response.data, identity };
   }
   async renderJobArtifacts(id: string, payload: API.RenderCVRequestInput) {
     return jobToView((await this.client.post<API.CVJobResponse>(`/cv-jobs/${id}/render`, payload)).data);
