@@ -78,8 +78,13 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
     } else if (url.pathname === '/api/v1/models/available') {
       modelCalls.push(`${route.request().method()} ${url.pathname}${url.search}`);
       json = {
-        ollama: { models: ['offline-test', 'other-model'], error: null, live: true },
-        google: { models: ['models/gemini-3.8-flash'], error: 'Google model list failed (HTTP 403); showing stable fallback IDs.', live: false },
+        ollama: { models: [
+          { id: 'offline-test', display: null, context_window: 8000, max_output_tokens: null, size_bytes: 512000, parameters: null },
+          { id: 'other-model', display: null, context_window: null, max_output_tokens: null, size_bytes: null, parameters: null },
+        ], error: null, live: true },
+        google: { models: [
+          { id: 'models/gemini-3.8-flash', display: 'Gemini 3.8 Flash', context_window: 1048576, max_output_tokens: 65536, size_bytes: null, parameters: null },
+        ], error: 'Google model list failed (HTTP 403); showing stable fallback IDs.', live: false },
       };
     } else if (url.pathname === '/api/v1/health') {
       json = { status: 'healthy' };
@@ -313,11 +318,15 @@ test('settings lists live provider models, surfaces provider errors and warns on
   await expect(analysisModels.locator('option[value="other-model"]')).toHaveCount(1);
   await expect(analysisModels.locator('option[value="offline-test"]')).toHaveCount(1);
   await expect(page.getByText('live list')).toHaveCount(2);
+  await expect(page.getByText('Selected: 8K ctx · 500 KB.').first()).toBeVisible();
   await page.getByLabel('Provider:').first().selectOption('google');
   await expect(analysisModels.locator('option[value="models/gemini-3.8-flash"]')).toHaveCount(1);
-  await expect(page.getByText(/Provider list unavailable: Google model list failed/)).toBeVisible();
+  await expect(analysisModels).toContainText('Gemini 3.8 Flash');
+  await analysisModels.selectOption('models/gemini-3.8-flash');
+  await expect(page.getByText('Selected: 1M ctx / 65.5K out.').first()).toBeVisible();
+  await expect(page.getByText(/Provider list unavailable: Google model list failed/).first()).toBeVisible();
   await page.getByLabel('Custom Model:').first().fill('models/dead-preview');
-  await expect(page.getByText(/may be retired/)).toBeVisible();
+  await expect(page.getByText(/may be retired/).first()).toBeVisible();
   await page.getByRole('button', { name: 'Refresh model lists' }).click();
   await expect.poll(() => api.modelCalls.length).toBe(2);
   expect(api.modelCalls[1]).toContain('refresh=true');

@@ -34,14 +34,17 @@ the cloud presets documented in the README. Explicit template choices still win.
 
 `GET /v1/models/available` returns the live provider catalog for the settings
 dropdown (`src/model_catalog.py` fetch/parse, `ModelCatalogService` TTL cache,
-typed `ModelCatalogResponse`). Ollama lists local `/api/tags`; Google lists
-`generateContent` models for the server-side `GEMINI_API_KEY` (clients never
-send keys). Each provider resolves independently with an explanatory `error`
-and `live` flag instead of failing the request; `?refresh=true` bypasses the
-cache. When Google is unreachable, stable fallback IDs are returned marked
-not-live. The configured Google default is a stable model ID, not a preview;
-retired IDs surface a 502 at analysis time and a "may be retired" warning in
-the settings panel when the saved value is absent from the live list.
+typed `ModelCatalogResponse`). Ollama lists local `/api/tags` with size,
+parameter count and context length when reported; Google lists
+`generateContent` models with display names and input/output token limits for
+the server-side `GEMINI_API_KEY` (clients never send keys). Neither provider
+API exposes prices, so costs are intentionally not part of the catalog. Each
+provider resolves independently with an explanatory `error` and `live` flag
+instead of failing the request; `?refresh=true` bypasses the cache. When Google
+is unreachable, stable fallback IDs are returned marked not-live. The configured
+Google default is a stable model ID, not a preview; retired IDs surface a 502
+at analysis time and a "may be retired" warning in the settings panel when the
+saved value is absent from the live list.
 
 HTTP jobs use an explicit request config, otherwise a copy of the current server
 config. Each job persists **non-secret effective settings**, and rescoring uses

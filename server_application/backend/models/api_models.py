@@ -133,9 +133,19 @@ class StreamError(APIModel):
     error: str
 
 
+class ModelEntry(APIModel):
+    """One provider model: the config value plus display/capacity metadata."""
+    id: str
+    display: Optional[str] = None
+    context_window: Optional[int] = None
+    max_output_tokens: Optional[int] = None
+    size_bytes: Optional[int] = None
+    parameters: Optional[str] = None
+
+
 class ProviderModelList(APIModel):
-    """Live provider model IDs with provenance; errors never fail the catalog."""
-    models: List[str] = Field(default_factory=list)
+    """Live provider model entries with provenance; errors never fail the catalog."""
+    models: List[ModelEntry] = Field(default_factory=list)
     error: Optional[str] = None
     live: bool = False
 

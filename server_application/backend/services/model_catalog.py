@@ -53,10 +53,10 @@ class ModelCatalogService:
         try:
             models = google_models(self.google_api_key, fetch=self.google_fetcher)
         except Exception as error:
-            return {"models": GOOGLE_FALLBACK_MODELS,
+            return {"models": [dict(entry) for entry in GOOGLE_FALLBACK_MODELS],
                     "error": f"Google model list failed ({error}); showing stable fallback IDs.", "live": False}
         if not models:
-            return {"models": GOOGLE_FALLBACK_MODELS,
+            return {"models": [dict(entry) for entry in GOOGLE_FALLBACK_MODELS],
                     "error": "Google reported no generateContent models; showing stable fallback IDs.", "live": False}
         return {"models": models, "error": None, "live": True}
 

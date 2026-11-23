@@ -12,31 +12,47 @@ from src.config import PROVIDER_DEFAULTS
 from server_application.backend.services.model_catalog import ModelCatalogService
 
 
-def ollama_payload(*names):
-    return {"models": [{"name": name, "size": 1} for name in names]}
+def ollama_payload(*entries):
+    return {"models": [
+        {"name": name, "size": size, "details": {"parameter_size": params, "context_length": context}}
+        for name, size, params, context in entries]}
 
 
 def google_payload(*entries):
-    return {"models": [{"name": name, "supportedGenerationMethods": methods}
-                        for name, methods in entries]}
+    return {"models": [{"name": name, "displayName": display, "inputTokenLimit": limit_in,
+                         "outputTokenLimit": limit_out, "supportedGenerationMethods": methods}
+                        for name, display, limit_in, limit_out, methods in entries]}
 
 
 def test_parse_ollama_tags_sorts_and_ignores_malformed_entries():
-    assert catalog.parse_ollama_tags(ollama_payload("b-model", "a-model")) == ["a-model", "b-model"]
-    assert catalog.parse_ollama_tags({"models": [{"name": "ok"}, {"size": 1}, "junk", {"name": 3}]}) == ["ok"]
+    payload = ollama_payload(("b-model", 10, "7B", None), ("a-model", 20, "13B", 4096))
+    assert catalog.parse_ollama_tags(payload) == [
+        {"id": "a-model", "display": None, "context_window": 4096,
+         "max_output_tokens": None, "size_bytes": 20, "parameters": "13B"},
+        {"id": "b-model", "display": None, "context_window": None,
+         "max_output_tokens": None, "size_bytes": 10, "parameters": "7B"},
+    ]
+    assert catalog.parse_ollama_tags({"models": [{"name": "ok"}, {"size": 1}, "junk", {"name": 3}]}) == [
+        {"id": "ok", "display": None, "context_window": None,
+         "max_output_tokens": None, "size_bytes": None, "parameters": None}]
     assert catalog.parse_ollama_tags({}) == []
     assert catalog.parse_ollama_tags({"models": None}) == []
 
 
 def test_parse_google_models_keeps_only_generate_content_ids():
     payload = google_payload(
-        ("models/gemini-3.8-flash", ["generateContent"]),
-        ("models/gemini-2.5-flash-image", ["generateContent", "generateImages"]),
-        ("models/embedding-001", ["embedContent"]),
-        ("other/gemini-3.8-flash", ["generateContent"]),
-        ("models/broken", []),
+        ("models/gemini-3.8-flash", "Gemini 3.8 Flash", 1048576, 65536, ["generateContent"]),
+        ("models/gemini-2.5-flash-image", None, 100, 100, ["generateContent", "generateImages"]),
+        ("models/embedding-001", "Embed", 100, 100, ["embedContent"]),
+        ("other/gemini-3.8-flash", "Other", 100, 100, ["generateContent"]),
+        ("models/broken", None, None, None, []),
     )
-    assert catalog.parse_google_models(payload) == ["models/gemini-2.5-flash-image", "models/gemini-3.8-flash"]
+    assert catalog.parse_google_models(payload) == [
+        {"id": "models/gemini-2.5-flash-image", "display": None, "context_window": 100,
+         "max_output_tokens": 100, "size_bytes": None, "parameters": None},
+        {"id": "models/gemini-3.8-flash", "display": "Gemini 3.8 Flash", "context_window": 1048576,
+         "max_output_tokens": 65536, "size_bytes": None, "parameters": None},
+    ]
     assert catalog.parse_google_models({}) == []
 
 
@@ -48,12 +64,13 @@ def test_google_models_follows_bounded_pages():
         assert "key=secret" in url
         assert "pageSize" in url
         if "pageToken=second" in url:
-            return google_payload(("models/gemini-3.8-flash", ["generateContent"]))
+            return google_payload(("models/gemini-3.8-flash", "Gemini 3.8 Flash", 4, 4, ["generateContent"]))
         assert "pageToken" not in url
-        return {**google_payload(("models/gemini-3.5-flash", ["generateContent"])),
+        return {**google_payload(("models/gemini-3.5-flash", "Gemini 3.5 Flash", 2, 2, ["generateContent"])),
                 "nextPageToken": "second"}
 
-    assert catalog.google_models("secret", fetch=fetch) == ["models/gemini-3.5-flash", "models/gemini-3.8-flash"]
+    assert [entry["id"] for entry in catalog.google_models("secret", fetch=fetch)] == [
+        "models/gemini-3.5-flash", "models/gemini-3.8-flash"]
     assert len(calls) == 2
 
 
@@ -61,20 +78,28 @@ def test_ollama_models_queries_tags_endpoint():
     def fetch(url, *, timeout):
         assert url == "http://ollama:11434/api/tags"
         assert timeout == catalog.OLLAMA_TIMEOUT
-        return ollama_payload("gemma4:31b")
+        return ollama_payload(("gemma4:31b", 100, "31B", None))
 
-    assert catalog.ollama_models("http://ollama:11434/", fetch=fetch) == ["gemma4:31b"]
+    assert catalog.ollama_models("http://ollama:11434/", fetch=fetch) == [{
+        "id": "gemma4:31b", "display": None, "context_window": None,
+        "max_output_tokens": None, "size_bytes": 100, "parameters": "31B"}]
 
 
 def test_service_returns_live_catalog_with_injected_transports():
     service = ModelCatalogService(
         ollama_host="http://ollama:11434", google_api_key="secret",
-        ollama_fetcher=lambda url, *, timeout: ollama_payload("gemma4:31b"),
-        google_fetcher=lambda url, *, timeout: google_payload(("models/gemini-3.8-flash", ["generateContent"])))
+        ollama_fetcher=lambda url, *, timeout: ollama_payload(("gemma4:31b", 100, "31B", 8192)),
+        google_fetcher=lambda url, *, timeout: google_payload(
+            ("models/gemini-3.8-flash", "Gemini 3.8 Flash", 1048576, 65536, ["generateContent"])))
     import asyncio
     result = asyncio.run(service.get_catalog())
-    assert result == {"ollama": {"models": ["gemma4:31b"], "error": None, "live": True},
-                      "google": {"models": ["models/gemini-3.8-flash"], "error": None, "live": True}}
+    assert result == {
+        "ollama": {"models": [{"id": "gemma4:31b", "display": None, "context_window": 8192,
+                               "max_output_tokens": None, "size_bytes": 100, "parameters": "31B"}],
+                   "error": None, "live": True},
+        "google": {"models": [{"id": "models/gemini-3.8-flash", "display": "Gemini 3.8 Flash",
+                               "context_window": 1048576, "max_output_tokens": 65536,
+                               "size_bytes": None, "parameters": None}], "error": None, "live": True}}
 
 
 def test_service_isolates_failures_and_uses_fallbacks_without_raising():
@@ -116,14 +141,19 @@ def test_catalog_endpoint_returns_typed_shape_and_supports_refresh(client, servi
     def fake(url, *, timeout):
         fetches.append(url)
         if "generativelanguage" in url:
-            return google_payload(("models/gemini-3.8-flash", ["generateContent"]))
-        return ollama_payload("gemma4:31b")
+            return google_payload(("models/gemini-3.8-flash", "Gemini 3.8 Flash", 1048576, 65536, ["generateContent"]))
+        return ollama_payload(("gemma4:31b", 100, "31B", 8192))
 
     services.model_catalog = ModelCatalogService(ollama_host="http://ollama:11434", google_api_key="secret",
                                                  ollama_fetcher=fake, google_fetcher=fake)
     body = client.get("/v1/models/available").json()
-    assert body == {"ollama": {"models": ["gemma4:31b"], "error": None, "live": True},
-                    "google": {"models": ["models/gemini-3.8-flash"], "error": None, "live": True}}
+    assert body == {
+        "ollama": {"models": [{"id": "gemma4:31b", "display": None, "context_window": 8192,
+                               "max_output_tokens": None, "size_bytes": 100, "parameters": "31B"}],
+                   "error": None, "live": True},
+        "google": {"models": [{"id": "models/gemini-3.8-flash", "display": "Gemini 3.8 Flash",
+                               "context_window": 1048576, "max_output_tokens": 65536,
+                               "size_bytes": None, "parameters": None}], "error": None, "live": True}}
     assert len(fetches) == 2
     again = client.get("/v1/models/available").json()
     assert again == body and len(fetches) == 2
@@ -132,5 +162,5 @@ def test_catalog_endpoint_returns_typed_shape_and_supports_refresh(client, servi
 
 
 def test_default_google_model_is_stable_not_retired_preview():
-    assert PROVIDER_DEFAULTS["google"] in catalog.GOOGLE_FALLBACK_MODELS
+    assert PROVIDER_DEFAULTS["google"] in [entry["id"] for entry in catalog.GOOGLE_FALLBACK_MODELS]
     assert "preview" not in PROVIDER_DEFAULTS["google"]

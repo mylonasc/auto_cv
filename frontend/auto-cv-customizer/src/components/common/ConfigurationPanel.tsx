@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppState, type BackendConfig, type ModelConfig, type RewritePolicy, type OutputsConfig } from '../../contexts/AppStateContext';
 import apiService from '../../services/api';
 import type { ModelCatalogResponse, ProviderModelList } from '../../types/api.generated';
-import { resolveModelOptions } from '../../domain/modelCatalog';
+import { resolveModelOptions, describeModel, entryLabel } from '../../domain/modelCatalog';
 import { Button, Modal } from './Primitives';
 import './ConfigurationPanel.css';
 
@@ -94,7 +94,9 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
     const provider = config[modelKey].provider;
     const reported = catalog[provider] ?? emptyProvider;
     const selectedModel = config[modelKey].model;
-    const { options: dropdownOptions, stale } = resolveModelOptions(reported.models, selectedModel);
+    const byId = new Map(reported.models.map(entry => [entry.id, entry]));
+    const { options: dropdownOptions, stale } = resolveModelOptions(reported.models.map(entry => entry.id), selectedModel);
+    const selectedMeta = describeModel(byId.get(selectedModel));
 
     return (
       <>
@@ -108,11 +110,15 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
             {dropdownOptions.length === 0 ? (
               <option value="">No models available</option>
             ) : (
-              dropdownOptions.map(model => (
-                <option key={`${modelKey}-${provider}-${model}`} value={model}>
-                  {model}
-                </option>
-              ))
+              dropdownOptions.map(model => {
+                const entry = byId.get(model);
+                const meta = describeModel(entry);
+                return (
+                  <option key={`${modelKey}-${provider}-${model}`} value={model} title={meta ?? undefined}>
+                    {entry ? entryLabel(entry) : model}
+                  </option>
+                );
+              })
             )}
           </select>
         </label>
@@ -133,6 +139,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ isOpen, onClose
               : reported.live
                 ? `Provider reports ${dropdownOptions.length} available model(s) — live list.`
                 : `Provider reports ${dropdownOptions.length} available model(s).`}
+          {selectedMeta && !isLoadingModels && ` Selected: ${selectedMeta}.`}
           {stale && !isLoadingModels && ' This saved model is not in the provider list and may be retired.'}
         </p>
       </>

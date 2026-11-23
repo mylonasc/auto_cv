@@ -230,6 +230,15 @@ export interface ModelConfig {
   config: Record<string, unknown> | null;
 }
 
+export interface ModelEntry {
+  id: string;
+  display: string | null;
+  context_window: number | null;
+  max_output_tokens: number | null;
+  size_bytes: number | null;
+  parameters: string | null;
+}
+
 export interface MotivationLetterTemplateData {
   template_id: string;
   template_path: string | null;
@@ -282,7 +291,7 @@ export interface ProjectEntry {
 }
 
 export interface ProviderModelList {
-  models: Array<string>;
+  models: Array<ModelEntry>;
   error: string | null;
   live: boolean;
 }

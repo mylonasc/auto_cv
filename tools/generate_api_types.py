@@ -25,7 +25,7 @@ ROOT_MODELS = [
     api.CreateJobRequest, api.JobAnalysisRequest, api.JobAnalysisResponse,
     api.RenderCVRequest, api.RescoreRequest, api.RescoreResponse, api.Submission,
     api.SubmissionCreateRequest, api.SubmissionUpdateRequest, api.StreamError, TemplateRegistryResponse,
-    api.ProviderModelList, api.ModelCatalogResponse,
+    api.ProviderModelList, api.ModelCatalogResponse, api.ModelEntry,
     template_package.TemplatePackage, template_package.TemplateRevision,
     studio.StudioImportRequest, studio.StudioDraft, studio.StudioSaveRequest,
     studio.StudioPreviewRequest, studio.StudioPreviewError, studio.StudioPreviewReport,
