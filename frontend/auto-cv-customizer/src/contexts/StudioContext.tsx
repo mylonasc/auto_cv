@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 import { apiService } from '../services/api';
-import { initialStudio, same, studioReducer } from '../domain/studio';
+import { initialStudio, studioReducer } from '../domain/studio';
 import type { CVData, StudioDraft } from '../types/api.generated';
 import type { CVVersionInfo } from '../services/api';
 import { useStudioPreview } from '../hooks/useStudioPreview';
@@ -18,10 +18,10 @@ function useStudioController() {
   const [source, setSource] = useState('master');
   const [target, setTarget] = useState('studio');
   const [templateID, setTemplateID] = useState('my-template');
-  const cvDirty = !!state.draft && !same(state.draft.cv, state.cvBaseline);
-  const packageDirty = !!state.draft && !same(state.draft.package, state.packageBaseline);
-  const preview = useStudioPreview(state.draft, state.edit);
-  const report = useStudioReport(state.draft, state.edit);
+  const cvDirty = !!state.draft && state.cvDirty;
+  const packageDirty = !!state.draft && state.packageDirty;
+  const preview = useStudioPreview(state.draft, { generation: state.generation, edit: state.edit });
+  const report = useStudioReport(state.draft, { generation: state.generation, edit: state.edit });
   const [starter, setStarter] = useState('template2');
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => { if (cvDirty || packageDirty) { event.preventDefault(); event.returnValue = ''; } };
@@ -66,7 +66,7 @@ function useStudioController() {
   };
   const saveCV = () => run(async () => {
     const captured = current.current;
-    if (!captured.draft || !captured.packageBaseline || !same(captured.draft.package, captured.packageBaseline)) throw new Error('Save the template draft first.');
+    if (!captured.draft || !captured.packageBaseline || captured.packageDirty) throw new Error('Save the template draft first.');
     if (!target.trim() || target === 'master' || target === source) throw new Error('Choose a new CV version ID; Studio never overwrites the selected original.');
     const cv = await apiService.createCVVersion(target, captured.draft.cv);
     dispatch({ type: 'cvSaved', cv, generation: captured.generation });

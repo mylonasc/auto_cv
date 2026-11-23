@@ -3,13 +3,16 @@ import type { StudioDraft, TemplatePackage, TemplateRevision, CVData } from '../
 
 export interface StudioState {
   draft: StudioDraft | null;
-  cvBaseline: CVData | null;
   packageBaseline: TemplatePackage | null;
   expected: string | null;
   edit: number;
   generation: number;
+  /** O(1) dirty flags; the reducer sets them on transitions instead of
+   * deep-comparing drafts against baselines on every render. */
+  cvDirty: boolean;
+  packageDirty: boolean;
 }
-export const initialStudio: StudioState = { draft: null, cvBaseline: null, packageBaseline: null, expected: null, edit: 0, generation: 0 };
+export const initialStudio: StudioState = { draft: null, packageBaseline: null, expected: null, edit: 0, generation: 0, cvDirty: false, packageDirty: false };
 export type StudioAction =
   | { type: 'load'; draft: StudioDraft; saved: boolean; edit: number }
   | { type: 'cv'; cv: CVData }
@@ -17,25 +20,25 @@ export type StudioAction =
   | { type: 'templateReload'; value: TemplateRevision; generation: number; edit: number }
   | { type: 'templateSaved'; value: TemplateRevision; generation: number }
   | { type: 'cvSaved'; cv: CVData; generation: number };
-export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 export function studioReducer(state: StudioState, action: StudioAction): StudioState {
   if (action.type === 'load') {
     if (state.edit !== action.edit) return state;
-    return { draft: action.draft, cvBaseline: action.saved ? action.draft.cv : null,
-      packageBaseline: action.saved ? action.draft.package : null,
-      expected: action.saved ? action.draft.cv.cv_template.revision : null, edit: state.edit + 1, generation: state.generation + 1 };
+    return { draft: action.draft, packageBaseline: action.saved ? action.draft.package : null,
+      expected: action.saved ? action.draft.cv.cv_template.revision : null, edit: state.edit + 1, generation: state.generation + 1,
+      cvDirty: !action.saved, packageDirty: !action.saved };
   }
   if (!state.draft) return state;
-  if (action.type === 'cv') return { ...state, edit: state.edit + 1, draft: { ...state.draft, cv: action.cv } };
-  if (action.type === 'package') return { ...state, edit: state.edit + 1, draft: { ...state.draft, package: action.package } };
+  if (action.type === 'cv') return { ...state, edit: state.edit + 1, draft: { ...state.draft, cv: action.cv }, cvDirty: true };
+  if (action.type === 'package') return { ...state, edit: state.edit + 1, draft: { ...state.draft, package: action.package }, packageDirty: true };
   if (action.generation !== state.generation) return state;
   if (action.type === 'templateReload') {
     if (action.edit !== state.edit) return state;
     return { ...state, edit: state.edit + 1, expected: action.value.revision, packageBaseline: action.value.package,
+      packageDirty: false,
       draft: { cv: { ...state.draft.cv, cv_template: { ...state.draft.cv.cv_template, revision: action.value.revision } }, package: action.value.package } };
   }
-  if (action.type === 'cvSaved') return { ...state, cvBaseline: action.cv };
-  return { ...state, expected: action.value.revision, packageBaseline: action.value.package,
+  if (action.type === 'cvSaved') return { ...state, cvDirty: false };
+  return { ...state, expected: action.value.revision, packageBaseline: action.value.package, packageDirty: false,
     draft: { ...state.draft, cv: { ...state.draft.cv,
       cv_template: { ...state.draft.cv.cv_template, template_id: action.value.package.template_id, template_path: null, revision: action.value.revision } } } };
 }

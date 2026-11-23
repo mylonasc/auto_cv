@@ -1,24 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { studioDraft } from '../studio-fixture.ts';
-import { studioReducer as reduce, initialStudio, same, move, duplicateSection, starterLabel, defaultStarter } from '../../src/domain/studio.ts';
+import { studioReducer as reduce, initialStudio, move, duplicateSection, starterLabel, defaultStarter } from '../../src/domain/studio.ts';
 import { httpErrorMessage } from '../../src/services/errors.ts';
 
 test('Studio late load cannot overwrite a newer edit; saves only update captured baselines', () => {
   const draft = studioDraft();
   let state = reduce(initialStudio, { type: 'load', draft, saved: false, edit: 0 });
   const generation = state.generation;
+  assert.ok(state.cvDirty && state.packageDirty);
   state = reduce(state, { type: 'cv', cv: { ...draft.cv, personal_statement: 'New edit' } });
+  assert.ok(state.cvDirty && state.packageDirty);
   assert.equal(reduce(state, { type: 'load', draft, saved: true, edit: 1 }), state);
   state = reduce(state, { type: 'cvSaved', cv: draft.cv, generation });
   assert.equal(state.draft?.cv.personal_statement, 'New edit');
-  assert.ok(!same(state.draft?.cv, state.cvBaseline));
+  assert.ok(!state.cvDirty && state.packageDirty);
   state = reduce(state, { type: 'package', package: { ...draft.package, name: 'New style' } });
+  assert.ok(state.packageDirty);
   state = reduce(state, { type: 'templateSaved', value: { package: draft.package, revision: 'b'.repeat(64) }, generation });
   assert.equal(state.draft?.package.name, 'New style');
-  assert.ok(!same(state.draft?.package, state.packageBaseline));
+  assert.ok(!state.packageDirty && !state.cvDirty);
   assert.equal(state.draft?.cv.cv_template.revision, 'b'.repeat(64));
   assert.equal(reduce(state, { type: 'cvSaved', cv: draft.cv, generation: generation - 1 }), state);
+});
+
+test('loading a saved draft starts clean in both editors', () => {
+  const draft = studioDraft();
+  const state = reduce(initialStudio, { type: 'load', draft, saved: true, edit: 0 });
+  assert.ok(!state.cvDirty && !state.packageDirty);
 });
 
 test('ordering is immutable and duplication creates distinct section and entry IDs', () => {

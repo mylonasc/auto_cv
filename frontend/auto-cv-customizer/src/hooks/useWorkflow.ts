@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import type { Dispatch } from 'react';
 import type { WorkflowAction, WorkflowState } from '../domain/workflow';
 import { isDirty } from '../domain/workflow';
@@ -105,11 +105,15 @@ export function useWorkflow(state: WorkflowState, send: Dispatch<WorkflowAction>
       }])) });
     } finally { pending.current.delete(`rescore:${id}`); }
   };
+  const viewedDraft = state.viewedJobId ? state.drafts[state.viewedJobId] : undefined;
+  // Deep-compare the viewed draft at most once per draft change, not on every
+  // render: monitoring ticks and unrelated updates must not reserialize it.
+  const dirty = useMemo(() => viewedDraft ? isDirty(viewedDraft) : false, [viewedDraft]);
   return {
     activeJob: state.activeJobId ? state.jobs[state.activeJobId] : null,
     viewedJob: state.viewedJobId ? state.jobs[state.viewedJobId] : null,
-    draft: state.viewedJobId ? state.drafts[state.viewedJobId] : undefined,
-    dirty: state.viewedJobId && state.drafts[state.viewedJobId] ? isDirty(state.drafts[state.viewedJobId]) : false,
+    draft: viewedDraft,
+    dirty,
     loadDraft, saveDraft, start, analyzePosting, cancel, render, rescore,
     editDraft: (value: WorkingCopy) => send({ type: 'edit', id: value.jobId, value }),
     updateDraft: (id: string, update: WorkingCopy | ((previous: WorkingCopy | null) => WorkingCopy | null)) => {
