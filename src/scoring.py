@@ -233,4 +233,5 @@ class CVCrossAnalyzer:
                     bullet.set_comment(comment(item.assessment))
             roles.append(rendered)
         return FullCVDocument(self.cv_model.statement, DocSection(self.source_cv.experience_section.section_title, roles),
-                              cv_template=self.source_cv.cv_template.model_copy(deep=True), content_format=self.source_cv.content_format)
+                              cv_template=self.source_cv.cv_template.model_copy(deep=True), content_format=self.source_cv.content_format,
+                              composition=self.source_cv.composition, template_catalog=self.source_cv.template_catalog)

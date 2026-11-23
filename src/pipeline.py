@@ -7,7 +7,7 @@ from importlib.metadata import version, PackageNotFoundError
 from .config import BackendConfig, build_model, public_config
 from .domain import CVData
 from .posting import JobPostAnalysis
-from .documents import FullCVDocument, DocSection, DocSectionItem
+from .documents import FullCVDocument
 from .scoring import CVCrossAnalyzer, BulletAnalysis, section_experience_analysis_prompt
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -44,7 +44,7 @@ async def analyze_posting(text: str, config: BackendConfig, *, model=None):
 
 
 async def analyze_cv(source: CVData, text: str, config: BackendConfig | None = None, *,
-                     model_builder=build_model, progress_callback=None, cache=None) -> CVRun:
+                     model_builder=build_model, progress_callback=None, cache=None, template_catalog=None) -> CVRun:
     config = (config or BackendConfig()).model_copy(deep=True)
 
     async def progress(message):
@@ -55,9 +55,7 @@ async def analyze_cv(source: CVData, text: str, config: BackendConfig | None = N
     analysis_model = model_builder(config.analysis_model)
     posting = await analyze_posting(text, config, model=analysis_model)
     source = source.model_copy(deep=True)
-    document = FullCVDocument(source.personal_statement, DocSection(source.cv_template.experience_section_title, [
-        DocSectionItem(**section.model_dump()) for section in source.experience_sections
-    ]), cv_template=source.cv_template, content_format=source.content_format)
+    document = FullCVDocument.from_cv(source, template_catalog=template_catalog)
     editor_model = model_builder(config.statement_editor_model) if source.alternative_statements else analysis_model
     analyzer = CVCrossAnalyzer(posting, document, llm_model=analysis_model, llm_editor_model=editor_model,
                               cache=cache, model_identity=cache_model_identity(config, analysis_model))

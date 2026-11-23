@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from . import rendering
 from .domain import CVTemplateData, ContentFormat
+from .composition import DocumentComposition
 from .latex_templates import prepare_template, legacy_layout
 
 
@@ -77,17 +78,31 @@ class DocSectionItem:
 
 class FullCVDocument:
     """Selected statement/roles plus a template; never a second canonical CV store."""
-    def __init__(self, statement, experience_section, cv_template=None, *, content_format: ContentFormat = "latex"):
+    def __init__(self, statement, experience_section, cv_template=None, *, content_format: ContentFormat = "latex",
+                 composition: DocumentComposition | None = None, template_catalog=None):
         self.statement, self.experience_section = statement, experience_section
         self.cv_template = cv_template or CVTemplateData()
         if content_format not in ("latex", "plain_text"):
             raise ValueError("Unsupported CV content format")
         self.content_format = content_format
+        self.composition = composition.model_copy(deep=True) if composition is not None else None
+        self.template_catalog = template_catalog
+
+    @classmethod
+    def from_cv(cls, cv, *, template_catalog=None):
+        return cls(cv.personal_statement, DocSection(cv.cv_template.experience_section_title,
+            [DocSectionItem(**role.model_dump()) for role in cv.experience_sections]), cv.cv_template.model_copy(deep=True),
+            content_format=cv.content_format, composition=cv.document, template_catalog=template_catalog)
 
     def prepare_latex(self, include_scoring_comments=False):
         if self.cv_template.revision is not None:
+            from .template_catalog import TemplateCatalog
+            from .composed_rendering import prepare_composed
+            catalog = self.template_catalog if self.template_catalog is not None else TemplateCatalog.from_env()
+            return prepare_composed(self, catalog.get(self.cv_template), include_scoring_comments=include_scoring_comments)
+        if self.composition is not None:
             from .template_registry import TemplateError
-            raise TemplateError('Managed composition rendering requires TRF-02; refusing legacy rendering that would omit sections')
+            raise TemplateError('Composed content cannot use an unpinned legacy template')
         return prepare_template('cv_templates', self.cv_template, document=self,
                                 include_scoring_comments=include_scoring_comments)
 
@@ -100,7 +115,10 @@ class FullCVDocument:
 
     def to_json(self, file):
         with open(file, 'w', encoding='utf-8') as target:
-            json.dump({'statement': self.statement, 'content_format': self.content_format, 'experience_section': {
+            json.dump({'statement': self.statement, 'content_format': self.content_format,
+                'cv_template': self.cv_template.model_dump(mode='json'),
+                'composition': self.composition.model_dump(mode='json') if self.composition is not None else None,
+                'experience_section': {
                 'section_title': self.experience_section.section_title,
                 'doc_section_items': [item.to_dict() for item in self.experience_section.doc_section_items],
             }}, target, indent=4)
@@ -111,7 +129,10 @@ class FullCVDocument:
         with open(file, encoding='utf-8') as source:
             data = json.load(source)
         section = data['experience_section']
-        return FullCVDocument(data['statement'], DocSection(section['section_title'], [DocSectionItem(**item) for item in section['doc_section_items']]), content_format=data.get('content_format', 'latex'))
+        return FullCVDocument(data['statement'], DocSection(section['section_title'], [DocSectionItem(**item) for item in section['doc_section_items']]),
+            CVTemplateData.model_validate(data.get('cv_template', {})), content_format=data.get('content_format', 'latex'),
+            composition=DocumentComposition.model_validate(data['composition']) if data.get('composition') is not None else None)
 
     def copy(self):
-        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template.model_copy(deep=True), content_format=self.content_format)
+        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template.model_copy(deep=True),
+            content_format=self.content_format, composition=self.composition, template_catalog=self.template_catalog)

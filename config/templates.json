@@ -3,12 +3,12 @@
     "default_cv": {
       "path": "assets/latex_cv_template_v0.tex",
       "layout": {},
-      "resources": {"resume.cls": "assets/resume.cls"}
+      "resources": {"resume.cls": "assets/resume.cls", "my_pic.jpeg": "assets/images/my_pic.jpeg"}
     },
     "template2": {
       "path": "assets/latex_cv_template_v2.tex",
       "layout": {},
-      "resources": {"resume.cls": "assets/resume.cls", "resume_v2.cls": "assets/resume_v2.cls"}
+      "resources": {"resume.cls": "assets/resume.cls", "resume_v2.cls": "assets/resume_v2.cls", "my_pic.jpeg": "assets/images/my_pic.jpeg"}
     }
   },
   "motivation_letter_templates": {

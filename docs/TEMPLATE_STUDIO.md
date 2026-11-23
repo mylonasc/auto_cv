@@ -18,9 +18,9 @@ and all source/runtime/legacy data.
 The GitHub bodies contain full acceptance checklists. No issue is complete merely
 because its design/types exist. Close only with verified implementation commits.
 
-TRF-01's model/repository/import acceptance checks are implemented and verified in
-the working tree, but not committed or issue-closed. TRF-02–TRF-05 are not started
-and retain their native blocking relationships.
+TRF-01 is delivered in `043978d` and #18 is closed. TRF-02 integrates composition
+rendering; its verification is recorded below. Subsequent slices retain native
+blocking relationships and are not complete merely because foundation types exist.
 
 ## Approved scope and ownership
 
@@ -135,11 +135,19 @@ Pydantic/OpenAPI-to-Ajv adapter; actual oneOf/const/ref constraints remain intac
 Cross-field invariants such as global ID uniqueness and paired references remain
 authoritatively validated by backend models on save.
 
-TRF-01 is foundation work, **not a usable Studio UI or composed renderer yet**.
-The legacy `FullCVDocument` renderer explicitly refuses revision-pinned input
-rather than silently dropping composed sections. TRF-02 owns rendering/catalog
-injection and shared entry-point integration; TRF-03 owns workspace/controllers;
-TRF-04 owns preview execution/diagnostics. Do not bypass their native blockers.
+TRF-01 alone was foundation work, not a usable Studio UI. TRF-02 now carries
+composition and the injected `TemplateCatalog` through document copies, analysis
+selection, initial HTTP output, working-copy re-render, CLI/telemetry and immutable
+render/submission snapshots. Managed rendering always loads the exact revision,
+never mutable HEAD. Missing packages, unpinned composition and incompatible legacy
+overrides fail rather than dropping sections. Projects/publications are rendered
+but not newly scored. TRF-03 owns workspace/controllers; TRF-04 owns preview.
+
+Both shipped classes require `my_pic.jpeg`; the registry now declares the existing
+image as a captured dependency. No original asset was changed. Both imported styles
+passed real XeLaTeX compilation with synthetic statement/experience in scratch
+space (no model calls or normal runtime writes). This is compilation evidence,
+not a claim of pixel-perfect visual review.
 
 ## Verification
 

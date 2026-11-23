@@ -49,7 +49,7 @@ def select_working_copy(job, request):
     return copy
 
 
-def document_from_working_copy(copy, request, section_title="Work Experience", source_template=None):
+def document_from_working_copy(copy, request, section_title="Work Experience", source_template=None, *, composition=None, template_catalog=None):
     roles = []
     for section in copy.sections:
         kept = [item for item in section.items if item.kept]
@@ -64,6 +64,10 @@ def document_from_working_copy(copy, request, section_title="Work Experience", s
                     point.set_comment(score_comment(item.relevance_score, item.explanation, item.posting_evidence))
         roles.append(role)
     template = (source_template or CVTemplateData()).model_copy(deep=True)
+    if composition is not None and (request.cv_template_path is not None or
+            request.cv_template_id is not None and request.cv_template_id != template.template_id):
+        from src.template_registry import TemplateError
+        raise TemplateError('A composed job must retain its pinned managed template; create a Studio CV version to change it')
     if request.cv_template_id is not None:
         template.template_id = request.cv_template_id
         template.template_path = None
@@ -71,4 +75,4 @@ def document_from_working_copy(copy, request, section_title="Work Experience", s
         template.template_path = request.cv_template_path
     template.experience_section_title = section_title
     return FullCVDocument(copy.personal_statement, DocSection(section_title, roles), cv_template=template,
-                          content_format=copy.content_format)
+                          content_format=copy.content_format, composition=composition, template_catalog=template_catalog)

@@ -14,6 +14,7 @@ from src.pipeline import analyze_posting, bullet_scoring_chain
 from src.cache import AnalysisResultCache
 from src.analysis import Assessment
 from src.outcomes import StageFailure
+from src.template_catalog import TemplateCatalog
 from .cv_processor import CVProcessor
 from .job_runner import JobRunner
 from .working_copy import create_working_copy, select_working_copy, document_from_working_copy
@@ -37,6 +38,7 @@ class ApplicationServices:
         paths.cache.parent.mkdir(parents=True, exist_ok=True)
         self.cache = cache if cache is not None else AnalysisResultCache(str(paths.cache))
         self.config = BackendConfig()
+        self.templates = TemplateCatalog(paths.root / 'template_packages')
         self.processor_factory = processor_factory
         self.runner = runner_factory(self.jobs, self.execute)
 
@@ -69,7 +71,7 @@ class ApplicationServices:
     async def execute(self, id, config, progress):
         job = self.get_job(id)
         processor = self.processor_factory(source=job.cv_snapshot.model_copy(deep=True), config=config,
-                                           artifacts_dir=self.paths.artifacts, cache=self.cache)
+                                           artifacts_dir=self.paths.artifacts, cache=self.cache, template_catalog=self.templates)
         output = await processor.process(job.job_description, id, status_callback=progress)
         await progress(id, JobStatus.PROCESSING, "Saving working copy and render provenance...")
         # There is deliberately no await between the final cancellation gate and
@@ -117,7 +119,8 @@ class ApplicationServices:
         copy.job_id = id
         title = job.cv_snapshot.cv_template.experience_section_title if job.cv_snapshot else (
             job.result.sections[0].title if job.result.sections else "Work Experience")
-        document = document_from_working_copy(copy, request, title, job.cv_snapshot.cv_template if job.cv_snapshot else None)
+        document = document_from_working_copy(copy, request, title, job.cv_snapshot.cv_template if job.cv_snapshot else None,
+            composition=job.cv_snapshot.document if job.cv_snapshot else None, template_catalog=self.templates)
         rendered = await asyncio.to_thread(render_artifacts, document, self.paths.artifacts,
             f"cv_output_{id}_{uuid4().hex}", render_pdf=request.render_pdf, include_latex=request.include_latex,
             include_scoring_comments=request.include_scoring_comments,

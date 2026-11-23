@@ -8,18 +8,20 @@ from ..models.api_models import CVJobResult, JobStatus, ProcessingOutput
 
 
 class CVProcessor:
-    def __init__(self, *, source, artifacts_dir, config=None, cache=None):
+    def __init__(self, *, source, artifacts_dir, config=None, cache=None, template_catalog=None):
         self.source = source.model_copy(deep=True)
         self.artifacts_dir = artifacts_dir
         self.cache = cache
         self.config = config or BackendConfig()
+        self.template_catalog = template_catalog
 
     async def process(self, job_description, job_id, status_callback=None) -> ProcessingOutput:
         async def progress(message):
             if status_callback:
                 await status_callback(job_id, JobStatus.PROCESSING, message)
 
-        run = await analyze_cv(self.source, job_description, self.config, progress_callback=progress, cache=self.cache)
+        run = await analyze_cv(self.source, job_description, self.config, progress_callback=progress, cache=self.cache,
+                               template_catalog=self.template_catalog)
         await progress("Rendering selected CV outputs...")
         import asyncio
         rendered = await asyncio.to_thread(

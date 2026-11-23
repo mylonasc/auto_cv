@@ -720,6 +720,13 @@ generated-schema drift and diff checks passed. A safety rerun preserved five
 external sentinels and all 815 inventoried data/assets/legacy file hashes. No
 live provider, real TeX or Docker execution ran. TRF-02–TRF-05 remain unstarted.
 
+Subsequent delivery: TRF-01 is pushed in `043978d` and #18 is closed. TRF-02 adds
+injected pinned-template lookup and pure composed rendering across initial outputs,
+working-copy re-renders, CLI/telemetry and render/submission provenance. The existing
+header image is now an explicit resource. Both built-in composed styles compiled
+successfully with real XeLaTeX and synthetic content in scratch space; no models or
+normal runtime stores were used by that smoke check.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native

@@ -51,7 +51,8 @@ def absolute_path(path: str) -> Path:
 def legacy_definition(group: TemplateGroup, path: str) -> TemplateDefinition:
     """Existing string entries/custom paths retain the historical resume contract."""
     return TemplateDefinition(path=path, layout=LatexLayout() if group == "cv_templates" else None,
-        resources={name: f"assets/{name}" for name in ("resume.cls", "resume_v2.cls")}
+        resources={**{name: f"assets/{name}" for name in ("resume.cls", "resume_v2.cls")},
+                   "my_pic.jpeg": "assets/images/my_pic.jpeg"}
         if group == "cv_templates" else {})
 
 
@@ -119,6 +120,9 @@ def apply_template_overrides(cv: CVData, *, cv_template_id=None, cv_template_pat
                              motivation_template_id=None, motivation_template_path=None) -> CVData:
     """Apply choices without filesystem access; analysis does not require templates."""
     result = cv.model_copy(deep=True)
+    if result.document is not None and (cv_template_path is not None or
+            cv_template_id is not None and cv_template_id != result.cv_template.template_id):
+        raise TemplateError('Composed CVs require their pinned managed template; change it through Studio')
     for field, id, path in (
         ("cv_template", cv_template_id, cv_template_path),
         ("motivation_letter_template", motivation_template_id, motivation_template_path),

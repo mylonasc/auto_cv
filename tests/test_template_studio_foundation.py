@@ -323,9 +323,9 @@ def test_storage_symlink_cannot_redirect_a_save_to_neighboring_data(repository, 
     assert list(external.iterdir()) == [sentinel]
 
 
-def test_pre_trf02_renderer_refuses_to_drop_composed_content(imported, tmp_path):
+def test_renderer_refuses_to_drop_composition_when_its_package_is_missing(imported, tmp_path):
     from src.documents import FullCVDocument, DocSection
     document = FullCVDocument('Statement', DocSection('Experience', []), imported.cv.cv_template)
-    with pytest.raises(TemplateError, match='TRF-02'):
+    with pytest.raises(TemplateError, match='Cannot load managed template'):
         document.render_pdf(str(tmp_path / 'not-created.pdf'))
     assert not (tmp_path / 'not-created.pdf').exists()

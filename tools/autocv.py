@@ -15,6 +15,7 @@ from src.pipeline import analyze_cv
 from src.artifacts import render_artifacts
 from src.cover_letter import CoverLetterModel, CoverLetterDrafter
 from src.rendering import materialize_resources
+from src.template_catalog import TemplateCatalog
 
 
 def _make_parser():
@@ -69,7 +70,7 @@ async def run_pipeline(args):
                                   motivation_template_id=args.motivation_template_id,
                                   motivation_template_path=args.motivation_template)
     text = Path(args.job_posting).read_text(encoding="utf-8")
-    run = await analyze_cv(source, text, config)
+    run = await analyze_cv(source, text, config, template_catalog=TemplateCatalog.from_env())
     with tempfile.TemporaryDirectory(prefix="autocv_") as temporary:
         folder = Path(temporary) / "output"
         folder.mkdir()
