@@ -69,7 +69,7 @@
 }
 
 \def \printpicture #1{
- \includegraphics[width=3cm]{my_pic.jpeg}
+ \includegraphics[width=2.2cm]{my_pic.jpeg}
 }
 
 
@@ -77,11 +77,14 @@
 % section environments after it own the CV body layout.
 
 
-% Name/address block on the left, photo top-aligned on the right. Address
-% rows are two-column tabular fragments (icon & text), so they need the inner
-% tabular below. Plain side-by-side minipages with explicit widths keep the
-% layout deterministic: no trial-pass measuring, no overlap. Paragraph indent
-% is zeroed inside the block so icon rows and the photo align to the margins.
+% Name/address block on the left, photo bottom-aligned with the last address
+% row on the right. Address rows are two-column tabular fragments (icon &
+% text), so they need the inner tabular below. Both minipages are [b]-aligned
+% so the photo bottom coincides with the last address baseline; the text block
+% is taller, so the name still leads top-left. Plain side-by-side minipages
+% with explicit widths keep the layout deterministic: no trial-pass measuring,
+% no overlap. Paragraph indent is zeroed inside the block so icon rows and the
+% photo align to the margins.
 \let\ori@document=\document
 \renewcommand{\document}{
   \ori@document  % Begin document
@@ -89,20 +92,20 @@
  \setlength{\leftmargin}{2.0em} % Margin within the section
 
 \noindent\setlength{\parindent}{0pt}
-% \vspace{0pt} first lines pin both tops: without it, [t] would align the
-% photo minipage on the image bottom and drop the name below the photo.
-\begin{minipage}[t]{\dimexpr\linewidth-4.2cm\relax}
+\begin{minipage}[b]{\dimexpr\linewidth-3.4cm\relax}
   \vspace{0pt}
   {\scshape {\namesize \@name}}\par\nameskip
-  \begin{tabular}{@{}ll@{}}
+  % [b] here matters: the outer [b] minipage aligns on this table's last
+  % baseline, which must be the last address row (default would center it).
+  \begin{tabular}[b]{@{}ll@{}}
     \@addressone \\
     \@addresstwo \\
     \@addressthree \\
-    \@addressfour \\
+    \@addressfour
   \end{tabular}
 \end{minipage}%
 \hfill%
-\begin{minipage}[t]{3.0cm}\vspace{0pt}\raggedleft \printpicture{}\end{minipage}
+\begin{minipage}[b]{2.4cm}\vspace{0pt}\raggedleft \printpicture{}\end{minipage}
 
 }
 
