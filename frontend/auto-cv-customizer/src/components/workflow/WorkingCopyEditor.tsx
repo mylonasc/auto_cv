@@ -49,6 +49,7 @@ export function WorkingCopyEditor({ controls: c }: { controls: ProcessingControl
       <Button disabled={c.draft.saving} onClick={c.reset}>Reset to saved working copy</Button></>}
     {!c.viewedJob?.result ? <p>Run CV analysis (Stage 2) first to create an editable working copy.</p> :
       c.loading ? <p>Loading working copy...</p> : !copy ? <Button onClick={c.retry}>Retry loading working copy</Button> : <>
+        <p>Text format: {copy.contentFormat === 'plain_text' ? 'Plain text — LaTeX characters are escaped when rendering.' : 'Authored LaTeX — preserve commands and escape special characters such as & and %.'}</p>
         <label>Personal Statement<textarea className="workcpy-statement-textarea" aria-label="Working copy personal statement"
           value={copy.personalStatement} onChange={event => c.statement(event.target.value)} /></label>
         {copy.sections.map((section, index) => <SectionEditor key={`${copy.jobId}:${section.id}`} section={section} index={index} controls={c} />)}

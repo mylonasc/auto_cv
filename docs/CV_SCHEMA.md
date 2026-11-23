@@ -8,17 +8,29 @@ active frontend. `candidate` contains metadata only; content has one location:
 {
   "schema_version": 1,
   "candidate": {"candidate_id": "charilaos_mylonas", "full_name": "", "profile": {}},
+  "content_format": "latex",
+  "document": null,
   "personal_statement": "",
   "alternative_statements": [],
   "experience_sections": [
     {"company": "Example", "duration": "2020-2024", "position": "Engineer", "text_items": ["Experience"]}
   ],
-  "cv_template": {"template_id": "default_cv", "template_path": null, "experience_section_title": "Work Experience"},
+  "cv_template": {"template_id": "default_cv", "template_path": null, "revision": null, "experience_section_title": "Work Experience"},
   "motivation_letter_template": {"template_id": "default_motivation_letter", "template_path": null}
 }
 ```
 
 Unknown fields and invalid types are rejected instead of silently discarded.
+The additive `content_format` field defaults to `latex` for existing documents;
+`plain_text` opts into render-time escaping without changing stored text. Working
+copies and render snapshots retain it. No existing files are rewritten on read.
+Template layouts, resources, precedence and remaining hard-coded content are
+documented in [TEMPLATES.md](TEMPLATES.md).
+TRF-01 adds optional `document` composition and a paired, pinned managed-template
+`revision`; missing/null values retain legacy behavior. Statement/experience
+bindings reference top-level content, never duplicate it. Managed revisions cannot
+also specify a legacy path. Contracts/import/recovery and the interim fail-closed
+rendering limitation are in [TEMPLATE_STUDIO.md](TEMPLATE_STUDIO.md).
 Candidate identity must match the requested CV. Template paths may be null (use
 the registry ID), relative to the project, or explicit paths as supported before.
 Resolution produces a rendering copy; it never changes stored paths. CLI path

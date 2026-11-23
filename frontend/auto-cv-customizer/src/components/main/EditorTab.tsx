@@ -15,7 +15,7 @@ export default function EditorTab() {
       <div className="editor-actions"><Button variant={c.jsonMode ? 'primary' : 'secondary'} disabled={c.saving} onClick={c.toggleMode}>
         {c.jsonMode ? 'Visual Mode' : '{ } JSON Mode'}</Button>
         <Button variant="success" disabled={!c.dirty || c.saving} onClick={c.save}>{c.saving ? 'Saving...' : '💾 Save Version'}</Button>
-        <Button onClick={c.runAnalysis}>🔄 Run Analysis</Button></div></header>
+        <Button disabled={c.saving} onClick={c.runAnalysis}>🔄 Analyze Saved Version</Button></div></header>
     {c.error && <p role="alert">{c.error}</p>}{c.notice && <p role="status">{c.notice}</p>}
     <fieldset disabled={c.saving} className="source-editor-fields">
       {c.jsonMode ? <div className="json-editor-container"><textarea className="json-textarea" aria-label="Source CV JSON"

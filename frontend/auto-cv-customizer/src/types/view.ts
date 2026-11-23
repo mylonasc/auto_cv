@@ -55,6 +55,9 @@ export interface ProcessingState {
   result: CVJobResult | null;
   jobAnalysis: JobAnalysis | null;
   error: string | null;
+  sourceCV?: API.CVData | null;
+  sourceVersion?: string | null;
+  effectiveConfig?: API.BackendConfig | null;
 }
 
 export interface SectionFilterConfig {
@@ -86,6 +89,7 @@ export interface WorkingCopySection {
 export interface WorkingCopy {
   jobId: string;
   personalStatement: string;
+  contentFormat: 'latex' | 'plain_text';
   sections: WorkingCopySection[];
   createdAt: string | null;
   updatedAt: string | null;

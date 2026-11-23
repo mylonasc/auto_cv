@@ -56,12 +56,14 @@ export function jobToView(job: API.CVJobResponse): View.ProcessingState {
     jobId: job.id, status: job.status, progress: job.progress, message: job.message,
     result: job.result ? resultToView(job.result) : null,
     jobAnalysis: job.job_analysis, error: job.error,
+    sourceCV: job.cv_snapshot, sourceVersion: job.cv_version_id, effectiveConfig: job.effective_config,
   };
 }
 
 export function workingCopyToView(data: API.WorkingCopy): View.WorkingCopy {
   return {
     jobId: data.job_id, personalStatement: data.personal_statement,
+    contentFormat: data.content_format,
     createdAt: data.created_at, updatedAt: data.updated_at,
     sections: data.sections.map(s => ({
       id: s.id,
@@ -85,6 +87,7 @@ export function workingCopyToView(data: API.WorkingCopy): View.WorkingCopy {
 export function workingCopyToAPI(wc: View.WorkingCopy): API.WorkingCopy {
   return {
     job_id: wc.jobId, personal_statement: wc.personalStatement,
+    content_format: wc.contentFormat,
     created_at: wc.createdAt, updated_at: wc.updatedAt,
     sections: wc.sections.map(s => ({
       id: s.id,

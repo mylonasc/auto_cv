@@ -8,7 +8,7 @@ const job = (id: string, status: ProcessingState['status'] = 'succeeded'): Proce
   jobId: id, status, progress: '', message: '', result: null, jobAnalysis: null, error: null,
 });
 const copy = (id: string, statement = id): WorkingCopy => ({
-  jobId: id, personalStatement: statement, sections: [], createdAt: null, updatedAt: null,
+  jobId: id, personalStatement: statement, contentFormat: 'latex', sections: [], createdAt: null, updatedAt: null,
 });
 
 test('viewed history and posting preview never replace active execution identity', () => {
@@ -20,6 +20,17 @@ test('viewed history and posting preview never replace active execution identity
   assert.equal(state.activeJobId, null);
   assert.equal(state.jobs.running.status, 'succeeded');
   assert.equal(state.jobs.history.jobId, 'history');
+});
+
+test('render overrides are explicit and job-specific, including reset to saved template', () => {
+  let state = reduce(initialWorkflow, { type: 'renderTemplate', id: 'A', value: 'template2' });
+  state = reduce(state, { type: 'view', job: job('B') });
+  assert.equal(state.renderTemplates.A, 'template2');
+  assert.equal(state.renderTemplates.B, undefined);
+  state = reduce(state, { type: 'renderTemplate', id: 'B', value: 'default_cv' });
+  state = reduce(state, { type: 'renderTemplate', id: 'A', value: '' });
+  assert.equal(state.renderTemplates.A, '');
+  assert.equal(state.renderTemplates.B, 'default_cv');
 });
 
 test('drafts retain independent edits across selection changes and late loads', () => {

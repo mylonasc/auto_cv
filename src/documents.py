@@ -4,8 +4,8 @@ import json
 from uuid import uuid4
 
 from . import rendering
-from .domain import CVTemplateData
-from .template_registry import resolve_template_path
+from .domain import CVTemplateData, ContentFormat
+from .latex_templates import prepare_template, legacy_layout
 
 
 class DocSection:
@@ -17,9 +17,7 @@ class DocSection:
         return f'## {self.section_title} \n' + ''.join(item.get_markdown() for item in self.doc_section_items) + '\n'
 
     def get_latex(self, include_scoring_comments=False):
-        return (f'\\begin{{rSection}}{{{self.section_title}}}\n' +
-                ''.join(item.get_latex(include_scoring_comments=include_scoring_comments) + '\n' for item in self.doc_section_items) +
-                '\\end{rSection}\n')
+        return legacy_layout().section(self, include_scoring_comments)
 
     def copy(self):
         return DocSection(self.section_title, [item.copy() for item in self.doc_section_items])
@@ -37,8 +35,7 @@ class SectionListItem:
         return f'* {self.text}' + (f' (comment:  {self.comment})' if self.comment is not None else '') + '\n'
 
     def get_latex(self, include_scoring_comments=False):
-        comment = f'\\pdfcomment{{{rendering.latex_comment(self.comment)}}}' if include_scoring_comments and self.comment is not None else ''
-        return f'    \\item {self.text}{comment}\n'
+        return legacy_layout().bullet(self, include_scoring_comments)
 
     def copy(self): return SectionListItem(self.text, self.parent, self.comment, id=self.id)
 
@@ -67,10 +64,7 @@ class DocSectionItem:
         return result
 
     def get_latex(self, include_scoring_comments=False):
-        comment = f'\\pdfcomment{{{rendering.latex_comment(self.comment)}}}' if include_scoring_comments and self.comment is not None else ''
-        return (f'  \\begin{{myrSubsection}}{{{self.company}}}{{{self.duration}}}{{{self.position}{comment}}}\n' +
-                ''.join(item.get_latex(include_scoring_comments=include_scoring_comments) for item in self.section_item_list) +
-                '  \\end{myrSubsection}\n')
+        return legacy_layout().role(self, include_scoring_comments)
 
     def to_dict(self):
         return {'id': self.id, 'item_ids': [item.id for item in self.section_item_list], 'company': self.company,
@@ -83,25 +77,30 @@ class DocSectionItem:
 
 class FullCVDocument:
     """Selected statement/roles plus a template; never a second canonical CV store."""
-    def __init__(self, statement, experience_section, cv_template=None):
+    def __init__(self, statement, experience_section, cv_template=None, *, content_format: ContentFormat = "latex"):
         self.statement, self.experience_section = statement, experience_section
         self.cv_template = cv_template or CVTemplateData()
+        if content_format not in ("latex", "plain_text"):
+            raise ValueError("Unsupported CV content format")
+        self.content_format = content_format
 
-    def make_latex(self, newpage_after_experience=True, include_scoring_comments=False):
-        path = resolve_template_path('cv_templates', self.cv_template.template_id, self.cv_template.template_path)
-        with open(path, encoding='utf-8') as template:
-            text = template.read()
-        experience = self.experience_section.get_latex(include_scoring_comments=include_scoring_comments)
-        if newpage_after_experience:
-            experience += '\n\\newpage\n\n'
-        return text.replace('<statement>', self.statement).replace('<experience_section>', experience)
+    def prepare_latex(self, include_scoring_comments=False):
+        if self.cv_template.revision is not None:
+            from .template_registry import TemplateError
+            raise TemplateError('Managed composition rendering requires TRF-02; refusing legacy rendering that would omit sections')
+        return prepare_template('cv_templates', self.cv_template, document=self,
+                                include_scoring_comments=include_scoring_comments)
+
+    def make_latex(self, include_scoring_comments=False):
+        return self.prepare_latex(include_scoring_comments).latex
 
     def render_pdf(self, out_file, include_scoring_comments=False):
-        rendering.latex_to_pdf(self.make_latex(include_scoring_comments=include_scoring_comments), out_file)
+        prepared = self.prepare_latex(include_scoring_comments)
+        rendering.latex_to_pdf(prepared.latex, out_file, resources=prepared.resources)
 
     def to_json(self, file):
         with open(file, 'w', encoding='utf-8') as target:
-            json.dump({'statement': self.statement, 'experience_section': {
+            json.dump({'statement': self.statement, 'content_format': self.content_format, 'experience_section': {
                 'section_title': self.experience_section.section_title,
                 'doc_section_items': [item.to_dict() for item in self.experience_section.doc_section_items],
             }}, target, indent=4)
@@ -112,7 +111,7 @@ class FullCVDocument:
         with open(file, encoding='utf-8') as source:
             data = json.load(source)
         section = data['experience_section']
-        return FullCVDocument(data['statement'], DocSection(section['section_title'], [DocSectionItem(**item) for item in section['doc_section_items']]))
+        return FullCVDocument(data['statement'], DocSection(section['section_title'], [DocSectionItem(**item) for item in section['doc_section_items']]), content_format=data.get('content_format', 'latex'))
 
     def copy(self):
-        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template.model_copy(deep=True))
+        return FullCVDocument(self.statement, self.experience_section.copy(), cv_template=self.cv_template.model_copy(deep=True), content_format=self.content_format)

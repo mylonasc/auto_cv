@@ -4,11 +4,9 @@ import type * as API from '../types/api.generated';
 import type { CVData } from '../types/cv';
 import type { BackendConfig } from '../types/view';
 import { jobToView, resultToView, workingCopyToAPI, workingCopyToView, configToAPI, configToView } from './mappers';
+import { httpErrorMessage } from './errors';
 
-export interface TemplateRegistryResponse {
-  cv_templates: Record<string, string>;
-  motivation_letter_templates: Record<string, string>;
-}
+export type TemplateRegistryResponse = API.TemplateRegistryResponse;
 export type RescoreRequestPayload = API.RescoreRequestInput;
 export type RescoreResponse = API.RescoreResponse;
 export type RescoredItemResult = API.RescoredItemResult;
@@ -20,6 +18,13 @@ const API_BASE_URL = '/api/v1';
 
 class ApiService {
   private client = axios.create({ baseURL: API_BASE_URL, headers: { 'Content-Type': 'application/json' } });
+
+  constructor() {
+    this.client.interceptors.response.use(response => response, (error: unknown) => {
+      if (!axios.isAxiosError(error)) return Promise.reject(error);
+      return Promise.reject(new Error(httpErrorMessage(error.response?.status, error.response?.data, error.message)));
+    });
+  }
 
   private toBackendConfig = configToAPI;
   private fromBackendConfig = configToView;

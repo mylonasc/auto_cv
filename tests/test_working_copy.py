@@ -159,6 +159,7 @@ class TestCreateWorkingCopyFromJob:
         class FakeJob:
             id = "job_123"
             result = FakeResult()
+            cv_snapshot = None
 
         from server_application.backend.services.working_copy import create_working_copy
 
@@ -188,6 +189,7 @@ class TestCreateWorkingCopyFromJob:
         class FakeJob:
             id = "job_empty"
             result = FakeEmptyResult()
+            cv_snapshot = None
 
         from server_application.backend.services.working_copy import create_working_copy
 

@@ -83,7 +83,7 @@ def offline_dependencies(monkeypatch, fake_model, pdf_calls):
     monkeypatch.setattr(subprocess, "Popen", forbidden)
     monkeypatch.setattr(ModelFactory, "get_llm_model", lambda self: fake_model)
 
-    def fake_pdf(latex, output):
+    def fake_pdf(latex, output, *, resources=()):
         output = Path(output)
         pdf_calls.append(PDFCall(latex, output))
         output.write_bytes(b"%PDF-1.4\n% offline test placeholder; not a real rendered document\n")

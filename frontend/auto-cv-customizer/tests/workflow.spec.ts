@@ -9,13 +9,14 @@ declare global {
 const fixture: CVJobResponse = JSON.parse(readFileSync(new URL('../../../tests/fixtures/job-contract.json', import.meta.url), 'utf8'));
 const makeJob = (id: string): CVJobResponse => ({ ...structuredClone(fixture), id, job_description: `Posting ${id}` });
 const makeCopy = (id: string): WorkingCopy => ({ job_id: id, personal_statement: `Statement ${id}`,
-  sections: [], created_at: null, updated_at: null });
+  content_format: 'latex', sections: [], created_at: null, updated_at: null });
 
 async function setup(page: Page) {
   const jobs = { A: makeJob('A'), B: makeJob('B') };
   const copies = { A: makeCopy('A'), B: makeCopy('B') };
   const writes: string[] = [];
   const renders: string[] = [];
+  const renderPayloads: Array<Record<string, unknown>> = [];
   const unexpected: string[] = [];
   const loadGates = new Map<string, Promise<void>>();
   const saveGates = new Map<string, Promise<void>>();
@@ -45,9 +46,9 @@ async function setup(page: Page) {
       default_cv: 'assets/latex_cv_template_v0.tex', template2: 'assets/latex_cv_template_v2.tex',
     }, motivation_letter_templates: {} };
     else if (path.endsWith('/versions')) json = [{ id: 'master', name: 'Master', last_modified: 0 }];
-    else if (path.endsWith('/versions/master')) json = { schema_version: 1, candidate: { candidate_id: 'charilaos_mylonas', full_name: '', profile: {} },
+    else if (path.endsWith('/versions/master')) json = { schema_version: 1, content_format: 'latex', document: null, candidate: { candidate_id: 'charilaos_mylonas', full_name: '', profile: {} },
       personal_statement: 'Source statement', alternative_statements: [], experience_sections: [],
-      cv_template: { template_id: 'default_cv', template_path: null, experience_section_title: 'Experience' },
+      cv_template: { template_id: 'default_cv', template_path: null, revision: null, experience_section_title: 'Experience' },
       motivation_letter_template: { template_id: 'default_motivation_letter', template_path: null } };
     else if (path === '/api/v1/cv-jobs/job-analysis') json = { job_analysis: { basic_analysis: { skills: 'Preview skills' } } };
     else if (path === '/api/v1/cv-jobs') {
@@ -66,7 +67,7 @@ async function setup(page: Page) {
           await saveGates.get(id);
         } else await loadGates.get(id);
         json = copies[id];
-      } else if (match[2] === '/render') { renders.push(id); json = jobs[id]; }
+      } else if (match[2] === '/render') { renders.push(id); renderPayloads.push(request.postDataJSON()); json = jobs[id]; }
       else if (match[2] === '/cancel') { jobs[id].status = 'cancelled'; json = jobs[id]; }
       else json = jobs[id];
     }
@@ -78,7 +79,7 @@ async function setup(page: Page) {
     map.set(id, new Promise<void>(done => { release = done; }));
     return release;
   };
-  return { jobs, copies, writes, renders, unexpected, failSave: (value: boolean) => { failSave = value; },
+  return { jobs, copies, writes, renders, renderPayloads, unexpected, failSave: (value: boolean) => { failSave = value; },
     holdLoad: (id: string) => hold(loadGates, id), holdSave: (id: string) => hold(saveGates, id) };
 }
 
@@ -156,6 +157,33 @@ test('render/export uses the explicitly viewed job, never the newest history res
   await expect(page.getByText('Job: B', { exact: true })).toBeVisible();
   expect(api.renders).toEqual(['B']);
   expect(api.writes).toEqual(['B']);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('saved templates and explicit per-job overrides survive navigation without copying registry paths', async ({ page }) => {
+  const api = await setup(page);
+  api.jobs.A.cv_snapshot = { schema_version: 1, content_format: 'latex', document: null, candidate: { candidate_id: 'test', full_name: '', profile: {} },
+    personal_statement: '', alternative_statements: [], experience_sections: [],
+    cv_template: { template_id: 'template2', template_path: null, revision: null, experience_section_title: 'Experience' },
+    motivation_letter_template: { template_id: 'default_motivation_letter', template_path: null } };
+  await page.goto('/');
+  await loadHistory(page, 'A');
+  await expect(page.getByLabel('CV template', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('CV template', { exact: true }).locator('option:checked')).toContainText('template2');
+  await page.getByLabel('CV template', { exact: true }).selectOption('default_cv');
+  await loadHistory(page, 'B');
+  await expect(page.getByLabel('CV template', { exact: true })).toHaveValue('');
+  await page.getByRole('button', { name: 'Render CV Artifacts', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Export & Download', exact: true })).toBeVisible();
+  expect(api.renderPayloads[0]).not.toHaveProperty('cv_template_id');
+  expect(api.renderPayloads[0]).not.toHaveProperty('cv_template_path');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await loadHistory(page, 'A');
+  await expect(page.getByLabel('CV template', { exact: true })).toHaveValue('default_cv');
+  await page.getByRole('button', { name: 'Render CV Artifacts', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Export & Download', exact: true })).toBeVisible();
+  expect(api.renderPayloads[1].cv_template_id).toBe('default_cv');
+  expect(api.renderPayloads[1]).not.toHaveProperty('cv_template_path');
   expect(api.unexpected).toEqual([]);
 });
 

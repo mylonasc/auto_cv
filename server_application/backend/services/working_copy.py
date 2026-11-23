@@ -6,7 +6,6 @@ from ..models.api_models import WorkingCopy
 from ..models.legacy import normalize_working_copy
 from src.analysis import SelectionPolicy, select_scored_ids, score_comment
 from src.domain import CVTemplateData
-from src.template_registry import resolve_template_path
 from src.documents import FullCVDocument, DocSection, DocSectionItem
 
 
@@ -34,6 +33,7 @@ def create_working_copy(job):
         sections.append(value)
     return WorkingCopy.model_validate(normalize_working_copy({
         "job_id": job.id, "personal_statement": data.get("personal_statement") or "", "sections": sections,
+        "content_format": job.cv_snapshot.content_format if job.cv_snapshot else "latex",
         "created_at": now, "updated_at": now,
     }))
 
@@ -49,7 +49,7 @@ def select_working_copy(job, request):
     return copy
 
 
-def document_from_working_copy(copy, request, section_title="Work Experience"):
+def document_from_working_copy(copy, request, section_title="Work Experience", source_template=None):
     roles = []
     for section in copy.sections:
         kept = [item for item in section.items if item.kept]
@@ -63,7 +63,12 @@ def document_from_working_copy(copy, request, section_title="Work Experience"):
                 if item.scored_text == item.text:
                     point.set_comment(score_comment(item.relevance_score, item.explanation, item.posting_evidence))
         roles.append(role)
-    template = CVTemplateData(template_id=request.cv_template_id,
-                              template_path=resolve_template_path("cv_templates", request.cv_template_id, request.cv_template_path),
-                              experience_section_title=section_title)
-    return FullCVDocument(copy.personal_statement, DocSection(section_title, roles), cv_template=template)
+    template = (source_template or CVTemplateData()).model_copy(deep=True)
+    if request.cv_template_id is not None:
+        template.template_id = request.cv_template_id
+        template.template_path = None
+    if request.cv_template_path is not None:
+        template.template_path = request.cv_template_path
+    template.experience_section_title = section_title
+    return FullCVDocument(copy.personal_statement, DocSection(section_title, roles), cv_template=template,
+                          content_format=copy.content_format)

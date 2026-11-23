@@ -669,6 +669,57 @@ Acceptance criteria:
 - [ ] All linked RFK acceptance criteria are verified and this document reflects
   the delivered architecture, known limitations, and any remaining follow-ups.
 
+## Template-boundary follow-up (RFK-04/RFK-09/RFK-10)
+
+The subsequent template-readiness review identified remaining layout/reference
+coupling, separate from the already delivered workflow/repository boundaries.
+Implementation on the working branch now provides explicit template definitions
+and layout/resource ownership, fail-closed selection/placeholder validation,
+saved-template inheritance and per-job UI overrides, one-pass PDF/LaTeX expansion,
+render fingerprints, opt-in plain-text escaping with authored-LaTeX compatibility,
+schema-derived JSON-editor validation, strict working-copy invariants, nullable
+score formatting and shared unsaved-source navigation guards.
+
+See [TEMPLATES.md](docs/TEMPLATES.md) for contracts and compatibility. Existing
+candidate/runtime files and hard-coded static template content are retained.
+Canonicalizing new editable education/contact/skills/publication fields requires
+agreed section requirements and a recoverable migration; it is a genuinely new
+content-schema follow-up tracked in technical debt #16, not a waived RFK criterion.
+This follow-up does not mark the remaining RFK-10/parent checklists complete.
+
+Working-tree verification: **219 backend tests, 29 typed frontend unit tests and
+19 API-isolated Chromium checks passed**, plus frontend build/full lint,
+generated-schema drift and diff checks. Independent safety verification preserved
+five external store sentinels and all 815 inventoried data/assets/legacy file
+hashes. Real providers/XeLaTeX/Docker execution were not run. Changes are not yet
+committed; no RFK issue is closed by this progress note.
+
+## Template Studio epic (TRF / RFK follow-up)
+
+The user approved the bounded five-day authoring/preview design. Parent
+[#17](https://github.com/mylonasc/auto_cv/issues/17) and indexed native sub-issues
+#18–#22 use label `template-refactoring`, with native blockers:
+TRF-01 #18 (none); TRF-02 #19 (#18); TRF-03 #20 (#18, #19);
+TRF-04 #21 (#19, #20); TRF-05 #22 (#21).
+
+TRF-01 working-tree implementation adds canonical optional composition, pinned
+managed references, immutable JSON template revisions with compare-and-save and
+recoverable HEAD publication, plus explicit read-only import of both shipped
+layouts. It preserves the original header/static/publication bytes and all CV
+inputs. No real user files have been migrated. Renderer integration, the Studio
+workspace and preview remain owned by subsequent blocked slices; the old renderer
+refuses pinned composition rather than silently dropping sections.
+
+Contracts/delivery map: [TEMPLATE_STUDIO.md](docs/TEMPLATE_STUDIO.md). This is new
+approved scope from TD-02 in #16, not a waiver or closure of RFK-10 or parent #5.
+TRF issues remain open pending verified implementation commits.
+
+TRF-01 verification: **255 backend tests** (36 new foundation cases), **30 typed
+frontend unit tests**, **19 isolated Chromium checks**, frontend build/full lint,
+generated-schema drift and diff checks passed. A safety rerun preserved five
+external sentinels and all 815 inventoried data/assets/legacy file hashes. No
+live provider, real TeX or Docker execution ran. TRF-02–TRF-05 remain unstarted.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native

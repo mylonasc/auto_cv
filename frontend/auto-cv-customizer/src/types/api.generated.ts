@@ -31,9 +31,15 @@ export interface BasicJobAnalysis {
   preferred_qualifications?: string | null;
 }
 
+export interface BinaryAsset {
+  data_base64: string;
+}
+
 export interface CVData {
   schema_version: 1;
   candidate: CandidateMetadata;
+  content_format: "latex" | "plain_text";
+  document: DocumentComposition | null;
   personal_statement: string;
   alternative_statements: Array<string>;
   experience_sections: Array<ExperienceSectionData>;
@@ -70,6 +76,7 @@ export interface CVJobResult {
 export interface CVTemplateData {
   template_id: string;
   template_path: string | null;
+  revision: string | null;
   experience_section_title: string;
 }
 
@@ -79,11 +86,47 @@ export interface CandidateMetadata {
   profile: Record<string, unknown>;
 }
 
+export interface ComposedFragments {
+  statement: string;
+  experience: string;
+  section: string;
+  role: string;
+  bullet: string;
+  comment: string;
+  entries: string;
+  entry: string;
+  publications: string;
+  publication: string;
+}
+
 export interface CreateJobRequest {
   job_description: string;
   candidate: string;
   cv_version_id: string;
   config: BackendConfig | null;
+}
+
+export interface DocumentComposition {
+  format_version: 1;
+  header_latex: string;
+  sections: Array<StatementSection | ExperienceSection | EntryListSection | PublicationListSection | LatexSection>;
+}
+
+export interface EntryListSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "entries";
+  entries: Array<ProjectEntry>;
+}
+
+export interface ExperienceSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "experience";
 }
 
 export interface ExperienceSectionData {
@@ -125,6 +168,15 @@ export interface JobAnalysisResponse {
 
 export type JobStatus = "queued" | "processing" | "succeeded" | "failed" | "cancelled";
 
+export interface LatexSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "latex";
+  latex: string;
+}
+
 export interface ModelConfig {
   provider: "ollama" | "google";
   model: string;
@@ -147,18 +199,57 @@ export interface ProcessingOutput {
   result: CVJobResult;
   job_analysis: JobAnalysis;
   rendered_cv: CVData | null;
+  render_manifest: RenderManifest | null;
+}
+
+export interface ProjectEntry {
+  id: string;
+  name: string;
+  description: string;
+  technologies: Array<string>;
+  url: string;
+  bullets: Array<string>;
+  enabled: boolean;
+}
+
+export interface PublicationEntry {
+  id: string;
+  authors: string;
+  title: string;
+  venue: string;
+  year: string;
+  url: string;
+  enabled: boolean;
+}
+
+export interface PublicationListSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "publications";
+  entries: Array<PublicationEntry>;
 }
 
 export interface RenderCVRequest {
   min_relevance_score: number;
   min_section_items_keep: number;
   max_section_items_keep: number;
-  cv_template_id: string;
+  cv_template_id: string | null;
   cv_template_path: string | null;
   include_latex: boolean;
   render_pdf: boolean;
   include_scoring_comments: boolean;
   working_copy: WorkingCopy | null;
+}
+
+export interface RenderManifest {
+  template_id: string;
+  template_path: string;
+  input_hashes: Record<string, string>;
+  resource_hashes: Record<string, string>;
+  latex_sha256: string;
+  options: Record<string, string | boolean>;
 }
 
 export interface RescoreItem {
@@ -219,6 +310,14 @@ export interface SectionResult {
   aggregate_score: number | null;
 }
 
+export interface StatementSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "statement";
+}
+
 export interface StreamError {
   id: string;
   error: string;
@@ -252,9 +351,32 @@ export interface SubmissionUpdateRequest {
   notes: string | null;
 }
 
+export interface TemplatePackage {
+  format_version: 1;
+  template_id: string;
+  name: string;
+  entrypoint: string;
+  fragments: ComposedFragments;
+  files: Record<string, string>;
+  assets: Record<string, BinaryAsset>;
+  imported_from: string | null;
+  imported_hashes: Record<string, string>;
+}
+
+export interface TemplateRegistryResponse {
+  cv_templates: Record<string, string>;
+  motivation_letter_templates: Record<string, string>;
+}
+
+export interface TemplateRevision {
+  revision: string;
+  package: TemplatePackage;
+}
+
 export interface WorkingCopy {
   job_id: string;
   personal_statement: string;
+  content_format: "latex" | "plain_text";
   sections: Array<WorkingCopySection>;
   created_at: string | null;
   updated_at: string | null;
@@ -322,3 +444,582 @@ export const DEFAULT_BACKEND_CONFIG: BackendConfig = {
   },
   "concurrency_limit": 5
 };
+
+export const CV_DATA_SCHEMA = {
+  "$defs": {
+    "CVTemplateData": {
+      "additionalProperties": false,
+      "description": "A portable template reference; an explicit path overrides its registry ID.",
+      "properties": {
+        "template_id": {
+          "default": "default_cv",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Path"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "experience_section_title": {
+          "default": "Work Experience",
+          "title": "Experience Section Title",
+          "type": "string"
+        }
+      },
+      "title": "CVTemplateData",
+      "type": "object"
+    },
+    "CandidateMetadata": {
+      "additionalProperties": false,
+      "description": "Identity/profile only: CV content is never duplicated under candidate.",
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "full_name": {
+          "default": "",
+          "title": "Full Name",
+          "type": "string"
+        },
+        "profile": {
+          "additionalProperties": true,
+          "title": "Profile",
+          "type": "object",
+          "default": {}
+        }
+      },
+      "required": [
+        "candidate_id"
+      ],
+      "title": "CandidateMetadata",
+      "type": "object"
+    },
+    "DocumentComposition": {
+      "additionalProperties": false,
+      "properties": {
+        "format_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Format Version",
+          "type": "integer"
+        },
+        "header_latex": {
+          "default": "",
+          "maxLength": 65536,
+          "title": "Header Latex",
+          "type": "string"
+        },
+        "sections": {
+          "items": {
+            "discriminator": {
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/StatementSection"
+              },
+              {
+                "$ref": "#/$defs/ExperienceSection"
+              },
+              {
+                "$ref": "#/$defs/EntryListSection"
+              },
+              {
+                "$ref": "#/$defs/PublicationListSection"
+              },
+              {
+                "$ref": "#/$defs/LatexSection"
+              }
+            ],
+            "type": "object"
+          },
+          "maxItems": 64,
+          "title": "Sections",
+          "type": "array",
+          "default": []
+        }
+      },
+      "title": "DocumentComposition",
+      "type": "object"
+    },
+    "EntryListSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "entries",
+          "title": "Kind",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/ProjectEntry"
+          },
+          "maxItems": 100,
+          "title": "Entries",
+          "type": "array",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "EntryListSection",
+      "type": "object"
+    },
+    "ExperienceSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "experience",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "ExperienceSection",
+      "type": "object"
+    },
+    "ExperienceSectionData": {
+      "additionalProperties": false,
+      "description": "One role and its experience bullets.",
+      "properties": {
+        "company": {
+          "title": "Company",
+          "type": "string"
+        },
+        "duration": {
+          "title": "Duration",
+          "type": "string"
+        },
+        "position": {
+          "title": "Position",
+          "type": "string"
+        },
+        "text_items": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Text Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "company",
+        "duration",
+        "position",
+        "text_items"
+      ],
+      "title": "ExperienceSectionData",
+      "type": "object"
+    },
+    "LatexSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "latex",
+          "title": "Kind",
+          "type": "string"
+        },
+        "latex": {
+          "default": "",
+          "maxLength": 262144,
+          "title": "Latex",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "LatexSection",
+      "type": "object"
+    },
+    "MotivationLetterTemplateData": {
+      "additionalProperties": false,
+      "description": "Motivation-letter template reference.",
+      "properties": {
+        "template_id": {
+          "default": "default_motivation_letter",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Path"
+        }
+      },
+      "title": "MotivationLetterTemplateData",
+      "type": "object"
+    },
+    "ProjectEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 10000,
+          "title": "Description",
+          "type": "string"
+        },
+        "technologies": {
+          "items": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Technologies",
+          "type": "array",
+          "default": []
+        },
+        "url": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Url",
+          "type": "string"
+        },
+        "bullets": {
+          "items": {
+            "maxLength": 10000,
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Bullets",
+          "type": "array",
+          "default": []
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "ProjectEntry",
+      "type": "object"
+    },
+    "PublicationEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "authors": {
+          "default": "",
+          "maxLength": 3000,
+          "title": "Authors",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 3000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "venue": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Venue",
+          "type": "string"
+        },
+        "year": {
+          "default": "",
+          "maxLength": 50,
+          "title": "Year",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Url",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "PublicationEntry",
+      "type": "object"
+    },
+    "PublicationListSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "publications",
+          "title": "Kind",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/PublicationEntry"
+          },
+          "maxItems": 200,
+          "title": "Entries",
+          "type": "array",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "PublicationListSection",
+      "type": "object"
+    },
+    "StatementSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "statement",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "StatementSection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Canonical persisted and editable CV. Paths resolve only when rendering.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "candidate": {
+      "$ref": "#/$defs/CandidateMetadata"
+    },
+    "content_format": {
+      "default": "latex",
+      "enum": [
+        "latex",
+        "plain_text"
+      ],
+      "title": "Content Format",
+      "type": "string"
+    },
+    "document": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DocumentComposition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "personal_statement": {
+      "default": "",
+      "title": "Personal Statement",
+      "type": "string"
+    },
+    "alternative_statements": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Alternative Statements",
+      "type": "array",
+      "default": []
+    },
+    "experience_sections": {
+      "items": {
+        "$ref": "#/$defs/ExperienceSectionData"
+      },
+      "title": "Experience Sections",
+      "type": "array",
+      "default": []
+    },
+    "cv_template": {
+      "$ref": "#/$defs/CVTemplateData",
+      "default": {
+        "template_id": "default_cv",
+        "template_path": null,
+        "revision": null,
+        "experience_section_title": "Work Experience"
+      }
+    },
+    "motivation_letter_template": {
+      "$ref": "#/$defs/MotivationLetterTemplateData",
+      "default": {
+        "template_id": "default_motivation_letter",
+        "template_path": null
+      }
+    }
+  },
+  "required": [
+    "candidate"
+  ],
+  "title": "CVData",
+  "type": "object"
+} as const;

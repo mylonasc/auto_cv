@@ -120,5 +120,6 @@ export function useWorkflow(state: WorkflowState, send: Dispatch<WorkflowAction>
     resetDraft: (id: string) => send({ type: 'reset', id }),
     viewJob: (job: ProcessingState) => send({ type: 'view', job }),
     exportJob: (id: string) => send({ type: 'export', id }),
+    setRenderTemplate: (id: string, value: string) => send({ type: 'renderTemplate', id, value }),
   };
 }

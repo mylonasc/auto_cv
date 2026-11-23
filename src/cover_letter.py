@@ -5,6 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from .domain import MotivationLetterTemplateData
 from .template_registry import resolve_template_path
 from . import rendering
+from .latex_templates import prepare_template
 
 
 class CoverLetterModel:
@@ -12,8 +13,6 @@ class CoverLetterModel:
         self.motivation_template = motivation_template or MotivationLetterTemplateData(template_path=cover_letter_template_path)
         self.cover_letter_template_path = resolve_template_path('motivation_letter_templates',
             self.motivation_template.template_id, self.motivation_template.template_path)
-        with open(self.cover_letter_template_path, encoding='utf-8') as source:
-            self.cover_letter_template_tex_contents = source.read()
 
     def set_data(self, date_str, company_name, letter_body, name='Charilaos Mylonas, PhD',
                  prof_signature='\\\\Machine Learning Engineer\\\\Zurich'):
@@ -21,15 +20,19 @@ class CoverLetterModel:
         self.name, self.prof_signature = name, prof_signature
 
     def render_tex_template(self):
-        text = self.cover_letter_template_tex_contents
-        for key, value in {'DATETODAY': self.date_str, 'COMPANYNAME': self.company_name,
-                           'LETTERCONTENT': self.letter_body, 'NAME': self.name, 'PROF_SIGNATURE': self.prof_signature}.items():
-            text = text.replace(f'<{key}>', value)
-        return text
+        return self.prepare_latex().latex
 
-    def to_pdf(self, file): rendering.latex_to_pdf(self.render_tex_template(), file)
+    def prepare_latex(self, include_scoring_comments=False):
+        return prepare_template('motivation_letter_templates', self.motivation_template, {
+            'DATETODAY': self.date_str, 'COMPANYNAME': self.company_name, 'LETTERCONTENT': self.letter_body,
+            'NAME': self.name, 'PROF_SIGNATURE': self.prof_signature,
+        })
+
+    def to_pdf(self, file): self.render_pdf(file)
     def make_latex(self, include_scoring_comments=False): return self.render_tex_template()
-    def render_pdf(self, file, include_scoring_comments=False): rendering.latex_to_pdf(self.make_latex(), file)
+    def render_pdf(self, file, include_scoring_comments=False):
+        prepared = self.prepare_latex()
+        rendering.latex_to_pdf(prepared.latex, file, resources=prepared.resources)
 
 
 class CoverLetterDrafter:

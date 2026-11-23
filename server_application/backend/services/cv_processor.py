@@ -22,7 +22,7 @@ class CVProcessor:
         run = await analyze_cv(self.source, job_description, self.config, progress_callback=progress, cache=self.cache)
         await progress("Rendering selected CV outputs...")
         import asyncio
-        artifacts = await asyncio.to_thread(
+        rendered = await asyncio.to_thread(
             render_artifacts, run.analyzer.render_document(self.config.outputs.include_scoring_comments),
             self.artifacts_dir, f"cv_output_{job_id}_{uuid4().hex}",
             render_pdf=self.config.outputs.render_pdf, include_latex=self.config.outputs.include_latex,
@@ -47,5 +47,6 @@ class CVProcessor:
         metrics = run.analyzer.get_section_aggregate_metrics()[0]
         result = CVJobResult(personal_statement=run.analyzer.cv_model.statement, sections=sections,
                              overall_score=metrics['weighted_mean_section_relevance'],
-                             summary_metrics=metrics, artifacts=artifacts)
-        return ProcessingOutput(result=result, job_analysis=run.job.data, rendered_cv=run.source)
+                             summary_metrics=metrics, artifacts=rendered.artifacts)
+        return ProcessingOutput(result=result, job_analysis=run.job.data, rendered_cv=run.source,
+                                 render_manifest=rendered.manifest)

@@ -16,10 +16,11 @@ export interface WorkflowState {
   posting: ProcessingState | null;
   starting: boolean;
   monitorError: string | null;
+  renderTemplates: Record<string, string>;
 }
 export const initialWorkflow: WorkflowState = {
   jobs: {}, activeJobId: null, viewedJobId: null, drafts: {}, posting: null,
-  starting: false, monitorError: null, exportJobId: null,
+  starting: false, monitorError: null, exportJobId: null, renderTemplates: {},
 };
 export const isTerminal = (job: ProcessingState) => !['queued', 'processing'].includes(job.status);
 export const isDirty = (draft: DraftState) => JSON.stringify([draft.value.personalStatement, draft.value.sections]) !==
@@ -32,6 +33,7 @@ export type WorkflowAction =
   | { type: 'export'; id: string }
   | { type: 'posting'; value: ProcessingState }
   | { type: 'monitorError'; value: string | null }
+  | { type: 'renderTemplate'; id: string; value: string }
   | { type: 'loaded'; id: string; value: WorkingCopy }
   | { type: 'edit'; id: string; value: WorkingCopy }
   | { type: 'reset'; id: string }
@@ -47,6 +49,7 @@ export function workflowReducer(state: WorkflowState, action: WorkflowAction): W
     case 'export': return state.jobs[action.id]?.status === 'succeeded' ? { ...state, exportJobId: action.id } : state;
     case 'posting': return { ...state, posting: action.value };
     case 'monitorError': return { ...state, monitorError: action.value };
+    case 'renderTemplate': return { ...state, renderTemplates: { ...state.renderTemplates, [action.id]: action.value } };
     case 'started':
     case 'snapshot':
     case 'view': {

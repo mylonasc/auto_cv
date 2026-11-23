@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useReducer, useCallback, type Dispatch } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useReducer, useCallback, useRef, type Dispatch } from 'react';
 import type { BackendConfig } from '../types/view';
 import { initialWorkflow, workflowReducer } from '../domain/workflow';
 import type { WorkflowState, WorkflowAction } from '../domain/workflow';
@@ -173,11 +173,26 @@ const AppStateContext = createContext<{
   state: AppState;
   dispatch: Dispatch<AppStateAction>;
   workflow: ReturnType<typeof useWorkflow>;
+  guardNavigation: (guard: () => boolean) => () => void;
 } | null>(null);
 
 export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(appStateReducer, undefined, getInitialState);
-  const send = useCallback((payload: WorkflowAction) => dispatch({ type: 'WORKFLOW', payload }), []);
+  const [state, rawDispatch] = useReducer(appStateReducer, undefined, getInitialState);
+  const current = useRef(state);
+  useLayoutEffect(() => { current.current = state; }, [state]);
+  const navigationGuard = useRef<(() => boolean) | null>(null);
+  const guardNavigation = useCallback((guard: () => boolean) => {
+    navigationGuard.current = guard;
+    return () => { if (navigationGuard.current === guard) navigationGuard.current = null; };
+  }, []);
+  const dispatch = useCallback((action: AppStateAction) => {
+    const leaving = action.type === 'SET_UI_STATE' && action.payload.activeTab !== undefined &&
+      action.payload.activeTab !== current.current.uiState.activeTab ||
+      action.type === 'SET_CURRENT_CV_VERSION' && action.payload !== current.current.currentCVVersionId;
+    if (leaving && navigationGuard.current && !navigationGuard.current()) return;
+    rawDispatch(action);
+  }, []);
+  const send = useCallback((payload: WorkflowAction) => dispatch({ type: 'WORKFLOW', payload }), [dispatch]);
   const workflow = useWorkflow(state.workflow, send);
 
   useEffect(() => {
@@ -197,7 +212,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [state.jobDescriptions, state.currentJobDescriptionId]);
 
   return (
-    <AppStateContext.Provider value={{ state, dispatch, workflow }}>
+    <AppStateContext.Provider value={{ state, dispatch, workflow, guardNavigation }}>
       {children}
     </AppStateContext.Provider>
   );

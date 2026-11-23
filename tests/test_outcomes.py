@@ -143,25 +143,18 @@ def test_existing_output_cannot_masquerade_as_new_success(tmp_path):
     assert path.read_bytes() == b'valuable original'
 
 
-def test_later_output_failure_cannot_publish_partial_success(client, job_manager, monkeypatch):
-    from src.documents import FullCVDocument
+def test_later_output_failure_cannot_publish_partial_success(client, job_manager, monkeypatch, services):
     job = job_manager.create_job()
     job_manager.update_job_status(job.id, 'succeeded', result={'sections': []})
-    original = FullCVDocument.make_latex
-    calls = 0
+    def fail_write(*args, **kwargs):
+        raise OSError('second output failed')
 
-    def fail_later(self, *args, **kwargs):
-        nonlocal calls
-        calls += 1
-        if calls > 1:
-            raise OSError('second output failed')
-        return original(self, *args, **kwargs)
-
-    monkeypatch.setattr(FullCVDocument, 'make_latex', fail_later)
+    monkeypatch.setattr('src.artifacts.atomic_write_bytes', fail_write)
     response = client.post(f'/v1/cv-jobs/{job.id}/render', json={})
     assert response.status_code == 502
     assert 'latex_render' in response.json()['detail']
     assert job_manager.get_job(job.id).result.artifacts == []
+    assert list(services.paths.artifacts.iterdir()) == []
 
 
 @pytest.mark.asyncio

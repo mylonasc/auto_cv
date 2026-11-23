@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 from src.domain import CVData
-from src.template_registry import load_template_registry
+from src.template_registry import load_template_registry, TemplateRegistryResponse
 from ..services.application import ApplicationServices, OperationError
 from .dependencies import get_services
 
@@ -27,7 +27,7 @@ def _validate_identity(data, candidate):
         raise OperationError(422, "candidate_id does not match the requested candidate")
 
 
-@router.get("/templates")
+@router.get("/templates", response_model=TemplateRegistryResponse)
 async def list_templates():
     return load_template_registry()
 

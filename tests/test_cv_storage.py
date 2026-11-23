@@ -184,7 +184,7 @@ def test_api_rejects_competing_payload_fields_and_wrong_identity(client, flat_cv
     assert client.get("/v1/cv-data/test/versions").json() == []
 
 
-def test_template_resolution_is_render_time_only_and_honors_overrides(flat_cv):
+def test_template_resolution_is_render_time_only_and_honors_overrides(flat_cv, tmp_path):
     from src.template_registry import resolve_cv_templates
 
     cv = normalize_cv_data(flat_cv, "test")
@@ -194,7 +194,9 @@ def test_template_resolution_is_render_time_only_and_honors_overrides(flat_cv):
     assert cv.cv_template.template_path is None
     overridden = resolve_cv_templates(cv, cv_template_id="default_cv")
     assert overridden.cv_template.template_path.endswith("latex_cv_template_v0.tex")
-    explicit = resolve_cv_templates(cv, cv_template_id="template2", cv_template_path="custom.tex")
+    custom = tmp_path / "custom.tex"
+    custom.write_text("<statement><experience_section>")
+    explicit = resolve_cv_templates(cv, cv_template_id="template2", cv_template_path=str(custom))
     assert explicit.cv_template.template_path.endswith("custom.tex")
 
 

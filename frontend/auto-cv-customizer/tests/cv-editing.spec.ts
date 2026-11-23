@@ -4,6 +4,8 @@ import type { BackendConfig } from '../src/types/api.generated';
 
 const initial: CVData = {
   schema_version: 1,
+  content_format: 'latex',
+  document: null,
   candidate: {
     candidate_id: 'charilaos_mylonas', full_name: 'Test Candidate',
     profile: { location: 'Test City', custom: 'preserve me' },
@@ -15,7 +17,7 @@ const initial: CVData = {
     text_items: ['Original experience bullet'],
   }],
   cv_template: {
-    template_id: 'default_cv', template_path: 'assets/latex_cv_template_v0.tex',
+    template_id: 'default_cv', template_path: 'assets/latex_cv_template_v0.tex', revision: null,
     experience_section_title: 'Work Experience',
   },
   motivation_letter_template: {
@@ -25,6 +27,8 @@ const initial: CVData = {
 
 async function isolatedAPI(page: Page, seed: CVData = initial) {
   let stored = structuredClone(seed);
+  const additional = new Map<string, CVData>();
+  let saveGate: Promise<void> | undefined;
   const unexpected: string[] = [];
   const versionsPath = '/api/v1/cv-data/charilaos_mylonas/versions';
   // Intercept all requests, not only expected endpoints: nothing may reach the
@@ -43,13 +47,19 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
     let json: unknown;
     if (url.pathname === `${versionsPath}/master`) {
       if (route.request().method() === 'PUT') {
+        await saveGate;
         stored = route.request().postDataJSON() as CVData;
         expect(stored.schema_version).toBe(1);
         expect(Object.keys(stored.candidate).sort()).toEqual(['candidate_id', 'full_name', 'profile']);
       }
       json = stored;
     } else if (url.pathname === versionsPath) {
-      json = [{ id: 'master', name: 'Master', last_modified: 0 }];
+      json = [{ id: 'master', name: 'Master', last_modified: 0 }, ...Array.from(additional.keys(), id => ({ id, name: id, last_modified: 0 }))];
+    } else if (url.pathname.startsWith(`${versionsPath}/`)) {
+      const id = url.pathname.slice(versionsPath.length + 1);
+      if (route.request().method() === 'POST') additional.set(id, route.request().postDataJSON() as CVData);
+      if (route.request().method() === 'DELETE') { additional.delete(id); json = { status: 'success' }; }
+      else json = additional.get(id);
     } else if (url.pathname === '/api/v1/cv-data/templates') {
       json = {
         cv_templates: { default_cv: 'assets/latex_cv_template_v0.tex', template2: 'assets/latex_cv_template_v2.tex' },
@@ -74,7 +84,11 @@ async function isolatedAPI(page: Page, seed: CVData = initial) {
     await route.fulfill({ json });
   });
   page.on('dialog', dialog => dialog.accept());
-  return { saved: () => stored, unexpected };
+  return { saved: () => stored, unexpected, additional, holdSave: () => {
+    let release!: () => void;
+    saveGate = new Promise<void>(resolve => { release = resolve; });
+    return release;
+  } };
 }
 
 test('JSON and visual source modes synchronize; invalid JSON cannot replace or save the CV', async ({ page }) => {
@@ -139,6 +153,7 @@ test('visual editor saves statements, alternatives, bullets and template choices
   expect(api.saved().alternative_statements).toEqual(['Visual alternative edit']);
   expect(api.saved().experience_sections[0].text_items).toEqual(['Visual experience edit']);
   expect(api.saved().cv_template.template_id).toBe('template2');
+  expect(api.saved().cv_template.template_path).toBeNull();
   expect(api.saved().candidate).toEqual(initial.candidate);
   expect(api.saved().motivation_letter_template).toEqual(initial.motivation_letter_template);
   await page.getByRole('button', { name: 'Job Description', exact: true }).first().click();
@@ -181,5 +196,103 @@ test('editing a section title preserves a registry-only template choice', async 
   expect(api.saved().cv_template.template_id).toBe('template2');
   expect(api.saved().cv_template.template_path).toBeNull();
   expect(api.saved().motivation_letter_template.template_path).toBeNull();
+  expect(api.unexpected).toEqual([]);
+});
+
+test('unapplied source text is protected on tab navigation and analyzing uses the saved version explicitly', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit master statement', exact: true }).click();
+  await page.getByLabel('Selected source text').fill('Unapplied draft');
+  page.removeAllListeners('dialog');
+  page.once('dialog', async dialog => { expect(dialog.message()).toContain('unsaved source CV'); await dialog.dismiss(); });
+  await page.getByRole('button', { name: 'Workflow Stages', exact: true }).click();
+  await expect(page.getByLabel('Selected source text')).toHaveValue('Unapplied draft');
+  page.once('dialog', async dialog => { expect(dialog.message()).toContain('saved version'); await dialog.accept(); });
+  await page.getByRole('button', { name: 'Analyze Saved Version', exact: false }).click();
+  await expect(page.locator('.job-input-tab')).toBeVisible();
+  expect(api.saved()).toEqual(initial);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('invalid JSON drafts are protected and extra template fields cannot enter the visual editor', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await page.getByRole('button', { name: '{ } JSON Mode', exact: true }).click();
+  await page.getByLabel('Source CV JSON').fill('{broken');
+  page.removeAllListeners('dialog');
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('button', { name: 'Job Description', exact: true }).click();
+  await expect(page.getByLabel('Source CV JSON')).toHaveValue('{broken');
+  await page.getByLabel('Source CV JSON').fill(JSON.stringify({ ...initial, cv_template: { ...initial.cv_template, typo: 'wrong' } }));
+  await page.getByRole('button', { name: 'Visual Mode', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('additional properties');
+  expect(api.saved()).toEqual(initial);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('plain-text format is saved without rewriting authored CV content', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await page.getByLabel('CV text format').selectOption('plain_text');
+  await page.getByRole('button', { name: 'Save Version' }).click();
+  await expect.poll(() => api.saved().content_format).toBe('plain_text');
+  expect(api.saved().personal_statement).toEqual(initial.personal_statement);
+  expect(api.saved().experience_sections).toEqual(initial.experience_sections);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('Job Input inline source edits are protected by the same navigation guard', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  await page.goto('/');
+  await page.locator('.preview-block .item-text').click();
+  await page.locator('.inline-edit textarea').fill('Unsaved preview edit');
+  page.removeAllListeners('dialog');
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await expect(page.locator('.inline-edit textarea')).toHaveValue('Unsaved preview edit');
+  expect(api.saved()).toEqual(initial);
+  expect(api.unexpected).toEqual([]);
+});
+
+test('source navigation waits for saves, while successful version creation/deletion can change selection', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  const release = api.holdSave();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CV Data Editor', exact: true }).click();
+  await page.getByLabel('Company 1').fill('Updated company');
+  await page.getByRole('button', { name: 'Save Version' }).click();
+  await expect(page.getByRole('button', { name: 'Saving...' })).toBeVisible();
+  await page.getByRole('button', { name: 'Workflow Stages', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Editing: Master' })).toBeVisible();
+  release();
+  await expect(page.getByRole('status')).toContainText('Version saved');
+  await page.getByTitle('New Version', { exact: true }).click();
+  await page.getByPlaceholder('Version name...').fill('New version');
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Editing: new_version' })).toBeVisible();
+  expect(api.additional.get('new_version')?.experience_sections[0].company).toBe('Updated company');
+  await page.getByRole('button', { name: 'Delete version new_version', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Editing: Master' })).toBeVisible();
+  expect(api.unexpected).toEqual([]);
+});
+
+test('preview editing is locked during a source save so a late response cannot discard newer text', async ({ page }) => {
+  const api = await isolatedAPI(page);
+  const release = api.holdSave();
+  await page.goto('/');
+  await page.locator('.preview-block .item-text').click();
+  await page.locator('.inline-edit textarea').fill('Saved preview text');
+  await page.locator('.inline-actions').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('.inline-edit textarea')).toBeDisabled();
+  await expect(page.locator('.inline-actions').getByRole('button', { name: 'Cancel', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Workflow Stages', exact: true }).click();
+  await expect(page.locator('.inline-edit textarea')).toHaveValue('Saved preview text');
+  release();
+  await expect.poll(() => api.saved().personal_statement).toBe('Saved preview text');
+  await expect(page.locator('.preview-block .item-text')).toContainText('Saved preview text');
   expect(api.unexpected).toEqual([]);
 });

@@ -78,7 +78,8 @@ class ApplicationServices:
         copy = create_working_copy(pending)
         self.working.save(copy)
         if output.result.artifacts:
-            self.record_render(pending, copy, output.result.artifacts, source=output.rendered_cv or job.cv_snapshot)
+            self.record_render(pending, copy, output.result.artifacts, source=output.rendered_cv or job.cv_snapshot,
+                               manifest=output.render_manifest)
         self.jobs.update_job_status(id, JobStatus.SUCCEEDED, result=output.result, job_analysis=output.job_analysis,
                                      progress="Processing complete", message="CV has been successfully processed")
 
@@ -95,10 +96,11 @@ class ApplicationServices:
         copy.created_at = copy.created_at or copy.updated_at
         return self.working.save(copy)
 
-    def record_render(self, job, copy, artifacts, *, source=None, template=None):
+    def record_render(self, job, copy, artifacts, *, source=None, template=None, manifest=None):
         source = source or job.cv_snapshot or CVData(candidate=CandidateMetadata(candidate_id=job.candidate))
         snapshot = source.model_copy(deep=True)
         snapshot.personal_statement = copy.personal_statement
+        snapshot.content_format = copy.content_format
         snapshot.alternative_statements = []
         snapshot.experience_sections = [ExperienceSectionData(company=section.company, position=section.position,
             duration=section.duration, text_items=[item.text for item in section.items if item.kept])
@@ -107,7 +109,7 @@ class ApplicationServices:
             snapshot.cv_template = template
         return self.artifacts.record(RenderRecord(id=str(uuid4()), job_id=job.id, artifacts=artifacts,
             cv_snapshot=snapshot, working_copy=copy.model_copy(deep=True), scoring_snapshot=job.result.model_copy(deep=True),
-            created_at=datetime.now().isoformat()))
+            created_at=datetime.now().isoformat(), manifest=manifest))
 
     async def render(self, id, request):
         job = self.completed_job(id)
@@ -115,16 +117,16 @@ class ApplicationServices:
         copy.job_id = id
         title = job.cv_snapshot.cv_template.experience_section_title if job.cv_snapshot else (
             job.result.sections[0].title if job.result.sections else "Work Experience")
-        document = document_from_working_copy(copy, request, title)
-        artifacts = await asyncio.to_thread(render_artifacts, document, self.paths.artifacts,
+        document = document_from_working_copy(copy, request, title, job.cv_snapshot.cv_template if job.cv_snapshot else None)
+        rendered = await asyncio.to_thread(render_artifacts, document, self.paths.artifacts,
             f"cv_output_{id}_{uuid4().hex}", render_pdf=request.render_pdf, include_latex=request.include_latex,
             include_scoring_comments=request.include_scoring_comments,
             source="working_copy" if request.working_copy is not None else "analysis")
         # Check that the job wasn't deleted while the render thread was running.
         job = self.completed_job(id)
-        if artifacts:
-            self.record_render(job, copy, artifacts, template=document.cv_template)
-        return self.jobs.append_artifacts(id, artifacts)
+        if rendered.artifacts:
+            self.record_render(job, copy, rendered.artifacts, template=document.cv_template, manifest=rendered.manifest)
+        return self.jobs.append_artifacts(id, rendered.artifacts)
 
     async def rescore(self, id, request):
         job = self.completed_job(id)

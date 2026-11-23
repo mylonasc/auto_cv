@@ -1,4 +1,6 @@
+import Ajv from 'ajv';
 import type { CVData, ExperienceSection } from '../types/cv';
+import { CV_DATA_SCHEMA } from '../types/api.generated.ts';
 
 export type TextTarget = { type: 'personal' | 'alternative' | 'experience'; sectionIdx?: number; itemIdx?: number };
 export function editText(data: CVData, target: TextTarget, text: string): CVData {
@@ -19,23 +21,13 @@ export function removeBullet(data: CVData, sectionIndex: number, itemIndex: numb
   return editSection(data, sectionIndex, { text_items: data.experience_sections[sectionIndex].text_items.filter((_, at) => at !== itemIndex) });
 }
 
-/** Validate canonical editable JSON before applying it to the visual editor. */
+// Generated from CVData, including nested extra-field rules and backend defaults.
+const ajv = new Ajv({ allErrors: true, useDefaults: true, discriminator: true });
+const validator = ajv.compile<CVData>(CV_DATA_SCHEMA);
 export function parseCVJSON(text: string): CVData {
   const value: unknown = JSON.parse(text);
-  const object = (item: unknown): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item);
-  const strings = (item: unknown) => Array.isArray(item) && item.every(part => typeof part === 'string');
-  const template = (item: unknown) => object(item) && typeof item.template_id === 'string' &&
-    (item.template_path === null || typeof item.template_path === 'string');
-  if (!object(value) || value.schema_version !== 1 || !object(value.candidate) ||
-      typeof value.candidate.candidate_id !== 'string' || !value.candidate.candidate_id ||
-      typeof value.candidate.full_name !== 'string' || !object(value.candidate.profile) ||
-      Object.keys(value.candidate).some(key => !['candidate_id', 'full_name', 'profile'].includes(key)) ||
-      typeof value.personal_statement !== 'string' || !strings(value.alternative_statements) ||
-      !Array.isArray(value.experience_sections) || !value.experience_sections.every(section =>
-        object(section) && ['company', 'position', 'duration'].every(key => typeof section[key] === 'string') && strings(section.text_items)) ||
-      !template(value.cv_template) || !object(value.cv_template) || typeof value.cv_template.experience_section_title !== 'string' ||
-      !template(value.motivation_letter_template)) {
-    throw new Error('Expected canonical CV schema v1: metadata-only candidate, top-level statements/experience and valid templates.');
+  if (!validator(value)) {
+    throw new Error(`Expected canonical CV schema v1: ${ajv.errorsText(validator.errors, { separator: '; ' })}`);
   }
-  return value as unknown as CVData;
+  return value;
 }

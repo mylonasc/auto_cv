@@ -1,7 +1,15 @@
 {
   "cv_templates": {
-    "default_cv": "assets/latex_cv_template_v0.tex",
-    "template2": "assets/latex_cv_template_v2.tex"
+    "default_cv": {
+      "path": "assets/latex_cv_template_v0.tex",
+      "layout": {},
+      "resources": {"resume.cls": "assets/resume.cls"}
+    },
+    "template2": {
+      "path": "assets/latex_cv_template_v2.tex",
+      "layout": {},
+      "resources": {"resume.cls": "assets/resume.cls", "resume_v2.cls": "assets/resume_v2.cls"}
+    }
   },
   "motivation_letter_templates": {
     "default_motivation_letter": "assets/cover_letter/CoverLetter_Template.tex"

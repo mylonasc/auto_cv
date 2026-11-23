@@ -8,7 +8,6 @@ import type { SectionFilterConfig, WorkingCopyItem } from '../types/view';
 export function useProcessingControls() {
   const { state, dispatch, workflow } = useAppState();
   const { registry, error: templateError } = useTemplates();
-  const [template, setTemplate] = useState('default_cv');
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
@@ -27,13 +26,15 @@ export function useProcessingControls() {
     try { await command(); } catch (failure) { setError(String(failure)); }
   };
   const posting = state.jobDescriptions.find(job => job.id === state.currentJobDescriptionId);
-  const selectedTemplate = registry.cv_templates[template] ? template : Object.keys(registry.cv_templates)[0] || template;
+  const selectedTemplate = id ? state.workflow.renderTemplates[id] || '' : '';
+  const inheritedTemplate = viewedJob?.sourceCV?.cv_template;
+  const setTemplate = (value: string) => { if (id) workflow.setRenderTemplate(id, value); };
   const showResults = () => dispatch({ type: 'SET_UI_STATE', payload: { activeTab: 'results' } });
   const render = (fromDraft: boolean) => run(async () => {
     if (!id) throw new Error('Select a completed analysis first.');
     setRendering(true);
     try {
-      await workflow.render(id, { cv_template_id: selectedTemplate, cv_template_path: registry.cv_templates[selectedTemplate],
+      await workflow.render(id, { ...(selectedTemplate ? { cv_template_id: selectedTemplate } : {}),
         min_relevance_score: state.backendConfig.rewritePolicy.minRelevanceScore,
         min_section_items_keep: state.backendConfig.rewritePolicy.minSectionItemsKeep,
         max_section_items_keep: state.backendConfig.rewritePolicy.maxSectionItemsKeep,
@@ -49,6 +50,7 @@ export function useProcessingControls() {
     try { await workflow.rescore(id, section, indices); } finally { setRescoring(false); }
   });
   return { viewedJob, activeJob, draft, dirty: workflow.dirty, id, registry, template: selectedTemplate,
+    inheritedTemplate,
     setTemplate, rendering, rescoring, posting: state.workflow.posting,
     starting: state.workflow.starting, hasPosting: Boolean(posting),
     error: draft?.error || loadError || error || templateError || state.workflow.monitorError,

@@ -10,6 +10,7 @@ from .core.paths import StoragePaths
 from .services.application import ApplicationServices, OperationError
 from .api import cv_jobs, config, models, cv_data, submissions
 from src.outcomes import StageFailure
+from src.template_registry import TemplateError
 
 
 def create_app(*, paths=None, services=None):
@@ -37,6 +38,10 @@ def create_app(*, paths=None, services=None):
     @app.exception_handler(StageFailure)
     async def stage_error(request: Request, error: StageFailure):
         return JSONResponse(status_code=502, content={"detail": str(error)})
+
+    @app.exception_handler(TemplateError)
+    async def template_error(request: Request, error: TemplateError):
+        return JSONResponse(status_code=422, content={"detail": str(error)})
 
     @app.exception_handler(FileNotFoundError)
     async def missing(request: Request, error: FileNotFoundError):

@@ -9,7 +9,8 @@ from enum import Enum
 from uuid import uuid4
 from src.artifacts import Artifact
 from src.config import ModelConfig, RewritePolicy, AnalysisPolicy, OutputsConfig, BackendConfig
-from src.domain import CVData
+from src.domain import CVData, ContentFormat
+from src.latex_templates import RenderManifest
 
 
 class APIModel(BaseModel):
@@ -120,6 +121,7 @@ class ProcessingOutput(APIModel):
     result: CVJobResult
     job_analysis: JobAnalysis
     rendered_cv: Optional[CVData] = None
+    render_manifest: Optional[RenderManifest] = None
 
 
 class JobAnalysisResponse(APIModel):
@@ -152,9 +154,15 @@ class CVJobResponse(APIModel):
 
 class SectionFilterConfig(APIModel):
     """Per-section filtering thresholds."""
-    min_relevance_score: int = 3
-    min_items_keep: int = 1
-    max_items_keep: int = 6
+    min_relevance_score: int = Field(default=3, ge=0, le=10)
+    min_items_keep: int = Field(default=1, ge=0)
+    max_items_keep: int = Field(default=6, ge=0)
+
+    @model_validator(mode="after")
+    def valid_limits(self):
+        if self.min_items_keep > self.max_items_keep:
+            raise ValueError("minimum items cannot exceed maximum items")
+        return self
 
 
 class WorkingCopyItem(APIModel):
@@ -163,7 +171,7 @@ class WorkingCopyItem(APIModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     scored_text: Optional[str] = None
     original_text: str = ""
-    relevance_score: Optional[float] = None
+    relevance_score: Optional[float] = Field(default=None, ge=0, le=10)
     explanation: Optional[str] = None
     posting_evidence: Optional[str] = None
     kept: bool = True
@@ -175,7 +183,7 @@ class WorkingCopySection(APIModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     position: str = ""
     duration: str = ""
-    section_score: Optional[float] = None
+    section_score: Optional[float] = Field(default=None, ge=0, le=10)
     section_explanation: Optional[str] = None
     section_posting_evidence: Optional[str] = None
     filter_config: SectionFilterConfig = Field(default_factory=SectionFilterConfig)
@@ -186,9 +194,17 @@ class WorkingCopy(APIModel):
     """Working copy — an editable CV derived from an analysis result."""
     job_id: str
     personal_statement: str = ""
+    content_format: ContentFormat = "latex"
     sections: List[WorkingCopySection] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+    @model_validator(mode="after")
+    def unique_ids(self):
+        ids = [id for role in self.sections for id in (role.id, *(item.id for item in role.items))]
+        if any(not id.strip() for id in ids) or len(ids) != len(set(ids)):
+            raise ValueError("Working-copy role and bullet IDs must be nonempty and unique")
+        return self
 
 
 class RescoreItem(APIModel):
@@ -224,7 +240,7 @@ class RenderCVRequest(APIModel):
     min_relevance_score: int = Field(default=4, ge=0, le=10)
     min_section_items_keep: int = Field(default=1, ge=0)
     max_section_items_keep: int = Field(default=5, ge=0)
-    cv_template_id: str = "default_cv"
+    cv_template_id: Optional[str] = None
     cv_template_path: Optional[str] = None
     include_latex: bool = True
     render_pdf: bool = True
@@ -278,3 +294,4 @@ class RenderRecord(APIModel):
     working_copy: WorkingCopy
     scoring_snapshot: CVJobResult
     created_at: str
+    manifest: Optional[RenderManifest] = None

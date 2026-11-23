@@ -4,6 +4,7 @@ import type { ExperienceSection } from '../../types/cv';
 import type { CVVersionInfo } from '../../services/api';
 import { useCVVersion } from '../../hooks/useCVVersion';
 import { editText } from '../../domain/cvEditing';
+import { useUnsavedNavigation } from '../../hooks/useUnsavedNavigation';
 import './JobInputTab.css';
 
 const JobInputTab: React.FC = () => {
@@ -21,6 +22,10 @@ const JobInputTab: React.FC = () => {
   const [editingText, setEditingText] = useState('');
   const [isSavingCV, setIsSavingCV] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const originalText = editingItemId?.type === 'personal' ? cvData?.personal_statement :
+    cvData?.experience_sections[editingItemId?.sectionIdx ?? -1]?.text_items[editingItemId?.itemIdx ?? -1];
+  useUnsavedNavigation(Boolean(editingItemId && editingText !== originalText), isSavingCV);
+  useEffect(() => { setEditingItemId(null); setEditingText(''); }, [state.currentCVVersionId]);
 
   useEffect(() => {
     const selectedJob = state.jobDescriptions.find((job) => job.id === state.currentJobDescriptionId);
@@ -47,8 +52,6 @@ const JobInputTab: React.FC = () => {
   };
 
   const handleVersionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEditingItemId(null);
-    setEditingText('');
     dispatch({ type: 'SET_CURRENT_CV_VERSION', payload: e.target.value });
   };
 
@@ -162,18 +165,19 @@ Nice to have:
 
   // Editing handlers
   const handleEditPersonal = () => {
-    if (!cvData) return;
+    if (!cvData || isSavingCV) return;
     setEditingItemId({ type: 'personal' });
     setEditingText(cvData.personal_statement);
   };
 
   const handleEditItem = (sectionIdx: number, itemIdx: number, text: string) => {
+    if (isSavingCV) return;
     setEditingItemId({ type: 'experience', sectionIdx, itemIdx });
     setEditingText(text);
   };
 
   const handleSaveCVEdit = async () => {
-    if (!editingItemId || !cvData) return;
+    if (!editingItemId || !cvData || isSavingCV) return;
     
     const updated = editText(cvData, editingItemId, editingText);
     
@@ -225,6 +229,7 @@ Nice to have:
 
         <div className="cv-preview-section">
           <h2>2. Review CV Draft</h2>
+          {cvData && <p>CV text format: {cvData.content_format === 'plain_text' ? 'Plain text (escaped when rendering)' : 'Authored LaTeX (preserve commands and escape special characters)'}</p>}
           <div className="form-group">
             <label htmlFor="cvVersion">Using CV Version:</label>
             <select id="cvVersion" className="form-input" value={state.currentCVVersionId || 'master'} onChange={handleVersionChange} disabled={isSavingCV}>
@@ -239,9 +244,9 @@ Nice to have:
                <div className="preview-item">
                   {editingItemId?.type === 'personal' ? (
                     <div className="inline-edit">
-                      <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={4} />
+                      <textarea disabled={isSavingCV} value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={4} />
                       <div className="inline-actions">
-                        <button className="btn btn-xs" onClick={() => setEditingItemId(null)}>Cancel</button>
+                        <button className="btn btn-xs" disabled={isSavingCV} onClick={() => setEditingItemId(null)}>Cancel</button>
                         <button className="btn btn-xs btn-primary" onClick={handleSaveCVEdit} disabled={isSavingCV}>Save</button>
                       </div>
                     </div>
@@ -264,9 +269,9 @@ Nice to have:
                   <div key={iIdx} className="preview-item">
                     {editingItemId?.type === 'experience' && editingItemId?.sectionIdx === sIdx && editingItemId?.itemIdx === iIdx ? (
                       <div className="inline-edit">
-                        <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={3} />
+                        <textarea disabled={isSavingCV} value={editingText} onChange={(e) => setEditingText(e.target.value)} rows={3} />
                         <div className="inline-actions">
-                          <button className="btn btn-xs" onClick={() => setEditingItemId(null)}>Cancel</button>
+                          <button className="btn btn-xs" disabled={isSavingCV} onClick={() => setEditingItemId(null)}>Cancel</button>
                           <button className="btn btn-xs btn-primary" onClick={handleSaveCVEdit} disabled={isSavingCV}>Save</button>
                         </div>
                       </div>

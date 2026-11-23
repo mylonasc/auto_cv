@@ -10,11 +10,11 @@ import tempfile
 
 from src.config import BackendConfig, ModelConfig, PROVIDER_DEFAULTS, build_model, public_config
 from src.cv_storage import load_cv_file
-from src.template_registry import resolve_cv_templates
+from src.template_registry import apply_template_overrides
 from src.pipeline import analyze_cv
 from src.artifacts import render_artifacts
-from src.paths import project_root
 from src.cover_letter import CoverLetterModel, CoverLetterDrafter
+from src.rendering import materialize_resources
 
 
 def _make_parser():
@@ -64,7 +64,7 @@ async def run_pipeline(args):
     if output.exists():
         raise FileExistsError(f"Output already exists; choose a fresh directory: {output}")
     config = config_from_args(args)
-    source = resolve_cv_templates(load_cv_file(args.candidate_json, args.candidate_id),
+    source = apply_template_overrides(load_cv_file(args.candidate_json, args.candidate_id),
                                   cv_template_id=args.cv_template_id, cv_template_path=args.cv_template,
                                   motivation_template_id=args.motivation_template_id,
                                   motivation_template_path=args.motivation_template)
@@ -78,24 +78,22 @@ async def run_pipeline(args):
         render_artifacts(run.analyzer.render_document(True), folder, "test_after_edits",
                          include_latex=False, include_scoring_comments=True)
         render_artifacts(run.analyzer.render_document(), folder, "test_after_edits_nocomments", include_latex=False)
-        render_artifacts(run.analyzer.render_document(True), latex, "cv_edited_with_comments",
-                         render_pdf=False, include_scoring_comments=True)
-        render_artifacts(run.analyzer.render_document(), latex, "cv_edited_no_comments", render_pdf=False)
+        annotated = render_artifacts(run.analyzer.render_document(True), latex, "cv_edited_with_comments",
+                                     render_pdf=False, include_scoring_comments=True)
+        plain = render_artifacts(run.analyzer.render_document(), latex, "cv_edited_no_comments", render_pdf=False)
+        materialize_resources(annotated.resources, latex)
+        materialize_resources(plain.resources, latex)
         if config.outputs.include_cover_letter:
             model = build_model(config.cover_letter_editor_model)
             body = await CoverLetterDrafter(run.analyzer, model).get_cover_letter_text()
             letter = CoverLetterModel(motivation_template=run.source.motivation_letter_template)
             letter.set_data(datetime.now().strftime("%-d %B %Y"), args.company_name, body.replace("&", "\\&"),
                             args.candidate_name, args.prof_signature)
-            render_artifacts(letter, folder, "cover_letter_tmp", source="cover_letter")
+            rendered_letter = render_artifacts(letter, folder, "cover_letter_tmp", source="cover_letter")
+            materialize_resources(rendered_letter.resources, folder)
         (folder / "metrics_summary.txt").write_text(json.dumps(run.analyzer.get_section_aggregate_metrics()[0]))
         (folder / "effective_config.json").write_text(public_config(config).model_dump_json(indent=2))
         (folder / "job_post.txt").write_text(text, encoding="utf-8")
-        for cls in (project_root() / "assets").glob("resume*.cls"):
-            shutil.copy(cls, latex)
-        picture = project_root() / "assets/images/my_pic.jpeg"
-        if picture.exists():
-            shutil.copy(picture, latex)
         output.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(folder), str(output))
     print(f"Output written to {output}")

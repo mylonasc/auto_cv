@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import type * as API from '../../src/types/api.generated';
 import { jobToView, resultToView, workingCopyToAPI, workingCopyToView, configToAPI, configToView } from '../../src/services/mappers.ts';
 import { DEFAULT_BACKEND_CONFIG } from '../../src/types/api.generated.ts';
+import { formatScore } from '../../src/domain/formatting.ts';
+import { httpErrorMessage } from '../../src/services/errors.ts';
 
 // Also validated by Python against the real HTTP and SSE serializers.
 const job: API.CVJobResponse = JSON.parse(readFileSync(
@@ -23,6 +25,30 @@ test('HTTP and SSE snapshots preserve identity, analysis, evidence, zero scores 
   assert.equal(view.result?.experience_analysis[0].items[0].posting_evidence, 'Bullet evidence');
   assert.equal(view.result?.experience_analysis[0].items[0].kept, false);
   assert.deepEqual(view.result?.artifacts, job.result?.artifacts);
+});
+
+test('job mappings preserve saved source and effective configuration for rendering', () => {
+  const source: API.CVData = { candidate: { candidate_id: 'test', full_name: '', profile: {} },
+    schema_version: 1, content_format: 'plain_text', document: null, personal_statement: '', alternative_statements: [], experience_sections: [],
+    cv_template: { template_id: 'template2', template_path: null, revision: null, experience_section_title: 'Experience' },
+    motivation_letter_template: { template_id: 'default_motivation_letter', template_path: null } };
+  const view = jobToView({ ...job, cv_snapshot: source, cv_version_id: 'saved', effective_config: DEFAULT_BACKEND_CONFIG });
+  assert.deepEqual(view.sourceCV, source);
+  assert.equal(view.sourceVersion, 'saved');
+  assert.deepEqual(view.effectiveConfig, DEFAULT_BACKEND_CONFIG);
+});
+
+test('score formatting distinguishes missing analysis from a real zero', () => {
+  for (const value of [null, undefined, NaN, Infinity]) assert.equal(formatScore(value), 'N/A');
+  assert.equal(formatScore(0), '0.0');
+  assert.equal(formatScore(7.25), '7.3');
+});
+
+test('HTTP errors retain actionable template and validation details without dumping bodies', () => {
+  assert.equal(httpErrorMessage(422, { detail: 'Unknown template ID: typo' }, 'request failed'), 'HTTP 422: Unknown template ID: typo');
+  assert.equal(httpErrorMessage(422, { detail: [{ loc: ['body', 'sections', 0], msg: 'Invalid IDs' }] }, 'request failed'),
+    'HTTP 422: body.sections.0: Invalid IDs');
+  assert.equal(httpErrorMessage(500, { sensitive: 'do not dump arbitrary response bodies' }, 'request failed'), 'HTTP 500: request failed');
 });
 
 for (const status of ['failed', 'cancelled'] as const) {
@@ -54,7 +80,7 @@ test('missing metrics stay absent rather than inventing a succeeded result or jo
 
 test('working-copy mapping round-trips all editable and analysis fields', () => {
   const copy: API.WorkingCopy = {
-    job_id: job.id, personal_statement: 'Editable statement', created_at: null, updated_at: null,
+    job_id: job.id, personal_statement: 'Editable statement', content_format: 'plain_text', created_at: null, updated_at: null,
     sections: [{
       id: 'role-1',
       company: 'Example', position: 'Engineer', duration: '2020', section_score: 0,

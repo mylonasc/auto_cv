@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppState, type CVResultSection, type CVResultItem } from '../../contexts/AppStateContext';
 import ScoreVisualization from '../scoring/ScoreVisualization';
+import { formatScore } from '../../domain/formatting';
 import '../main/ResultsTab.css';
 
 const ResultsTab: React.FC = () => {
@@ -39,15 +40,15 @@ const ResultsTab: React.FC = () => {
         {metrics && (
           <div className="metrics-summary">
             <div className="metric-card">
-              <div className="metric-value">{Number(metrics.mean_section_relevance)?.toFixed(1) || 'N/A'}</div>
+              <div className="metric-value">{formatScore(metrics.mean_section_relevance)}</div>
               <div className="metric-label">Mean Relevance</div>
             </div>
             <div className="metric-card">
-              <div className="metric-value">{Number(metrics.weighted_mean_section_relevance)?.toFixed(1) || 'N/A'}</div>
+              <div className="metric-value">{formatScore(metrics.weighted_mean_section_relevance)}</div>
               <div className="metric-label">Weighted Relevance</div>
             </div>
             <div className="metric-card">
-              <div className="metric-value">{Number(metrics.conciseness_relevance_metric)?.toFixed(1) || 'N/A'}</div>
+              <div className="metric-value">{formatScore(metrics.conciseness_relevance_metric)}</div>
               <div className="metric-label">Conciseness Metric</div>
             </div>
           </div>
@@ -59,16 +60,16 @@ const ResultsTab: React.FC = () => {
           <h3>Experience Sections</h3>
           {experienceAnalysis.map((section: CVResultSection, index: number) => (
             <div 
-              key={index} 
-              className={`section-card ${selectedSection === (section.company || '') + (section.position || '') ? 'selected' : ''}`}
-              onClick={() => setSelectedSection((section.company || '') + (section.position || ''))}
+              key={section.id || `${viewedJob.jobId}:${index}`}
+              className={`section-card ${selectedSection === `${viewedJob.jobId}:${section.id || index}` ? 'selected' : ''}`}
+              onClick={() => setSelectedSection(`${viewedJob.jobId}:${section.id || index}`)}
             >
               <div className="section-header">
                 <h4>{section.company || '-'}</h4>
                 <span className="position">{section.position || '-'}</span>
               </div>
               <div className="section-score">
-                <ScoreVisualization score={section.section_score ?? 0} maxScore={10} />
+                {section.section_score == null ? 'N/A' : <ScoreVisualization score={section.section_score} maxScore={10} />}
               </div>
               <div className="items-count">
                 {section.items?.length || 0} items
@@ -81,11 +82,11 @@ const ResultsTab: React.FC = () => {
           <div className="section-details">
             <h3>Section Details</h3>
             {experienceAnalysis
-              .filter((section: CVResultSection) => ((section.company || '') + (section.position || '')) === selectedSection)
+              .filter((section: CVResultSection, index) => `${viewedJob.jobId}:${section.id || index}` === selectedSection)
               .map((section: CVResultSection, idx: number) => (
                 <div key={idx} className="section-detail-content">
                   <h4>{section.company} - {section.position}</h4>
-                  <p><strong>Section Score:</strong> {Number(section.section_score)?.toFixed(1)}/10</p>
+                  <p><strong>Section Score:</strong> {formatScore(section.section_score)}/10</p>
                   <div className="items-list">
                     <h5>Experience Items:</h5>
                     {section.items?.map((item: CVResultItem, itemIdx: number) => (
@@ -93,7 +94,7 @@ const ResultsTab: React.FC = () => {
                         <div className="item-text">{item.text}</div>
                         <div className="item-meta">
                           <span className="relevance-score">
-                            Relevance: {Number(item.relevance_score)?.toFixed(1)}/10
+                            Relevance: {formatScore(item.relevance_score)}/10
                           </span>
                           <span className="explanation">{item.explanation}</span>
                         </div>

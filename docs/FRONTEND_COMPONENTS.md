@@ -1,7 +1,8 @@
 # Frontend components and editing (RFK-09)
 
-The application remains one React/Vite frontend; no state, orchestration or
-validation framework was added.
+The application remains one React/Vite frontend; no state or orchestration
+framework was added. The template-boundary follow-up uses Ajv to validate JSON
+editing against the generated backend CV schema rather than a handwritten copy.
 
 ## Boundaries
 
@@ -9,8 +10,9 @@ validation framework was added.
   configuration, navigation and the application-owned workflow reducer.
 - `hooks/useWorkflow.ts` and `services/jobMonitor.ts`: execution commands and
   monitoring above conditional tabs. See [FRONTEND_WORKFLOW.md](FRONTEND_WORKFLOW.md).
-- `hooks/useProcessingControls.ts`: command-to-UI adaptation, selected render
-  template, working-copy loading, edit/filter commands and operation feedback.
+- `hooks/useProcessingControls.ts`: command-to-UI adaptation, working-copy loading,
+  edit/filter commands and operation feedback. Render template overrides are
+  application-owned, keyed by job; omission inherits its saved template.
 - `hooks/useCVVersion.ts`: shared source-version list/load/save/create/delete
   access for Job Input and CV Data Editor. Request generations reject late loads
   and save responses after selecting another version.
@@ -40,8 +42,17 @@ input cannot silently replace visual data or send a save. Valid JSON changes are
 applied before switching modes. Backend Pydantic validation remains authoritative.
 Saving disables source editing controls; source-version switching prompts before
 discarding dirty changes. Source editing is distinct from a result working copy.
-Source drafts remain tab-local; save before leaving the source editor or reloading
-the page. Per-result drafts retain the stronger per-job semantics from RFK-08.
+Source drafts remain tab-local, with a shared `useUnsavedNavigation` guard covering
+tab/version navigation, page unload, JSON drafts and unapplied text in both source
+editing paths. Cancelling navigation retains the draft; accepting explicitly
+discards it. Navigation is blocked while a source save is in flight. “Analyze
+Saved Version” explicitly opens analysis inputs, not an unsaved draft. Per-result
+drafts retain the stronger per-job semantics from RFK-08.
+
+JSON validation/defaults come from generated `CV_DATA_SCHEMA` and Ajv. Unknown
+nested/top-level fields fail before entering visual mode or issuing a save.
+Missing fields receive backend defaults, including legacy `content_format: latex`.
+See [TEMPLATES.md](TEMPLATES.md) for template contracts and text-format compatibility.
 
 ## Presentation ownership
 
