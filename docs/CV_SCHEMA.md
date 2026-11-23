@@ -15,7 +15,7 @@ active frontend. `candidate` contains metadata only; content has one location:
   "experience_sections": [
     {"company": "Example", "duration": "2020-2024", "position": "Engineer", "text_items": ["Experience"]}
   ],
-  "cv_template": {"template_id": "default_cv", "template_path": null, "revision": null, "experience_section_title": "Work Experience"},
+  "cv_template": {"template_id": "template2", "template_path": null, "revision": null, "experience_section_title": "Work Experience"},
   "motivation_letter_template": {"template_id": "default_motivation_letter", "template_path": null}
 }
 ```

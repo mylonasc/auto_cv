@@ -157,6 +157,23 @@ def test_both_outputs_use_exactly_one_expansion(tmp_path, monkeypatch, pdf_calls
     assert len(result.artifacts) == 2
 
 
+def test_pdf_artifacts_never_contain_scoring_comments(tmp_path, pdf_calls):
+    doc = document()
+    for role in doc.experience_section.doc_section_items:
+        role.set_comment('Role score 8')
+        for item in role.section_item_list:
+            item.set_comment('Bullet score 8 (80%)')
+    commented = doc.make_latex(include_scoring_comments=True)
+    assert r'\pdfcomment' in commented
+    result = render_artifacts(doc, tmp_path, 'reviewed', include_scoring_comments=True)
+    assert r'\pdfcomment' not in pdf_calls[-1].latex
+    tex = (tmp_path / 'reviewed.tex').read_text()
+    assert r'\pdfcomment' in tex and 'Bullet score 8' in tex
+    assert result.manifest.latex_sha256 == sha256(pdf_calls[-1].latex.encode()).hexdigest()
+    assert result.manifest.options['include_scoring_comments'] is True
+    assert len(result.artifacts) == 2
+
+
 def test_compiler_materializes_only_declared_snapshot_resources_and_uses_scratch_cwd(tmp_path, monkeypatch):
     from src import rendering
     from src.latex_templates import RenderResource

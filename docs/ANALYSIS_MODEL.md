@@ -34,10 +34,12 @@ Analysis metadata and PDF comments never affect weights or model prompts.
 
 Rendering receives explicit selection/content/template and comment options.
 `render_document(include_scoring_comments=True)` constructs a rendering copy with
-source-score annotations. `make_latex`/`render_pdf` also require an explicit
-`include_scoring_comments=True` to emit them. Plain-text annotations are escaped
-for LaTeX separately from source CV content, which may intentionally contain TeX.
-Stale bullet scores are never emitted as current annotations.
+source-score annotations. `make_latex(include_scoring_comments=True)` emits them
+into the LaTeX review artifact; rendered PDFs never contain scoring comments,
+regardless of the flag (`src/artifacts.py` expands the PDF without them and the
+commented expansion only for the `.tex` output). Plain-text annotations are
+escaped for LaTeX separately from source CV content, which may intentionally
+contain TeX. Stale bullet scores are never emitted as current annotations.
 
 `copy()` is now an ordinary deep content copy: IDs, comments and parent links are
 preserved, and template metadata is independent. Copying is no longer a hidden

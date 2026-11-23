@@ -23,7 +23,7 @@ class ExperienceSectionData(BaseModel):
 class CVTemplateData(BaseModel):
     """A portable template reference; an explicit path overrides its registry ID."""
     model_config = ConfigDict(extra="forbid")
-    template_id: str = "default_cv"
+    template_id: str = "template2"
     template_path: str | None = None
     revision: str | None = Field(default=None, pattern=TEMPLATE_REVISION_PATTERN)
     experience_section_title: str = "Work Experience"

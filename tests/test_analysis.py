@@ -154,6 +154,7 @@ def test_rescore_records_the_exact_scored_text_and_preserves_identity(client, jo
 
 
 def test_working_copy_comment_options_do_not_publish_stale_bullet_scores(client, pdf_calls, job_manager):
+    from pathlib import Path
     from server_application.backend.models.api_models import WorkingCopy, WorkingCopySection, WorkingCopyItem, JobStatus
 
     job = job_manager.create_job()
@@ -166,7 +167,13 @@ def test_working_copy_comment_options_do_not_publish_stale_bullet_scores(client,
         "working_copy": wc.model_dump(), "include_scoring_comments": True,
     })
     assert response.status_code == 200
-    content = pdf_calls[-1].latex
+    # Rendered PDFs never carry scoring comments, even when requested.
+    assert r'\pdfcomment' not in pdf_calls[-1].latex
+    assert 'Current evidence' not in pdf_calls[-1].latex
+    assert 'Stale evidence' not in pdf_calls[-1].latex
+    # The LaTeX review artifact keeps current (never stale) annotations.
+    tex = next(artifact for artifact in response.json()["result"]["artifacts"] if artifact["kind"] == "latex")
+    content = Path(tex["path"]).read_text(encoding="utf-8")
     assert r'\pdfcomment' in content
     assert 'Current evidence' in content
     assert 'Stale evidence' not in content

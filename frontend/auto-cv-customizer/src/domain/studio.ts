@@ -66,5 +66,5 @@ export function starterLabel(id: string): string {
 export function defaultStarter(cvTemplateId: string | undefined, registry: string[]): string {
   if (cvTemplateId && registry.includes(cvTemplateId)) return cvTemplateId;
   if (registry.includes('template2')) return 'template2';
-  return registry[0] ?? 'default_cv';
+  return registry[0] ?? 'template2';
 }

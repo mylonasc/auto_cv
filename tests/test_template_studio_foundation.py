@@ -185,6 +185,7 @@ def test_import_rejects_custom_path_unknown_template_and_reimport(source, import
 
 
 def test_modified_builtin_is_not_silently_parsed(source, tmp_path):
+    source.cv_template.template_id = 'default_cv'
     asset = tmp_path / 'assets/latex_cv_template_v0.tex'
     asset.parent.mkdir()
     asset.write_text((ROOT / 'assets/latex_cv_template_v0.tex').read_text() + '\n% modified\n')
@@ -194,8 +195,10 @@ def test_modified_builtin_is_not_silently_parsed(source, tmp_path):
     assert asset.read_bytes() == original
 
 
-def test_import_snapshots_mutable_class_resources_and_rejects_missing_classes(source, imported, tmp_path):
-    for logical in imported.package.imported_hashes:
+def test_import_snapshots_mutable_class_resources_and_rejects_missing_classes(source, tmp_path):
+    source.cv_template.template_id = 'default_cv'
+    isolated = import_builtin_template(source, root=ROOT, new_template_id='isolated_copy', name='Copy')
+    for logical in isolated.package.imported_hashes:
         target = tmp_path / logical
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((ROOT / logical).read_bytes())

@@ -53,7 +53,7 @@ test('JSON editor uses backend defaults for historical payloads and retains expl
   assert.equal(parsed.content_format, 'latex');
   assert.deepEqual(parsed.experience_sections, []);
   assert.deepEqual(parsed.candidate.profile, {});
-  assert.equal(parsed.cv_template.template_id, 'default_cv');
+  assert.equal(parsed.cv_template.template_id, 'template2');
   assert.equal(parseCVJSON(JSON.stringify({ ...source, content_format: 'plain_text' })).content_format, 'plain_text');
   assert.throws(() => parseCVJSON(JSON.stringify({ ...source, content_format: 'html' })), /canonical CV schema/);
 });

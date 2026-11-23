@@ -595,7 +595,7 @@ export const CV_DATA_SCHEMA = {
       "description": "A portable template reference; an explicit path overrides its registry ID.",
       "properties": {
         "template_id": {
-          "default": "default_cv",
+          "default": "template2",
           "title": "Template Id",
           "type": "string"
         },
@@ -1432,7 +1432,7 @@ export const CV_DATA_SCHEMA = {
     "cv_template": {
       "$ref": "#/$defs/CVTemplateData",
       "default": {
-        "template_id": "default_cv",
+        "template_id": "template2",
         "template_path": null,
         "revision": null,
         "experience_section_title": "Work Experience"

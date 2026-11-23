@@ -58,5 +58,5 @@ test('starter selection prefers the wide template and falls back to the registry
   assert.equal(defaultStarter('default_cv', ['default_cv', 'template2']), 'default_cv');
   assert.equal(defaultStarter('gone', ['default_cv', 'template2']), 'template2');
   assert.equal(defaultStarter(undefined, ['default_cv']), 'default_cv');
-  assert.equal(defaultStarter(undefined, []), 'default_cv');
+  assert.equal(defaultStarter(undefined, []), 'template2');
 });

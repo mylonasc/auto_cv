@@ -28,7 +28,7 @@ export default function ProcessingTab() {
     <section className="rewrite-controls-card"><h3>Stage 4: CV PDF Rendering</h3>
       <p>Render new artifacts from existing analysis using current filtering and selected template.</p>
       <label>CV template<select aria-label="CV template" disabled={!c.id} value={c.template} onChange={event => c.setTemplate(event.target.value)}>
-        <option value="">Use saved template ({c.inheritedTemplate?.template_id || 'default_cv'}{c.inheritedTemplate?.template_path ? ' · explicit path' : ''})</option>
+        <option value="">Use saved template ({c.inheritedTemplate?.template_id || 'template2'}{c.inheritedTemplate?.template_path ? ' · explicit path' : ''})</option>
         {c.template && !(c.template in c.registry.cv_templates) && <option value={c.template}>{c.template} (unavailable)</option>}
         {Object.keys(c.registry.cv_templates).map(id => <option key={id} value={id}>{id}</option>)}</select></label>
       <Button variant="primary" onClick={() => c.render(false)} disabled={c.rendering || !c.viewedJob?.result}>

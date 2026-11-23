@@ -45,23 +45,28 @@ def render_artifacts(document, directory, stem, *, render_pdf=True, include_late
             raise StageFailure("artifact_render", stem, FileExistsError("Output already exists"))
     if not outputs:
         return RenderOutput([], None)
+    # Scoring comments are review metadata for the LaTeX source only. Rendered
+    # PDFs never contain them, regardless of the requested flag.
     try:
-        prepared = document.prepare_latex(include_scoring_comments=include_scoring_comments)
+        pdf_prepared = document.prepare_latex(include_scoring_comments=False)
+        tex_prepared = (document.prepare_latex(include_scoring_comments=True)
+                        if include_latex and include_scoring_comments else pdf_prepared)
     except TemplateError:
         raise
     except Exception as error:
         raise StageFailure("latex_render", stem, error) from error
+    prepared = {"pdf": pdf_prepared, "latex": tex_prepared}
     result = []
     created = []
     try:
         for kind, path in outputs:
             created.append(path)
             if kind == "pdf":
-                rendering.latex_to_pdf(prepared.latex, str(path), resources=prepared.resources)
+                rendering.latex_to_pdf(prepared["pdf"].latex, str(path), resources=prepared["pdf"].resources)
                 if not path.is_file() or path.stat().st_size == 0:
                     raise RuntimeError("PDF rendering did not produce a nonempty artifact")
             else:
-                atomic_write_bytes(path, prepared.latex.encode("utf-8"))
+                atomic_write_bytes(path, prepared["latex"].latex.encode("utf-8"))
             result.append({"id": f"{kind}_{uuid4().hex}", "kind": kind, "filename": path.name,
                            "path": str(path), "source": source})
     except Exception as error:
@@ -71,6 +76,10 @@ def render_artifacts(document, directory, stem, *, render_pdf=True, include_late
         if isinstance(error, StageFailure):
             raise
         raise StageFailure("pdf_render" if kind == "pdf" else "latex_render", stem, error) from error
-    manifest = prepared.manifest.model_copy(update={"options": {**prepared.manifest.options,
-        "render_pdf": render_pdf, "include_latex": include_latex, "source": source}})
-    return RenderOutput(result, manifest, prepared.resources)
+    # The manifest describes the PDF expansion when a PDF was rendered and the
+    # LaTeX expansion otherwise; options retain the requested .tex choice.
+    manifest = (pdf_prepared if render_pdf else tex_prepared).manifest
+    manifest = manifest.model_copy(update={"options": {**manifest.options,
+        "render_pdf": render_pdf, "include_latex": include_latex,
+        "include_scoring_comments": include_scoring_comments, "source": source}})
+    return RenderOutput(result, manifest, (pdf_prepared if render_pdf else tex_prepared).resources)
