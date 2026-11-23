@@ -9,7 +9,17 @@ from .template_registry import TemplateError
 
 class PackageLayout(DocumentLayout):
     def __init__(self, package, content_format):
-        self.fragments = {name: package.files[path] for name, path in package.fragments.model_dump().items()}
+        self.fragments = {name: package.files[path] for name, path in package.fragments.model_dump().items()
+                          if path is not None}
+        self.content_format = content_format
+
+    def fragment(self, name, values):
+        from .latex_templates import expand
+        try:
+            text = self.fragments[name]
+        except KeyError:
+            raise TemplateError(f"Managed package predates the {name!r} fragment; re-import the starter to use it") from None
+        return expand(text, values, context=f"managed fragment {name}")
         self.content_format = content_format
 
 
@@ -31,6 +41,46 @@ def prepare_composed(document, package: TemplatePackage, *, include_scoring_comm
                 layout.role(role, include_scoring_comments) for role in document.experience_section.doc_section_items)})
         elif section.kind == 'latex':
             body = section.latex
+        elif section.kind == 'education':
+            rendered = []
+            for entry in section.entries:
+                if not entry.enabled:
+                    continue
+                rendered.append(layout.fragment('education_entry', {
+                    'institution': layout.text(entry.institution), 'dates': layout.text(entry.dates),
+                    'degree': layout.text(entry.degree),
+                    'details': ''.join('\n      \\newline\n      ' + layout.text(line) for line in entry.details)}))
+            inner = layout.fragment('education', {'entries': '\n\\vspace{-0.65cm}\n'.join(rendered)})
+            body = layout.fragment('section', {'title': title, 'body': inner})
+        elif section.kind == 'skills':
+            rated, plain = [], []
+            for group in section.groups:
+                if not group.enabled:
+                    continue
+                if group.rating is None:
+                    plain.append(layout.fragment('skill_plain', {
+                        'name': layout.text(group.name), 'items': layout.text(group.items)}))
+                else:
+                    dots = ' '.join(['\\bcirc'] * group.rating + ['\\wcirc'] * (6 - group.rating))
+                    rated.append(layout.fragment('skill_rated', {
+                        'name': layout.text(group.name), 'items': layout.text(group.items),
+                        'dots': dots}))
+            parts = []
+            if rated:
+                parts.append(layout.fragment('skill_rated_table', {'rows': '\n'.join(rated)}))
+            parts.extend(plain)
+            inner = layout.fragment('skills', {'content': '\n\\newline\n\\newline\n'.join(parts)})
+            body = layout.fragment('section', {'title': title, 'body': inner})
+        elif section.kind == 'item_groups':
+            rendered = []
+            for group in section.groups:
+                if not group.enabled:
+                    continue
+                rendered.append(layout.fragment('item_group', {
+                    'title': layout.text(group.title),
+                    'items': ''.join('\\item ' + layout.text(line) + '\n' for line in group.items)}))
+            inner = layout.fragment('item_groups', {'entries': '\n\n'.join(rendered)})
+            body = layout.fragment('section', {'title': title, 'body': inner})
         else:
             entries = []
             for item in section.entries:

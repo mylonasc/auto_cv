@@ -121,3 +121,45 @@ def test_wide_starter_bullets_start_left_of_classic(tmp_path, monkeypatch):
             xmin[template_id] = first_bullet_xmin(bbox_xml(pdf))
     assert xmin["template2"] < xmin["default_cv"], xmin
     print(f"\nfirst-bullet xMin: classic={xmin['default_cv']:.1f}pt wide={xmin['template2']:.1f}pt")
+
+
+def _ordered_words(pdf: Path) -> list[str]:
+    import xml.etree.ElementTree as ET
+    root = ET.fromstring(bbox_xml(pdf))
+    return ["".join(word.itertext()) for page in root.findall(".//{*}page") for word in page.findall("{*}word")]
+
+
+@pytest.mark.parametrize("template_id,label", RUNS)
+def test_structured_import_renders_identical_words_to_legacy(template_id, label, tmp_path, monkeypatch):
+    """Structured sections must preserve every word in order versus legacy."""
+    from src.documents import FullCVDocument
+    from src.rendering import materialize_resources
+    datastore = Path(os.environ.get("AUTO_CV_DATA_ROOT", tmp_path / "data"))
+    monkeypatch.setenv("AUTO_CV_DATA_ROOT", str(datastore))
+    source = representative_cv(template_id)
+    words = {}
+    for variant in ("structured", "legacy"):
+        if variant == "legacy":
+            # Identical content through the historical path: no composition,
+            # no managed revision, registry-resolved entry and fragments.
+            legacy_cv = source.model_copy(deep=True)
+            assert legacy_cv.document is None and legacy_cv.cv_template.revision is None
+            prepared = FullCVDocument.from_cv(legacy_cv).prepare_latex()
+        else:
+            cv = source.model_copy(deep=True)
+            draft = import_builtin_template(cv, root=ROOT, new_template_id="visual", name="Visual")
+            from src.composed_rendering import prepare_composed
+            prepared = prepare_composed(FullCVDocument.from_cv(draft.cv), draft.package)
+        with tempfile.TemporaryDirectory(prefix="auto_cv_visual_", dir="/tmp/opencode") as folder:
+            folder = Path(folder)
+            (folder / "temp.tex").write_text(prepared.latex)
+            materialize_resources(prepared.resources, folder)
+            subprocess.run(["xelatex", "-no-shell-escape", "-file-line-error",
+                            "-interaction=nonstopmode", "-halt-on-error",
+                            "-output-directory", str(folder), "temp.tex"],
+                           capture_output=True, cwd=folder, check=True, timeout=120)
+            words[variant] = _ordered_words(folder / "temp.pdf")
+            (folder / "temp.pdf").unlink(missing_ok=True)
+    assert words["structured"] == words["legacy"], (
+        f"{template_id}: structured import changed rendered words")
+    print(f"\n[{template_id}] structured render preserves all {len(words['structured'])} words in order")

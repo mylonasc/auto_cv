@@ -61,13 +61,56 @@ class PublicationListSection(SectionBase):
     entries: list[PublicationEntry] = Field(default_factory=list, max_length=200)
 
 
+class EducationEntry(CompositionModel):
+    """One structured education record; rendered through the education fragment."""
+    id: Identifier
+    institution: str = Field(min_length=1, max_length=300)
+    dates: str = Field(default="", max_length=200)
+    degree: str = Field(default="", max_length=1000)
+    details: list[Annotated[str, Field(max_length=5000)]] = Field(default_factory=list, max_length=20)
+    enabled: bool = True
+
+
+class EducationSection(SectionBase):
+    kind: Literal["education"]
+    entries: list[EducationEntry] = Field(default_factory=list, max_length=50)
+
+
+class SkillGroup(CompositionModel):
+    """One skill row; a null rating renders a plain row without dots."""
+    id: Identifier
+    name: str = Field(min_length=1, max_length=300)
+    items: str = Field(default="", max_length=5000)
+    rating: Annotated[int, Field(ge=0, le=6)] | None = Field(default=None)
+    enabled: bool = True
+
+
+class SkillsSection(SectionBase):
+    kind: Literal["skills"]
+    groups: list[SkillGroup] = Field(default_factory=list, max_length=50)
+
+
+class ItemGroup(CompositionModel):
+    """One titled bullet group, rendered through the item_group fragment."""
+    id: Identifier
+    title: str = Field(min_length=1, max_length=300)
+    items: list[Annotated[str, Field(max_length=5000)]] = Field(default_factory=list, max_length=100)
+    enabled: bool = True
+
+
+class ItemGroupsSection(SectionBase):
+    kind: Literal["item_groups"]
+    groups: list[ItemGroup] = Field(default_factory=list, max_length=50)
+
+
 class LatexSection(SectionBase):
     kind: Literal["latex"]
     latex: str = Field(default="", max_length=262144)
 
 
 DocumentSection = Annotated[
-    StatementSection | ExperienceSection | EntryListSection | PublicationListSection | LatexSection,
+    StatementSection | ExperienceSection | EntryListSection | PublicationListSection
+    | EducationSection | SkillsSection | ItemGroupsSection | LatexSection,
     Field(discriminator="kind"),
 ]
 
@@ -85,8 +128,10 @@ class DocumentComposition(CompositionModel):
             ids.append(section.id)
             if isinstance(section, (StatementSection, ExperienceSection)):
                 bindings.append(section.kind)
-            if isinstance(section, (EntryListSection, PublicationListSection)):
+            if isinstance(section, (EntryListSection, PublicationListSection, EducationSection)):
                 ids.extend(entry.id for entry in section.entries)
+            if isinstance(section, (SkillsSection, ItemGroupsSection)):
+                ids.extend(group.id for group in section.groups)
         if len(ids) != len(set(ids)):
             raise ValueError("Composition section and entry IDs must be globally unique")
         if len(bindings) != len(set(bindings)):

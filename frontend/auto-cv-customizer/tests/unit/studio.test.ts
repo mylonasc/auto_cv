@@ -33,6 +33,15 @@ test('ordering is immutable and duplication creates distinct section and entry I
   assert.notEqual(duplicate.id, section.id);
   assert.equal(duplicate.kind, 'entries');
   if (duplicate.kind === 'entries') assert.notEqual(duplicate.entries[0].id, section.entries[0].id);
+  const skills = { kind: 'skills' as const, id: 's', title: 'Skills', enabled: true, page_break_before: false,
+    groups: [{ id: 'g', name: 'Lang', items: 'A', rating: 3 as number | null, enabled: true }] };
+  const duplicateSkills = duplicateSection(skills, () => `new-${++n}`);
+  assert.notEqual(duplicateSkills.id, skills.id);
+  assert.equal(duplicateSkills.kind, 'skills');
+  if (duplicateSkills.kind === 'skills') {
+    assert.notEqual(duplicateSkills.groups[0].id, skills.groups[0].id);
+    assert.equal(duplicateSkills.groups[0].rating, 3);
+  }
   assert.throws(() => duplicateSection(studioDraft().cv.document!.sections[0], () => 'no'));
 });
 

@@ -48,7 +48,10 @@ export function move<T>(items: T[], index: number, delta: number): T[] {
 }
 export function duplicateSection(section: NonNullable<CVData['document']>['sections'][number], id: () => string) {
   if (section.kind === 'statement' || section.kind === 'experience') throw new Error('Bindings cannot be duplicated');
-  return { ...section, id: id(), title: `${section.title} copy`, ...('entries' in section ? { entries: section.entries.map(entry => ({ ...entry, id: id() })) } : {}) } as typeof section;
+  const copy = { ...section, id: id(), title: `${section.title} copy` };
+  if ('entries' in section) return { ...copy, entries: section.entries.map(entry => ({ ...entry, id: id() })) } as typeof section;
+  if ('groups' in section) return { ...copy, groups: section.groups.map(group => ({ ...group, id: id() })) } as typeof section;
+  return copy as typeof section;
 }
 
 const STARTER_LABELS: Record<string, string> = {

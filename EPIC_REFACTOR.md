@@ -766,6 +766,14 @@ overfulls, one classic font substitution) are recorded in
 `docs/TEMPLATE_STUDIO.md` as follow-ups. Docker execution of the new checks is
 unverified; #22 stays open for final acceptance.
 
+Template follow-ups on the epic branch: starter LaTeX simplified without
+layout change (`df593b0`: dead comments/blocks removed, render-identical word
+boxes verified); structural header/skills overfulls and the small-caps font
+substitution fixed (`248f9b6`); education/skills/other-information import as
+structured, editable, template-rendered sections with raw fallback and no
+migration of existing drafts (this change). Contact header and publications
+stay raw by design; contact canonicalization remains TD-02 in #16.
+
 ## Completion policy
 
 Each task must have a GitHub child issue attached to the parent epic and native

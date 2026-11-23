@@ -4,11 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from src.composition import EntryListSection, ProjectEntry, PublicationListSection, PublicationEntry
+from src.composition import (EducationEntry, EducationSection, EntryListSection, ItemGroup, ItemGroupsSection,
+    ProjectEntry, PublicationListSection, PublicationEntry, SkillGroup, SkillsSection)
 from src.domain import CVData, CandidateMetadata, ExperienceSectionData
 from src.documents import FullCVDocument
 from src.template_import import import_builtin_template
 from src.template_package import package_revision
+from src.template_registry import TemplateError
 from tests.helpers import wait_for_job
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +71,49 @@ def test_imported_role_fragment_preserves_empty_role_without_empty_list(composed
     text = FullCVDocument.from_cv(composed.cv, template_catalog=services.templates).make_latex()
     assert r'\if\relax\detokenize{}\relax' in text
     assert r'\textbf{Company}' in text
+
+
+def test_structured_sections_render_order_visibility_escaping_and_layout(composed, services):
+    sections = composed.cv.document.sections
+    sections.append(EducationSection(kind='education', id='schools', title='Education & training',
+        entries=[EducationEntry(id='s1', institution='Example & Uni', dates='2020', degree='Ph.D. \\textit{Field}',
+                                        details=['Advisor: Prof. X & Co.']),
+                         EducationEntry(id='hidden-school', institution='Hidden', enabled=False)]))
+    sections.append(SkillsSection(kind='skills', id='skills-extra', title='Extra skills',
+        groups=[SkillGroup(id='g1', name='Lang & tools', items='A & B', rating=3),
+                SkillGroup(id='g2', name='Plain skill', items='Just text')]))
+    sections.append(ItemGroupsSection(kind='item_groups', id='service', title='Service',
+        page_break_before=True,
+        groups=[ItemGroup(id='service-group-1', title='Roles & duties', items=['Did 100% of X'])]))
+    text = FullCVDocument.from_cv(composed.cv, template_catalog=services.templates).make_latex()
+    assert text.index('Education \\& training') < text.index('Extra skills') < text.index('Service')
+    assert 'Hidden' not in text
+    # Authored LaTeX passes through in latex mode...
+    assert r'Example & Uni' in text and 'Advisor: Prof. X & Co.' in text
+    assert r'Ph.D. \textit{Field}' in text
+    assert r'Roles & duties' in text and r'Did 100% of X' in text
+    # ...and is escaped exactly once in plain-text mode.
+    plain = composed.cv.model_copy(deep=True)
+    plain.content_format = 'plain_text'
+    plain_text = FullCVDocument.from_cv(plain, template_catalog=services.templates).make_latex()
+    assert r'Example \& Uni' in plain_text and r'Did 100\% of X' in plain_text
+    assert r'\textbackslash{}textit' in plain_text
+    region = text.split('Extra skills')[1].split('Service')[0]
+    assert region.count('\\bcirc') == 3 and region.count('\\wcirc') == 3
+    assert '   \\bf{Lang & tools}&  A & B & \\bcirc \\bcirc \\bcirc \\wcirc \\wcirc \\wcirc \\\\' in text
+    assert 'Plain skill' in text and 'Just text' in text
+    assert sections[-1].page_break_before and '\\newpage\n' in text
+    # Missing structured fragments fail closed instead of rendering raw text.
+    import types
+    broken = composed.package.model_copy(deep=True)
+    broken.fragments.education_entry = None
+    broken.files.pop('fragments/education_entry.tex')
+    from src.template_package import package_revision as revision
+    broken_cv = composed.cv.model_copy(deep=True)
+    broken_cv.cv_template.revision = revision(broken)
+    fake_catalog = types.SimpleNamespace(get=lambda reference: broken)
+    with pytest.raises(TemplateError, match='education_entry'):
+        FullCVDocument.from_cv(broken_cv, template_catalog=fake_catalog).prepare_latex()
 
 
 def test_document_export_retains_composition_and_pin(composed, services, tmp_path):

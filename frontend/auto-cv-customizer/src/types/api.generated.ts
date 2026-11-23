@@ -97,6 +97,14 @@ export interface ComposedFragments {
   entry: string;
   publications: string;
   publication: string;
+  education: string | null;
+  education_entry: string | null;
+  skills: string | null;
+  skill_rated_table: string | null;
+  skill_rated: string | null;
+  skill_plain: string | null;
+  item_groups: string | null;
+  item_group: string | null;
 }
 
 export interface CreateJobRequest {
@@ -109,7 +117,25 @@ export interface CreateJobRequest {
 export interface DocumentComposition {
   format_version: 1;
   header_latex: string;
-  sections: Array<StatementSection | ExperienceSection | EntryListSection | PublicationListSection | LatexSection>;
+  sections: Array<StatementSection | ExperienceSection | EntryListSection | PublicationListSection | EducationSection | SkillsSection | ItemGroupsSection | LatexSection>;
+}
+
+export interface EducationEntry {
+  id: string;
+  institution: string;
+  dates: string;
+  degree: string;
+  details: Array<string>;
+  enabled: boolean;
+}
+
+export interface EducationSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "education";
+  entries: Array<EducationEntry>;
 }
 
 export interface EntryListSection {
@@ -148,6 +174,22 @@ export interface IndustryJobAnalysis {
   job_title?: string;
   business_skills?: number;
   hands_on_skills?: number;
+}
+
+export interface ItemGroup {
+  id: string;
+  title: string;
+  items: Array<string>;
+  enabled: boolean;
+}
+
+export interface ItemGroupsSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "item_groups";
+  groups: Array<ItemGroup>;
 }
 
 export interface JobAnalysis {
@@ -330,6 +372,23 @@ export interface SectionResult {
   posting_evidence: string | null;
   items: Array<ResultItem>;
   aggregate_score: number | null;
+}
+
+export interface SkillGroup {
+  id: string;
+  name: string;
+  items: string;
+  rating: number | null;
+  enabled: boolean;
+}
+
+export interface SkillsSection {
+  id: string;
+  title: string;
+  enabled: boolean;
+  page_break_before: boolean;
+  kind: "skills";
+  groups: Array<SkillGroup>;
 }
 
 export interface StatementSection {
@@ -614,6 +673,15 @@ export const CV_DATA_SCHEMA = {
                 "$ref": "#/$defs/PublicationListSection"
               },
               {
+                "$ref": "#/$defs/EducationSection"
+              },
+              {
+                "$ref": "#/$defs/SkillsSection"
+              },
+              {
+                "$ref": "#/$defs/ItemGroupsSection"
+              },
+              {
                 "$ref": "#/$defs/LatexSection"
               }
             ],
@@ -626,6 +694,103 @@ export const CV_DATA_SCHEMA = {
         }
       },
       "title": "DocumentComposition",
+      "type": "object"
+    },
+    "EducationEntry": {
+      "additionalProperties": false,
+      "description": "One structured education record; rendered through the education fragment.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "institution": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Institution",
+          "type": "string"
+        },
+        "dates": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Dates",
+          "type": "string"
+        },
+        "degree": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Degree",
+          "type": "string"
+        },
+        "details": {
+          "items": {
+            "maxLength": 5000,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Details",
+          "type": "array",
+          "default": []
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "institution"
+      ],
+      "title": "EducationEntry",
+      "type": "object"
+    },
+    "EducationSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "education",
+          "title": "Kind",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/EducationEntry"
+          },
+          "maxItems": 50,
+          "title": "Entries",
+          "type": "array",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "EducationSection",
       "type": "object"
     },
     "EntryListSection": {
@@ -744,6 +909,91 @@ export const CV_DATA_SCHEMA = {
         "text_items"
       ],
       "title": "ExperienceSectionData",
+      "type": "object"
+    },
+    "ItemGroup": {
+      "additionalProperties": false,
+      "description": "One titled bullet group, rendered through the item_group fragment.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "maxLength": 5000,
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array",
+          "default": []
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "ItemGroup",
+      "type": "object"
+    },
+    "ItemGroupsSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "item_groups",
+          "title": "Kind",
+          "type": "string"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/ItemGroup"
+          },
+          "maxItems": 50,
+          "title": "Groups",
+          "type": "array",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "ItemGroupsSection",
       "type": "object"
     },
     "LatexSection": {
@@ -970,6 +1220,101 @@ export const CV_DATA_SCHEMA = {
         "kind"
       ],
       "title": "PublicationListSection",
+      "type": "object"
+    },
+    "SkillGroup": {
+      "additionalProperties": false,
+      "description": "One skill row; a null rating renders a plain row without dots.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "items": {
+          "default": "",
+          "maxLength": 5000,
+          "title": "Items",
+          "type": "string"
+        },
+        "rating": {
+          "anyOf": [
+            {
+              "maximum": 6,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rating"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "SkillGroup",
+      "type": "object"
+    },
+    "SkillsSection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "page_break_before": {
+          "default": false,
+          "title": "Page Break Before",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "skills",
+          "title": "Kind",
+          "type": "string"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/SkillGroup"
+          },
+          "maxItems": 50,
+          "title": "Groups",
+          "type": "array",
+          "default": []
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "SkillsSection",
       "type": "object"
     },
     "StatementSection": {

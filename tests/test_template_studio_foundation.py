@@ -147,7 +147,22 @@ def test_import_is_an_independent_draft_preserving_all_static_bytes(source, id):
     assert draft.cv.cv_template.template_id == 'new_template'
     text = original.decode('utf-8')
     static = text.split('<experience_section>', 1)[1].rsplit(r'\end{document}', 1)[0]
-    assert ''.join(section.latex for section in draft.cv.document.sections[2:]) == static
+    sections = draft.cv.document.sections
+    assert [section.kind for section in sections] == ['statement', 'experience', 'education', 'skills',
+                                                      'item_groups', 'latex']
+    assert [section.id for section in sections] == ['about', 'experience', 'education', 'skills',
+                                                    'other_information', 'publications']
+    assert sections[2].page_break_before is True
+    assert [entry.institution for entry in sections[2].entries] == ['ETH Zurich', 'ETH Zurich']
+    assert sections[2].entries[0].details == ['Advisor: Prof. Eleni Chatzi']
+    assert [(group.name, group.rating) for group in sections[3].groups] == [
+        ('Programming', 6), ('Languages', 4),
+        ('Other software {development} {skills}', None), ('Deep Learning', None)]
+    assert [group.title for group in sections[4].groups] == [
+        'Teaching assistant roles', 'Other academic engagements', 'Distinctions and certificates']
+    assert sum(len(group.items) for group in sections[4].groups) == 7
+    # Publications stay preserved raw LaTeX, never guessed into structured rows.
+    assert sections[5].latex == static[static.index('\n\\begin{rSection}{Selected Publications}'):]
     assert draft.cv.document.header_latex == text[text.index(r'\name{'):text.index(r'\begin{document}')]
     shell = draft.package.files['main.tex']
     assert '<header>' in shell and '<sections>' in shell

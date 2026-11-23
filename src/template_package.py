@@ -63,6 +63,16 @@ class ComposedFragments(PackageModel):
     entry: str
     publications: str
     publication: str
+    # Structured-section fragments are optional so revisions saved before they
+    # existed remain readable; rendering a new kind without its fragment fails.
+    education: str | None = None
+    education_entry: str | None = None
+    skills: str | None = None
+    skill_rated_table: str | None = None
+    skill_rated: str | None = None
+    skill_plain: str | None = None
+    item_groups: str | None = None
+    item_group: str | None = None
 
 
 FRAGMENT_FIELDS = {
@@ -75,6 +85,14 @@ FRAGMENT_FIELDS = {
     "entry": ("name", "description", "technologies", "url", "bullets"),
     "publications": ("entries",),
     "publication": ("authors", "title", "venue", "year", "url"),
+    "education": ("entries",),
+    "education_entry": ("institution", "dates", "degree", "details"),
+    "skills": ("content",),
+    "skill_rated_table": ("rows",),
+    "skill_rated": ("name", "items", "dots"),
+    "skill_plain": ("name", "items"),
+    "item_groups": ("entries",),
+    "item_group": ("title", "items"),
 }
 
 
@@ -117,6 +135,8 @@ class TemplatePackage(PackageModel):
         if shell.count("<header>") != 1 or shell.count("<sections>") != 1:
             raise ValueError("Managed shell must bind header and sections exactly once")
         for field, path in self.fragments.model_dump().items():
+            if path is None:
+                continue  # Pre-structured revisions simply lack the new kinds.
             if path not in self.files:
                 raise ValueError(f"Fragment {field!r} must name a managed text file")
             expand(self.files[path], dict.fromkeys(FRAGMENT_FIELDS[field], ''), context=f"managed fragment {field}")

@@ -13,6 +13,7 @@ import re
 
 from .composition import DocumentComposition, StatementSection, ExperienceSection, LatexSection
 from .domain import CVData, CVTemplateData
+from .static_parse import parse_education, parse_item_groups, parse_skills
 from .template_package import (TemplatePackage, ComposedFragments, BinaryAsset, TEXT_EXTENSIONS,
                                logical_filename, package_revision)
 from .template_registry import TemplateError, parse_template_definitions
@@ -85,11 +86,22 @@ def import_builtin_template(cv: CVData, *, root: Path, new_template_id: str, nam
     boundaries = (0, technical, other, publications, len(static))
     labels = (('education', 'Education'), ('strengths', 'Technical Strengths'),
               ('other_information', 'Other Information'), ('publications', 'Selected Publications'))
+    blocks = {}
+    for index, (section_id, title) in enumerate(labels):
+        blocks[section_id] = static[boundaries[index]:boundaries[index + 1]]
+
+    def raw(section_id, title):
+        return LatexSection(kind='latex', id=section_id, title=title, latex=blocks[section_id])
+
+    education = parse_education(blocks['education']) or raw('education', 'Education')
+    skills = parse_skills(blocks['strengths']) or raw('strengths', 'Technical Strengths')
+    other = parse_item_groups(blocks['other_information'], section_id='other_information',
+                              title='Other Information') or raw('other_information', 'Other Information')
     composition = DocumentComposition(header_latex=source[header_start:document_start], sections=[
         StatementSection(kind='statement', id='about', title='About'),
         ExperienceSection(kind='experience', id='experience', title=cv.cv_template.experience_section_title),
-        *(LatexSection(kind='latex', id=section_id, title=title, latex=static[boundaries[index]:boundaries[index + 1]])
-          for index, (section_id, title) in enumerate(labels)),
+        education, skills, other,
+        raw('publications', 'Selected Publications'),
     ])
     files = {
         'main.tex': source[:header_start] + '<header>' + begin + source[document_start + len(begin):statement_start]
@@ -109,6 +121,14 @@ def import_builtin_template(cv: CVData, *, root: Path, new_template_id: str, nam
                                 '\\begin{itemize}\n<bullets>\\end{itemize}\n\\fi\n',
         'fragments/publications.tex': '<entries>',
         'fragments/publication.tex': '<authors> (<year>). \\textit{<title>}. <venue>. <url>\\par\n',
+        'fragments/education.tex': '<entries>',
+        'fragments/education_entry.tex': '\\begin{myrSubsectionEmpty2}{{\\bf <institution>}}{<dates>}{<degree><details>}\n\\end{myrSubsectionEmpty2}',
+        'fragments/skills.tex': '<content>\n\\vspace{-10.0pt}',
+        'fragments/skill_rated_table.tex': '\\begin{tabular}{p{0.18\\linewidth}  p{0.24\\linewidth}  @{\\hspace{4ex}} p{0.50\\linewidth}}\n<rows>\\end{tabular}',
+        'fragments/skill_rated.tex': '   \\bf{<name>}&  <items> & <dots> \\\\',
+        'fragments/skill_plain.tex': '\\begin{tabular}{p{0.2\\linewidth}  p{0.76\\linewidth} }\n     {\\bf <name> } & <items> \\\\\n      \\,\n   \\end{tabular}',
+        'fragments/item_groups.tex': '<entries>',
+        'fragments/item_group.tex': '\\begin{rSubsection}{{\\,\\,\\,<title>}}{}{}{}\n<items>\\end{rSubsection}',
     })
     assets = {}
     for destination, path in definition.resources.items():
@@ -125,7 +145,9 @@ def import_builtin_template(cv: CVData, *, root: Path, new_template_id: str, nam
         raise TemplateError('Built-in registry is missing a required class resource; refusing an incomplete import')
     package = TemplatePackage(template_id=new_template_id, name=name, entrypoint='main.tex',
         files=files, assets=assets, fragments=ComposedFragments(**{key: f'fragments/{key}.tex' for key in (
-            'statement', 'experience', 'section', 'role', 'bullet', 'comment', 'entries', 'entry', 'publications', 'publication')}),
+            'statement', 'experience', 'section', 'role', 'bullet', 'comment', 'entries', 'entry',
+            'publications', 'publication', 'education', 'education_entry', 'skills', 'skill_rated_table',
+            'skill_rated', 'skill_plain', 'item_groups', 'item_group')}),
         imported_from=id, imported_hashes=hashes)
     payload = cv.model_dump(mode='json')
     payload['document'] = composition.model_dump(mode='json')

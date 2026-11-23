@@ -1,6 +1,7 @@
 import type { DocumentComposition, EntryListSection, PublicationListSection } from '../../types/api.generated';
 import { duplicateSection, move } from '../../domain/studio';
 import { Button } from '../common/Primitives';
+import { StructuredListEditor, type StructuredKind } from './StructuredListEditor';
 type Section = DocumentComposition['sections'][number];
 const id = () => crypto.randomUUID();
 
@@ -21,9 +22,10 @@ function ListEditor({ section, change }: { section: EntryListSection | Publicati
 export function SectionEditor({ document, change }: { document: DocumentComposition; change: (d: DocumentComposition) => void }) {
   const sections = (value: Section[]) => change({ ...document, sections: value });
   const replace = (section: Section) => sections(document.sections.map(item => item.id === section.id ? section : item));
+  const KIND_LABELS: Record<Section['kind'], string> = { statement: 'statement', experience: 'experience', entries: 'entries', publications: 'publications', education: 'education', skills: 'skills', item_groups: 'item groups', latex: 'raw LaTeX' };
   function add(kind: Section['kind']) {
-    const base = { id: id(), title: kind === 'entries' ? 'Personal projects' : kind === 'publications' ? 'Publications' : kind, enabled: true, page_break_before: false };
-    sections([...document.sections, (kind === 'latex' ? { ...base, kind, latex: '' } : kind === 'entries' || kind === 'publications' ? { ...base, kind, entries: [] } : { ...base, kind }) as Section]);
+    const base = { id: id(), title: kind === 'entries' ? 'Personal projects' : kind === 'publications' ? 'Publications' : kind === 'education' ? 'Education' : kind === 'skills' ? 'Technical Strengths' : kind === 'item_groups' ? 'Other Information' : kind, enabled: true, page_break_before: false };
+    sections([...document.sections, (kind === 'latex' ? { ...base, kind, latex: '' } : kind === 'entries' || kind === 'publications' || kind === 'education' ? { ...base, kind, entries: [] } : { ...base, kind, groups: [] }) as Section]);
   }
   return <section><h3>Section outline</h3>
     {document.sections.map((section, at) => <details key={section.id} data-testid="studio-section"><summary>{at + 1}. {section.title}{!section.enabled && ' (hidden)'}</summary>
@@ -36,7 +38,8 @@ export function SectionEditor({ document, change }: { document: DocumentComposit
       <Button onClick={() => sections(document.sections.filter(item => item.id !== section.id))}>Delete section</Button>
       {section.kind === 'latex' && <label>Raw section LaTeX<textarea rows={12} value={section.latex} onChange={e => replace({ ...section, latex: e.target.value })} /><small>The raw source owns its printed heading and any original page breaks.</small></label>}
       {(section.kind === 'entries' || section.kind === 'publications') && <ListEditor section={section} change={replace} />}
+      {(section.kind === 'education' || section.kind === 'skills' || section.kind === 'item_groups') && <StructuredListEditor section={section as Section & { kind: StructuredKind }} change={replace} />}
     </details>)}
-    {(['statement', 'experience', 'entries', 'publications', 'latex'] as const).map(kind => <Button key={kind} disabled={(kind === 'statement' || kind === 'experience') && document.sections.some(s => s.kind === kind)} onClick={() => add(kind)}>Add {kind}</Button>)}
+    {(['statement', 'experience', 'entries', 'publications', 'education', 'skills', 'item_groups', 'latex'] as const).map(kind => <Button key={kind} disabled={(kind === 'statement' || kind === 'experience') && document.sections.some(s => s.kind === kind)} onClick={() => add(kind)}>Add {KIND_LABELS[kind]}</Button>)}
   </section>;
 }

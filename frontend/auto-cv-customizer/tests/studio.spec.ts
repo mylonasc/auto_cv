@@ -142,6 +142,28 @@ test('unsaved preview survives tabs, rejects stale completion, decodes JSON blob
   expect(api.unexpected).toEqual([]);
 });
 
+test('structured education and skills sections are editable and save with the draft', async ({ page }) => {
+  const api = await setup(page);
+  await page.getByRole('button', { name: 'Add education', exact: true }).click();
+  const education = page.getByTestId('studio-section').filter({ hasText: 'Education' }).last();
+  await education.locator('summary').click();
+  await education.getByRole('button', { name: 'Add education entry', exact: true }).click();
+  await education.getByLabel('institution education entry 1', { exact: true }).fill('Test University');
+  await page.getByRole('button', { name: 'Add skills', exact: true }).click();
+  const skills = page.getByTestId('studio-section').filter({ hasText: 'Technical Strengths' }).last();
+  await skills.locator('summary').click();
+  await skills.getByRole('button', { name: 'Add skill', exact: true }).click();
+  await skills.getByLabel('name skill 1', { exact: true }).fill('Testing');
+  await skills.getByLabel('rating skill 1', { exact: true }).fill('4');
+  await page.getByRole('button', { name: 'Save template revision', exact: true }).click();
+  await page.getByRole('button', { name: 'Save new CV version', exact: true }).click();
+  await expect.poll(() => api.saved()?.cv.document?.sections.find((s: { kind: string }) => s.kind === 'education')).toBeTruthy();
+  const saved = () => api.saved()?.cv.document?.sections as unknown as Array<{ kind: string; entries?: Array<{ institution?: string }>; groups?: Array<{ name?: string; rating?: number | null }> }>;
+  expect(saved()?.find(s => s.kind === 'education')?.entries?.[0]).toMatchObject({ institution: 'Test University' });
+  expect(saved()?.find(s => s.kind === 'skills')?.groups?.[0]).toMatchObject({ name: 'Testing', rating: 4 });
+  expect(api.unexpected).toEqual([]);
+});
+
 test('starter selection is forwarded and layout quality is summarized', async ({ page }) => {
   const api = await setup(page);
   expect(api.imports).toEqual([{ template_id: 'my-template', source_template: 'template2' }]);

@@ -56,6 +56,9 @@ Templates use these named placeholders:
 | Role | `<company>`, `<duration>`, `<position>`, `<comment>`, `<bullets>` |
 | Bullet | `<text>`, `<comment>` |
 | Comment | `<text>` |
+| Education list / entry | `<entries>` / `<institution>`, `<dates>`, `<degree>`, `<details>` |
+| Skills wrapper / rated table / rated row / plain table | `<content>` / `<rows>` / `<name>`, `<items>`, `<dots>` / `<name>`, `<items>` |
+| Item-groups list / group | `<entries>` / `<title>`, `<items>` |
 | Cover-letter entry | `<DATETODAY>`, `<COMPANYNAME>`, `<LETTERCONTENT>`, `<NAME>`, `<PROF_SIGNATURE>` |
 
 All declared placeholders must occur; repeated occurrences are allowed. Unknown
@@ -157,18 +160,22 @@ output was disabled, the record does not contain expanded LaTeX, and historical
 resource/template bytes are not archived. Existing PDFs remain the authoritative
 visual artifact; fonts, TeX environment, and system packages are not fingerprinted.
 
-## Deliberately remaining content boundary
+## Structured sections and remaining raw content
 
-The existing entry files still contain contact details, education, strengths,
-academic activities and publications. They are preserved candidate content, not
-disposable boilerplate. These fields are not editable canonical CV data yet, so a
-CV snapshot is not a complete content representation of those legacy sections.
+Education, Technical Strengths and Other Information import as structured,
+editable `education`/`skills`/`item_groups` sections rendered through
+template-owned fragments (`docs/TEMPLATE_STUDIO.md` has the field contracts).
+The curated import parses only the exact fingerprinted starter bytes and keeps
+any unrecognized block as preserved raw LaTeX instead of guessing; older saved
+revisions stay readable and render their existing sections unchanged. Reads
+never migrate raw sections to structured ones.
 
-Before making any of these sections editable, agree on the fields, introduce an
-explicit schema migration with recoverable saves, move the content out of both
-entry files, and test editor/storage/render round trips. Do not create parallel
-writable copies under `candidate.profile` or introduce a generic section framework.
-This follow-up is tracked in technical debt #16, separate from delivered RFK tasks.
+Selected Publications stay raw by design (no bibliography parsing); author new
+structured `publications` rows or hide the raw block without deleting it. The
+contact header stays raw `header_latex`. Canonicalizing contact fields remains
+a separate content-schema follow-up in technical debt #16, not a waived
+criterion: do not create parallel writable copies under `candidate.profile` or
+introduce a generic section framework.
 
 ## Verification and trust boundary
 

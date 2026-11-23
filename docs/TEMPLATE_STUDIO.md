@@ -90,8 +90,23 @@ Every section has `id`, `kind`, `title`, `enabled` and `page_break_before`:
   bullets and inclusion flag. New structured content is plain text.
 - `publications`: identified author/title/venue/year/URL entries and inclusion
   flags. No invented scoring or bibliography parsing.
+- `education`: identified institution/dates/degree/detail-lines entries. The
+  curated import parses the shipped Education block into these fields.
+- `skills`: identified skill groups with items text and an optional 0–6 rating
+  rendered as filled/empty dots; unrated groups render as plain rows.
+- `item_groups`: identified titled bullet groups (used for Other Information).
 - `latex`: complete authored LaTeX. `title` is its outline/editor label; the
   printed heading and existing page breaks remain in its raw source.
+
+Parsed-from-LaTeX fields keep their authored markup in `latex` content format
+(passed through unescaped) and are escaped exactly once in `plain_text` mode,
+matching the authored-LaTeX contract. New user-authored structured entries and
+publication rows remain plain text. When the curated import cannot recognize
+an expected block shape it keeps that block as preserved raw LaTeX instead of
+guessing; missing structured fragments in older saved revisions fail closed at
+render with the fragment name rather than printing raw text. Publications stay
+raw by design (no bibliography parsing); the header stays raw `header_latex`.
+Reads never migrate old raw sections to structured ones.
 
 `header_latex` preserves the original authored header. IDs are unique across all
 sections and their entries; counts and payload sizes are bounded. Raw content is
