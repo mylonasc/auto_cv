@@ -89,7 +89,10 @@
  \setlength{\leftmargin}{2.0em} % Margin within the section
 
 \noindent\setlength{\parindent}{0pt}
+% \vspace{0pt} first lines pin both tops: without it, [t] would align the
+% photo minipage on the image bottom and drop the name below the photo.
 \begin{minipage}[t]{\dimexpr\linewidth-4.2cm\relax}
+  \vspace{0pt}
   {\scshape {\namesize \@name}}\par\nameskip
   \begin{tabular}{@{}ll@{}}
     \@addressone \\
@@ -99,7 +102,7 @@
   \end{tabular}
 \end{minipage}%
 \hfill%
-\begin{minipage}[t]{3.0cm}\raggedleft \printpicture{}\end{minipage}
+\begin{minipage}[t]{3.0cm}\vspace{0pt}\raggedleft \printpicture{}\end{minipage}
 
 }
 
