@@ -18,8 +18,8 @@ from .template_package import (TemplatePackage, ComposedFragments, BinaryAsset, 
 from .template_registry import TemplateError, parse_template_definitions
 
 BUILTINS = {
-    "default_cv": ("assets/latex_cv_template_v0.tex", "ff64f2804b2a81c9263f357fce03b171ca3dad5942e7550a49c9b4a1a0aa9061"),
-    "template2": ("assets/latex_cv_template_v2.tex", "3d51cb749d102fce1959724e0cd1272c354aed7385ca10b0c81e94df0119dd47"),
+    "default_cv": ("assets/latex_cv_template_v0.tex", "44ccabd941c185356b87f30e48083c9ffc3c775c370a2e1a7663a9665c764e5f"),
+    "template2": ("assets/latex_cv_template_v2.tex", "04992c1b5a90bcab29a084b881fb07320664114a3e4cd130a0de1282fc7d9e9c"),
 }
 
 

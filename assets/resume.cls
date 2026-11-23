@@ -24,7 +24,6 @@
 
 \usepackage[parfill]{parskip} % Remove paragraph indentation
 \usepackage{array} % Required for boldface (\bf and \bfseries) tabular columns
-\usepackage{multirow}
 \usepackage{tabularx}
 \usepackage{ifthen} % Required for ifthenelse statements
 \usepackage{graphicx}
@@ -42,8 +41,6 @@
 
 \definecolor{bluedark}{RGB}{18,54,147}
 \definecolor{bluelight}{RGB}{0,83,214}
-
-\usetikzlibrary{backgrounds}
 
 %----------------------------------------------------------------------------------------
 %	HEADINGS COMMANDS: Commands for printing name and address
@@ -80,6 +77,11 @@
 % section environments after it own the CV body layout.
 
 
+% Name/address block on the left, photo top-aligned on the right. Address
+% rows are two-column tabular fragments (icon & text), so they need the inner
+% tabular below. Plain side-by-side minipages with explicit widths keep the
+% layout deterministic: no trial-pass measuring, no overlap. Paragraph indent
+% is zeroed inside the block so icon rows and the photo align to the margins.
 \let\ori@document=\document
 \renewcommand{\document}{
   \ori@document  % Begin document
@@ -87,17 +89,18 @@
  \setlength{\leftmargin}{2.0em} % Margin within the section
 
 \vspace{0.0cm}
-\begin{tabularx}{\linewidth}{c c  l  c   c  l r }
-   \multicolumn{6}{ l}{
-    {\scshape {\namesize \@name}} \hfill %{\namesize\bf \MakeUppercase \@name}\hfill
-    \nameskip
-  }  \multirow{3}{*}{ \hspace{6.0cm} \printpicture} \\
-  & \@addressone & \,&  &  \\
-  &  \@addresstwo \\
-  &  \@addressthree & \, & &  \\
-  & \@addressfour \\
-  
- \end{tabularx}
+\noindent\setlength{\parindent}{0pt}
+\begin{minipage}[t]{\dimexpr\linewidth-4.2cm\relax}
+  {\scshape {\namesize \@name}}\par\nameskip
+  \begin{tabular}{@{}ll@{}}
+    \@addressone \\
+    \@addresstwo \\
+    \@addressthree \\
+    \@addressfour \\
+  \end{tabular}
+\end{minipage}%
+\hfill%
+\begin{minipage}[t]{3.0cm}\raggedleft \printpicture{}\end{minipage}
 
 }
 
@@ -106,10 +109,11 @@
 %----------------------------------------------------------------------------------------
 
 % Defines the rSection environment for the large sections within the CV
+% Section titles use non-bold small caps: Latin Modern has no bold small-caps
+% shape, so \textbf here only produced substitution warnings.
 \newenvironment{rSection}[1]{ % 1 input argument - section name
   \sectionskip
-  % \MakeUppercase{\bf #1} % Section title
-  {\Large{\textsc{ \textbf{{#1}}}}}
+  {\Large{\textsc{{#1}}}}
   \sectionlineskip
   \hrule % Horizontal line
   \begin{list}{}{ % List for each individual item in the section
@@ -133,7 +137,9 @@
       &
 
 \def\arraystretch{1.3}
-      \begin{tabular}{p{1.0\linewidth}}
+      % @{} drops this table's own column padding: p{1.0\linewidth} already
+      % accounts for the full column, so the padding would stick 12pt out.
+      \begin{tabular}{@{}p{\linewidth}@{}}
     \begin{list}{$\cdot$}{\leftmargin=.75em \rightmargin=0cm} % \cdot used for bullets, no indentation
     \itemsep 0.5em \vspace{-1.75em} % Compress items in list together for aesthetics
      
