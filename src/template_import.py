@@ -20,7 +20,7 @@ from .template_registry import TemplateError, parse_template_definitions
 
 BUILTINS = {
     "default_cv": ("assets/latex_cv_template_v0.tex", "44ccabd941c185356b87f30e48083c9ffc3c775c370a2e1a7663a9665c764e5f"),
-    "template2": ("assets/latex_cv_template_v2.tex", "04992c1b5a90bcab29a084b881fb07320664114a3e4cd130a0de1282fc7d9e9c"),
+    "template2": ("assets/latex_cv_template_v2.tex", "fcdc1165f4e18f3f48e7c2024912bf65181c9f30abf156852fb0ef9906134eb8"),
 }
 
 

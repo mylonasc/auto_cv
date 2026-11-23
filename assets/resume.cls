@@ -88,7 +88,6 @@
 
  \setlength{\leftmargin}{2.0em} % Margin within the section
 
-\vspace{0.0cm}
 \noindent\setlength{\parindent}{0pt}
 \begin{minipage}[t]{\dimexpr\linewidth-4.2cm\relax}
   {\scshape {\namesize \@name}}\par\nameskip
@@ -185,5 +184,6 @@
 \def\namesize{\huge} % Size of the name at the top of the document
 \def\addressskip{\smallskip} % The space between the two address (or phone/email) lines
 \def\sectionlineskip{\medskip} % The space above the horizontal line for each section 
-\def\nameskip{\bigskip} % The space after your name at the top
+\def\nameskip{\medskip} % The space after your name at the top: kept small so the
+% first page holds more content; the photo sets the header height.
 \def\sectionskip{\medskip} % The space after the heading section
